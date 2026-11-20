@@ -179,7 +179,7 @@ Everything is in the namespace `CatSplat.SfxForge`; the editor code in `CatSplat
 ### The inspectors look like the device
 
 The Inspector of a sound, the Inspector of a song and **Window > SFX Forge** are built with UI Toolkit and drawn as
-the device draws its display: the firmware's colours (one for each engine), its pages of four values, its names
+the device draws its display: the firmware's colours (one for each engine), its pages of up to four values, its names
 and its units. What you learned on the device you find again in Unity, and the other way round.
 
 ![The Inspector of a sound, page OSC](img/unity-inspector-sound-osc.png)
@@ -195,12 +195,12 @@ values make. HOLD appears because the sound is held.*
 
 | | |
 |---|---|
-| **The pages** | a sound has seven: OSC, TONE, FILTER, WAVE, ENV, LFO, FX. Each has four values, as the device has four encoders; together they hold the engine and all 25 values, each once ([section 3](#the-patch-as-an-asset-sfxpreset) has the table). A song has four: STEPS, MIX, MASTER, AUTO |
+| **The pages** | a sound has seven: OSC, TONE, FILTER, WAVE, ENV, LFO, FX. Each has up to four values, as the device has four encoders (WAVE has two, and its tiles 3 and 4 are empty); together they hold the engine and all 25 values, each once ([section 3](#the-patch-as-an-asset-sfxpreset) has the table). A song has four: STEPS, MIX, MASTER, AUTO |
 | **The knobs** | a value is a tile: a ring that stands where the value stands, the encoder's number in it, a dim name, and the value in large letters. The ring is a picture; the whole tile is the control (below) |
 | **The units** | the value is written as the device writes it: `448Hz`, `3.6kHz`, `36ms`, `1.4s`, `-20`, `100%`, `OFF`, `SAW-SQ`. The texts are worked out with the firmware's own arithmetic, and the tests compare them with values read off the device's own pictures |
 | **The waveform** | the sound as the device draws it: one dry voice, without chorus, delay or reverb, mono, 1.5 seconds at most, a held sound let go after 0.8 seconds. Under it, how long it is. It is not what PLAY and BAKE WAV render: those have the effects. On most pages a white line shows what the page's four values shape |
 | **The soft keys** | the rows of keys at the bottom, as F1 – F6 on the device. A green key is a switch that is on. A dark key has nothing to do and takes no click: SEND while no device is connected, UNDO while there is nothing of this sound to take back |
-| **The link dot** | top right: green while a MIDI output to the device is open |
+| **The link dot** | top right. In the two Inspectors: green while a MIDI output to the device is open. In the window: green while either port is open, so with the input alone it is green while SEND and the pads stay dark |
 
 **Turning a knob.** What a value tile does with the mouse and the keys (`Editor/UI/ValueTile.cs`):
 
@@ -210,7 +210,7 @@ values make. HOLD appears because the sound is held.*
 | turn the wheel over the ring | one step a notch; up is more. Only over the ring, so the Inspector still scrolls everywhere else |
 | press an arrow key while the tile has the focus | up or right: one step more; down or left: one less. With SHIFT: eight |
 | double-click the value | it becomes a field to type in; ENTER takes what you typed. Type it as the display writes it: `200Hz`, `1.2s`, `40%`, `+12`, `OFF`. The nearest value the knob can have is taken |
-| double-click the ring | back to the value of a plain patch of that engine ([section 3](#every-value)). In a song: TEMPO 120, SWING 0 %, LAYER 0 %, VOLUME 100, PAN C |
+| double-click the ring | not back to what it was: to the value of a plain patch of that engine ([section 3](#every-value)). HOLD: 1.50 s. ENGINE has no plain value: nothing happens. In a song: TEMPO 120, SWING 0 %, LAYER 0 %, VOLUME 100, PAN C |
 | click the value of ENGINE or TABLE | a menu of the names. Dragging and the wheel go through them too, round and round |
 
 A tile that only shows, such as STEPS in a song, is an outline with a dim ring, and takes neither the mouse nor the
@@ -246,13 +246,15 @@ values, the patches and the messages in it are the test's, and no device was con
 ![The Inspector of a sound at 340 pixels](img/unity-inspector-sound-narrow.png)
 
 *At 340 pixels the soft keys wrap into rows of three and the picture is lower: below 400 pixels a panel uses its
-narrow layout. The tests render the inspectors at 300, 340, 640 and 700 pixels and the window at 340, 420 and 700.*
+narrow layout. The tests render every page at 340 and 640 pixels, some also at 300 and 700, and the window at 340, 420 and 700.*
 
 > **What was tried, and what was not.** The tests build these panels, call what the knobs and keys call, send
 > mouse and wheel events to them in a test panel, and check the asset and Undo afterwards
 > ([section 9](#the-inspectors-are-tested-in-a-project-of-their-own)). Not tried: the real Inspector and the real
 > window, which nobody has opened; the menus (ENGINE, TABLE, the pad, the MIDI ports), which were never opened;
-> typing into a value's field with a keyboard; and anything sent to a device from these panels: SEND, PLAY ON
+> typing into a value's field with a keyboard; any key: the arrow keys on a tile, ENTER in the window's text
+> field and the double-click that opens a value's field were never sent as events, and what they call was called
+> directly; and anything sent to a device from these panels: SEND, PLAY ON
 > DEVICE, SEND CHANGES, the pads, the text. Only Unity 6000.3.8f1 on Windows x64 was used, and nobody has
 > listened to what PLAY plays.
 
@@ -359,8 +361,8 @@ words (FM RATIO, ARP STEP, GRAIN AMT, POSITION …).
 
 ### Variations
 
-`patch.Mutate(rng)` moves every value by up to 15 % of its range, as MUTATE does on the device. It keeps what kind of
-sound it is: the engine, the table, the level, and whether it is a one-shot.
+`patch.Mutate(rng)` moves every value except LEVEL and TABLE by up to 15 % of its range, as MUTATE does on the device. It keeps what
+kind of sound it is: the engine, the table, the level, and whether it is a one-shot.
 
 ```csharp
 var rng = new System.Random(7);
@@ -396,13 +398,13 @@ What is on each page. Knob 1 is top left, 2 top right, 3 bottom left, 4 bottom r
 
 A and B carry the engine's own names: FM RATIO and FM DEPTH, ARP STEP and ARP SPEED (UI BLIP), GRAIN RATE and
 GRAIN AMT (FOLEY), POSITION and WARP (WAVETABLE). With FOLEY, CUTOFF reads BAND. The values are written in the
-units of the table above: FREQ and CUTOFF in Hz or kHz, the times in ms or s, PITCH ENV and FILTER ENV as −64 … +63
-around 0, A, B and LEVEL as the bare number, SUSTAIN and CRUSH as `OFF` at 0, the rest in per cent.
+units of the table above: FREQ, CUTOFF and LFO RATE in Hz or kHz, the times in ms or s, PITCH ENV and FILTER ENV as −64 … +63
+around 0, A, B and LEVEL as the bare number, SUSTAIN and CRUSH as `OFF` at 0, TABLE and ENGINE as a name, the rest in per cent.
 
 | Soft key | What it does |
 |---|---|
 | **PLAY** | plays the sound through the editor's speakers, with the engine and its effects. A held sound is held for HOLD |
-| **MUTATE** | a variation: every value moves by up to 15 % (`SfxPatch.Mutate`) |
+| **MUTATE** | a variation: every value except LEVEL and TABLE moves by up to 15 %; a one-shot stays a one-shot, the engine stays (`SfxPatch.Mutate`) |
 | **UNDO** | Unity's own Undo, lit only while Unity's next undo step is a change made to this sound here. Ctrl+Z does the same |
 | **RANDOM** | a new one-shot from nothing, inside ranges that stay audible. The engine changes too |
 | **BAKE WAV** | writes a stereo 16-bit `.wav` next to the asset |
@@ -585,7 +587,7 @@ Select an `SfxSong`. From the top ([the STEPS page is pictured in section 2](#th
 | **TEMPO · STEPS · SWING · CHAIN** | the song's four numbers. CHAIN reads "(unused)" while the song has an arrangement | **TEMPO**, **SWING** |
 | **Patterns A – H** | a tile each; along its foot, how many sounds play on each step. A click looks at that pattern | |
 | **ARRANGEMENT** | the bars as a row of letters, or what the song does without one. A click on a bar looks at its pattern | |
-| **STEPS** | a row for each sound over the pattern looked at: a step is as high as it is hard, a line says how long it holds, and the chosen sound's notes are written on its steps. A row is dim while its sound's layer is silent at the INTENSITY below, or the sound is muted. A click on a name chooses the sound and plays it. Under the rows: INTENSITY, with a mark for every sound's LAYER, and the chosen sound's LAYER as a bar | INTENSITY can be dragged, but it is not in the song |
+| **STEPS** | a row for each sound over the pattern looked at: a step is as high as it is hard, a line says how long it holds, and the chosen sound's notes are written on its steps. A row is dim while its sound's layer is silent at the INTENSITY below, or the sound is muted. A click on a name chooses the sound and plays it. Under the rows: INTENSITY, with a mark for the LAYER of every sound that plays in the song, and the chosen sound's LAYER as a bar | INTENSITY can be dragged, but it is not in the song |
 | **MIX** | a tile for each sound: fader, pan, muted or not. A click chooses the sound and plays it | |
 | **MASTER** | two drawings, the delay's echoes and the reverb's fading, and DELAY TIME, FEEDBACK, ROOM SIZE, DAMPING, DRIVE | |
 | **AUTO** | a block for every automation lane: the sound, the knob it moves, its points over the pattern looked at and their range, or in which patterns it moves | |
@@ -819,7 +821,7 @@ opened, and none of its keys was pressed against a device or the emulator.
 
 | On the device | In Unity |
 |---|---|
-| **F5 EXPORT** on a sound page | `SfxLink.PatchReceived(slot, patch)`. The window saves it as an `SfxPreset` |
+| **F5 EXPORT** on a sound page | `SfxLink.PatchReceived(slot, patch)`. The window, while it is open, saves it as an `SfxPreset` (with SAVE AS THEY ARRIVE on, as it is at first; otherwise SAVE on its tile) |
 | **F5 SEND** on the SONG page | 16 patches, then the song in 39 pieces: `SfxLink.SongReceived(song, sounds)`. The window saves an `SfxSong` |
 
 In your own code:
@@ -1640,6 +1642,7 @@ into a texture. The eight pictures of the editor UI in this manual are copies of
 | **Not the Inspector itself** | the panels were never hosted by a real Inspector or by the real window. How Unity's own Inspector lays them out, scrolls them and themes what is around them has not been seen by anyone |
 | **No menus** | the menus of ENGINE, TABLE, the pad and the MIDI ports were never opened |
 | **No typing** | nobody typed into a value's field; the code behind it was called directly |
+| **No keys** | the arrow keys on a tile, ENTER in the window's text field and the double-click that opens a value's field were never sent; what they call was called directly |
 | **No device** | SEND, PLAY ON DEVICE, SEND CHANGES, the window's pads, its text and FETCH SONG were not tried against a device or the emulator. The link tests of [section 6](#6-from-the-device-to-the-game) call `SfxLink` directly, not these keys |
 | **No ears** | PLAY, PLAY SOUND and PLAY BAR were not listened to |
 | **One Unity** | 6000.3.8f1 only, on Windows x64 |
@@ -1750,7 +1753,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `engine`, and the 25 `byte` fields of [section 3](#every-value) | |
 | `this[SfxParam p]` | a value by index; clamps to 127 |
 | `bool IsSustained` | held (`sustain` above 0) |
-| `void Mutate(System.Random rng)` | a variation, up to 15 % a value |
+| `void Mutate(System.Random rng)` | a variation, up to 15 % a value; LEVEL and TABLE stay |
 | `static string Label(SfxParam p, SfxEngine engine)` | a value's name for an engine |
 | `static readonly string[] EngineNames`, `TableNames` | |
 | `byte[] Pack()` · `static bool TryUnpack(byte[] src, int offset, out SfxPatch patch)` | the 28 bytes |

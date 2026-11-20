@@ -109,7 +109,7 @@ namespace CatSplat.SfxForge.Editor
 
             var keys = new SoftKeyRow();
             playKey = keys.Add("PLAY", Play, "Plays the sound here, with the device's engine.");
-            keys.Add("MUTATE", Mutate, "Every value moves by up to 15 % – a variation of this sound.");
+            keys.Add("MUTATE", Mutate, "Every value except LEVEL and TABLE moves by up to 15 % – a variation of this sound.");
             undoKey = keys.Add("UNDO", UndoOwn, "Takes back the last change made to this sound here – while it is the last thing done in Unity. Unity's own Undo (Ctrl+Z) does the same.");
             keys.Add("RANDOM", Randomize, "A new one-shot from nothing, inside ranges that stay audible. The engine changes too.");
             bakeKey = keys.Add("BAKE WAV", Bake, "Writes the sound as a .wav next to this asset.");
@@ -407,7 +407,7 @@ namespace CatSplat.SfxForge.Editor
             if (SfxUnits.TryParseSeconds(text, out float seconds)) SetHold(_ => seconds);
         }
 
-        /// <summary>MUTATE: every value of every selected sound moves by up to 15 %.</summary>
+        /// <summary>MUTATE: every value of every selected sound, except LEVEL and TABLE, moves by up to 15 %.</summary>
         public void Mutate() => Edit(UndoMutate, p => { p.Mutate(Rng); return p; });
         /// <summary>RANDOM: every selected sound becomes a new one-shot.</summary>
         public void Randomize() => Edit(UndoRandom, _ => RandomPatch(Rng));

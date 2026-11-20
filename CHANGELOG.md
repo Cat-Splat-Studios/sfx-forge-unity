@@ -42,7 +42,9 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
 - If a song transfer breaks off and a different song follows within two seconds, pieces of the two can be mixed.
 - The Inspectors and the window were tested as elements in a test panel (88 EditMode tests in the source
   repository), and the pictures of them in these pages were rendered there. Nobody has opened them in the editor
-  itself; their menus, typing into a value, and their keys against a device were not tried.
+  itself; their menus, typing into a value, and their keys against a device were not tried. No keys: the arrow
+  keys on a tile, ENTER in the window's text field and the double-click that opens a value's field were never
+  sent; what they call was called directly.
 - Tried on the generated package, headless: added to an empty project from disk, the sample imported with the
   Package Manager's import call, with and without the Test Framework, its checks, tests, Windows build and the
   build's probe (the README, "What is tested", has the numbers). Not tried: the Package Manager's buttons clicked

@@ -228,7 +228,7 @@ namespace CatSplat.SfxForge.Editor
             SfxUI.Menu(this, Choices, ChoiceIndex, pick => chosen?.Invoke(pick));
         }
 
-        /// <summary>The value becomes a field to type in. ENTER takes it (typed), ESC or a click elsewhere leaves it.</summary>
+        /// <summary>The value becomes a field to type in. ENTER takes it (typed). ESC or a click elsewhere is meant to leave it; that was never tried, and a delayed field may take the text when it loses the focus.</summary>
         public void BeginTyping()
         {
             if (entry != null || !Interactive) return;

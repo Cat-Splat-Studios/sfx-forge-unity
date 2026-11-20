@@ -51,6 +51,11 @@ Texts are `TextElement`s made with `SfxUI.Text(text, class)`, so the editor's th
 Each inspector is a static `Build(SerializedObject) -> VisualElement` that `CreateInspectorGUI` returns
 (`SfxPresetEditor.Build`). A test or a picture builds the same element without an Inspector window.
 
+`Editor/AssemblyInfo.cs` names `CatSplat.SfxForge.Editor.Tests` in an `InternalsVisibleTo`: that is the test project
+of the source repository (`tests/unity-inspectors`), which is not in the package. What it opens is one member,
+`SfxUI.PretendNativeMissing`, which makes the panels show their state without the native library. Any assembly of
+that name in a project sees it too, and whatever is made `internal` here later.
+
 ## The song
 
 `SfxSongPanel` (made by `SfxSongEditor.Build`) is a viewer of the packed song, read through `SfxSong`'s accessors

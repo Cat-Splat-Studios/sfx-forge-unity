@@ -228,7 +228,7 @@ namespace CatSplat.SfxForge.Editor
             soundTiles[TileVolume].nudged += d => SetVolume(sound, Song.VolumeRaw(sound) + d);
             soundTiles[TileVolume].typed += text => { if (Number(text, out int v)) SetVolume(sound, v); };
             soundTiles[TileVolume].resetRequested += () => SetVolume(sound, 100);
-            soundTiles[TilePan].tooltip = "The chosen sound's pan: L63 .. C .. R63.";
+            soundTiles[TilePan].tooltip = "The chosen sound's pan: L64 .. C .. R63.";
             soundTiles[TilePan].nudged += d => SetPan(sound, Song.PanRaw(sound) + d);
             soundTiles[TilePan].typed += text => { if (SfxUnits.TryParse(text, 0, 127, SfxUnits.PanText, out int v)) SetPan(sound, v); };
             soundTiles[TilePan].resetRequested += () => SetPan(sound, 64);
@@ -260,7 +260,7 @@ namespace CatSplat.SfxForge.Editor
             header.HideLink();
             root.Add(SfxUI.Text(many > 1 ? "SELECT ONE SONG" : "NO SONG YET", "sfx-song-message"));
             root.Add(SfxUI.Text(many > 1 ? "A song is shown one at a time."
-                : "Make one on SFX FORGE and press SEND on its SONG page (or 'Fetch the song' in Window > SFX Forge) – it arrives as an asset like this one.", "sfx-song-message-small"));
+                : "Make one on SFX FORGE and press SEND on its SONG page (or FETCH SONG in Window > SFX Forge) – it arrives as an asset like this one.", "sfx-song-message-small"));
         }
 
         void BuildSteps(VisualElement into)
