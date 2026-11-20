@@ -717,9 +717,10 @@ received.
 
 ### A song without MIDI
 
-The demo's song was not fetched over MIDI. `tests/make-demo-song.mjs` writes what the firmware sends on SEND into
-`DemoSong.bytes` – 16 patches of 28 bytes, then the 7699-byte song – and the demo's builder turns that file into the
-asset. This is the path that is proven to work:
+The showcase's song was not fetched over MIDI. A script in the source repository (`tests/make-demo-song.mjs`) wrote
+what the firmware sends on SEND into a file – 16 patches of 28 bytes, then the 7699-byte song. That file is in the
+sample, `Song/DemoSong.bytes`, and the sample's builder (`Editor/ShowcaseAudio.cs`) turns it into the asset
+`Song/DemoSong.asset`. This is the path that is proven to work:
 
 ```csharp
 // in an editor script: a .bytes file (16 x 28 patch bytes, then the packed song) -> an SfxSong asset
@@ -798,9 +799,11 @@ Things that sound continuously have no event. The audio reads the player's state
 
 `Scripts/Audio` is the only runtime assembly that references `CatSplat.SfxForge`. Outside it, the sound is named
 only in editor and test code: `Editor/ShowcaseAudio.cs`, the two lines of `Editor/ShowcaseBuilder.cs` that call it
-(`ShowcaseAudio.Install` and `ShowcaseAudio.Check`), and three files in `Tests` (`ShowcaseAudioTests.cs`, and
-`CaptureTakes.cs` and `CaptureTelemetry.cs` of the capture rig). Delete the folder, those four files and those two
-lines, and the game is the same game, silent. (That is true by construction. It has not been tried by deleting them.)
+(`ShowcaseAudio.Install` and `ShowcaseAudio.Check`), and five files in `Tests` (`ShowcaseAudioTests.cs`;
+`CaptureTakes.cs` and `CaptureTelemetry.cs` of the capture rig; `LinkTakes.cs` and `LinkSession.cs` of the link
+takes). The assembly definitions of `Editor` and `Tests` reference `CatSplat.SfxForge` as well. Delete the folder,
+those six files, those two lines and the two references, and the game is the same game, silent. (That is true by
+construction. It has not been tried by deleting them.)
 
 ### The sound table: SoundLibrary
 
@@ -908,7 +911,7 @@ The music's volume is 0.36 (`musicVolume`), halved for a moment after a hit.
 | **4** | Held sounds: one `SfxPlayer` each, started with its note, bent every frame, released | `ContinuousSounds.cs`, `HeldSound.cs` |
 | **5** | Music: one `SfxMusicPlayer` with a song, and a script that sets `intensity` from a floor and the game's speed, holds a pattern where the level wants one, and plays notes by hand | `MusicDirector.cs`, and [a first song](#a-first-song) |
 | **6** | Put it in the scene: follow the installer top to bottom, in code or by hand in the Inspector | `AudioInstaller.cs` |
-| **7** | Or take the folder: copy `Scripts/Audio` (16 files), ten files of `Scripts/Core`, and the song `Song/DemoSong.asset` | below |
+| **7** | Or take the folder: copy `Scripts/Audio` (17 scripts and its `.asmdef`), ten files of `Scripts/Core`, and the song `Song/DemoSong.asset` | below |
 
 **The scene objects**, as `AudioInstaller.Install(player, session, song, presetFactory)` builds them. `player` is a
 `PlayerBase` and `session` a `GameSessionBase`: `Install` throws without either. `song` is the `SfxSong`; without one
@@ -1403,10 +1406,10 @@ Sound can be asserted. The demo's and the showcase's Play mode tests do it in th
 | What to check | How | Where |
 |---|---|---|
 | a patch makes sound at all | bake it and look for a sample above a threshold | `ShowcaseAudio.Check` → `IsAudible` (peak above 0.01) |
-| a player started, and stopped | poll `SfxPlayer.IsPlaying` | `SfxDemoTests.FiringPlaysTheLaserAndSpawnsABolt` |
+| a player started, and stopped | poll `SfxPlayer.IsPlaying` | `SfxDemoTests.FiringPlaysTheLaserAndSpawnsABolt` (the older demo, in the source repository) |
 | a baked clip really comes out | `AudioSource.GetOutputData`, largest sample | `ShowcaseAudioTests.AJumpIsHeardThroughSfxForge` |
 | the game bends a held sound | read `pitchSemitones`, `fm`, `level` after the game moved | `ShowcaseAudioTests.TheWindUpRevAndTheRollHumFollowThePlayer` |
-| the music runs and moves on | `IsPlaying`, `Step`, `Bar` | `SfxDemoTests.TheMusicPlaysAndFollowsTheSpeed` |
+| the music runs and moves on | `IsPlaying`, `Step`, `Bar` | `SfxDemoTests.TheMusicPlaysAndFollowsTheSpeed` (the older demo, in the source repository) |
 | a cue took, and held | wait for `Pattern`, then watch it for three bars | `ShowcaseAudioTests.EnteringASectionCuesItsPatternAndTheMusicStaysOnIt` (Static Field, pattern E) |
 | the mix does not clip | record a take at half volume; assert that its largest sample ÷ 0.5 is under 0.95 | `CaptureTakes`, every take ([below](#the-mix-is-measured-not-heard)) |
 | intensity follows the game | read `intensity` (or your director's own value) | `ShowcaseAudioTests.TheMusicsIntensityFollowsSpeedAndDropsOnAHit` |

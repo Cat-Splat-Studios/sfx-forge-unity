@@ -7,3 +7,7 @@ How to play it: [the device's manual](../Documentation~/MANUAL.md). How to join 
 [section 6 of the Unity manual](../Documentation~/UNITY.md#6-from-the-device-to-the-game). It was run in the VIBE FM SDK's
 tools and emulator only, not on hardware; the link was tested against the SDK's local emulator, not against the
 Playground site or the plugin. Its source is not in this package.
+
+The `.wasm` is SFX FORGE's code compiled together with the VIBE FM SDK's runtime and its display fonts
+(Apache-2.0 and SIL OFL 1.1): see [Third Party Notices](../Third%20Party%20Notices.md) and the licence texts in
+[`Documentation~/licenses`](../Documentation~/licenses). It carries no debug information.

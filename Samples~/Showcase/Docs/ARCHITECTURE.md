@@ -318,7 +318,7 @@ version, with every step, is `../README.md` ("Use SFX FORGE in your own Unity ga
    no preset for the pool. Every source is 2D with no clip and `playOnAwake` off; the players keep their
    sources running themselves.
 
-7. **Lifting the audio folder out.** Copy `Scripts/Audio` (16 files). From `Scripts/Core` it needs
+7. **Lifting the audio folder out.** Copy `Scripts/Audio` (17 scripts and its `.asmdef`). From `Scripts/Core` it needs
    exactly these ten files: `GameEvents`; `PlayerBase` with the interfaces it implements, `IPlayerState`
    (speed, grounded, rolling, charging), `IPlayerActor` and `IPlayerInput`, and `TerrainPlane`, which
    those name; `GameSessionBase` with `IGameSession`, `GamePhase` and `SectionId`. The folder's

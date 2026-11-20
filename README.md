@@ -10,23 +10,39 @@ The documentation and the videos are the main thing here. Start with the videos,
 
 ## Watch
 
-Each picture is a silent preview of ten to twelve seconds; click it for the whole video (an mp4 in
-[`Documentation~/video`](Documentation~/video/README.md), with sound). If your browser shows a file page instead of
-a player, download the file.
+Each picture is a silent excerpt of ten to fourteen seconds, at a third of the video's size; the text under it says
+what the whole video shows. Click it for the video (an mp4 in [`Documentation~/video`](Documentation~/video/README.md),
+1920×1080, with sound), where the small print of the panels is readable. If your browser shows a file page instead
+of a player, download the file.
 
 [![The link: device and game, joined over MIDI](Documentation~/img/readme/sfx-forge-unity-link.gif)](Documentation~/video/sfx-forge-unity-link.mp4)
 
 **[The link: device and game, joined over MIDI](Documentation~/video/sfx-forge-unity-link.mp4)** (0:31). SFX FORGE in the emulator beside the game in Unity. SEND is pressed on the device and the song arrives in the running game; a sound is mutated, EXPORT is pressed, and the game plays the patch.
 
-| | |
-|---|---|
-| [![The showcase game, start to goal](Documentation~/img/readme/sfx-forge-unity-showcase.gif)](Documentation~/video/sfx-forge-unity-showcase.mp4) | [![How it works in Unity](Documentation~/img/readme/sfx-forge-unity-how-it-works.gif)](Documentation~/video/sfx-forge-unity-how-it-works.mp4) |
-| **[The showcase game, start to goal](Documentation~/video/sfx-forge-unity-showcase.mp4)** (1:55). *Brio: First Harmonic* played through, with a panel naming what SFX FORGE is doing at each moment: the song's bar, the intensity, the layers, every sound and its route. | **[How it works in Unity](Documentation~/video/sfx-forge-unity-how-it-works.mp4)** (4:06). The three ways to play a sound and the adaptive music, one at a time: a page of the showcase's code, then the game doing it. |
-| [![The device: a tour](Documentation~/img/readme/sfx-forge-tour.gif)](Documentation~/video/sfx-forge-tour.mp4) | [![The device: building the song](Documentation~/img/readme/sfx-forge-build-a-song.gif)](Documentation~/video/sfx-forge-build-a-song.mp4) |
-| **[The device: a tour](Documentation~/video/sfx-forge-tour.mp4)** (2:05). The instrument itself: sound effects, MUTATE, the five engines, the sequencer, layers that follow INTENSITY, automation, the mixer, the link page. | **[The device: building the song](Documentation~/video/sfx-forge-build-a-song.mp4)** (2:16). The demo song played in from nothing with pads and keys, then arranged, layered, automated, mixed and sent to the game. It is the song the showcase plays. |
+[![The showcase game, start to goal](Documentation~/img/readme/sfx-forge-unity-showcase.gif)](Documentation~/video/sfx-forge-unity-showcase.mp4)
+
+**[The showcase game, start to goal](Documentation~/video/sfx-forge-unity-showcase.mp4)** (1:55). *Brio: First Harmonic* played through, with a panel naming what SFX FORGE is doing at each moment: the song's bar, the intensity, the layers, every sound and its route.
+
+[![How it works in Unity](Documentation~/img/readme/sfx-forge-unity-how-it-works.gif)](Documentation~/video/sfx-forge-unity-how-it-works.mp4)
+
+**[How it works in Unity](Documentation~/video/sfx-forge-unity-how-it-works.mp4)** (4:06). The three ways to play a sound and the adaptive music, one at a time: a page of the showcase's code, then the game doing it.
+
+[![The device: a tour](Documentation~/img/readme/sfx-forge-tour.gif)](Documentation~/video/sfx-forge-tour.mp4)
+
+**[The device: a tour](Documentation~/video/sfx-forge-tour.mp4)** (2:05). The instrument itself: sound effects, MUTATE, the five engines, the sequencer, layers that follow INTENSITY, automation, the mixer, the link page.
+
+[![The device: building the song](Documentation~/img/readme/sfx-forge-build-a-song.gif)](Documentation~/video/sfx-forge-build-a-song.mp4)
+
+**[The device: building the song](Documentation~/video/sfx-forge-build-a-song.mp4)** (2:16). The demo song played in from nothing with pads and keys, then arranged, layered, automated, mixed and sent to the game. It is the song the showcase plays.
 
 The videos were made by scripts from the firmware and the game themselves. Their sound is SFX FORGE's own, on the
 device and in Unity; nobody has listened to it (see [What is tested](#what-is-tested-and-what-is-not)).
+
+**The videos were recorded in the repository this package is generated from, and their pages name things there.**
+Where a video shows the package id `com.catsplat.sfxforge`, read `com.catsplatstudios.sfxforge`, and install it as
+[Install](#install) says, not with the manifest line on the video's "INSTALL" page. Where it shows `unity/Demo` or
+`unity/Demo/Assets/Showcase`, read the imported sample ([The showcase sample](#the-showcase-sample)); where it shows `docs/UNITY.md` or "the
+manual in the repository", read [`Documentation~/UNITY.md`](Documentation~/UNITY.md).
 
 ## From the device to the game in five steps
 
@@ -43,8 +59,8 @@ device is the emulator or the plugin, and the two ports are a virtual MIDI cable
 **Window > SFX Forge**, choose **From device** and **To device**, press **Connect**.
 
 **3. EXPORT a sound, SEND the song.** On a sound page, **F5 EXPORT** sends the selected sound: one patch. On the SONG
-page, **F5 SEND** sends the 16 instruments and the song with its arrangement, layers, mix and automation, in 39
-pieces. Unity can also ask: **Fetch the song** in the window, or from code:
+page, **F5 SEND** sends everything: the 16 patches, then the song with its arrangement, layers, mix and automation
+in 39 pieces (55 messages in all). Unity can also ask: **Fetch the song** in the window, or from code:
 
 ```csharp
 SfxLink.Shared.PatchReceived += (slot, patch) => Debug.Log($"pad {slot + 1}: {patch.engine}");
@@ -52,6 +68,11 @@ SfxLink.Shared.SongReceived += (packedSong, sounds) => { /* sounds is null if no
 SfxLink.Shared.RequestPatch(0);        // ask for pad 1
 SfxLink.Shared.RequestSong();          // ask for the 16 sounds and the song
 ```
+
+Both requests return false while the ports are not open, and the events fire from `SfxLink.Shared.Poll()`. In the
+editor the SFX Forge window opens the ports and the editor polls for you once it is connected. In a running scene or a
+built game, put an `SfxForgeLink` component in the scene: it opens the ports (in a built game, name them in its
+`inputPort` and `outputPort`) and polls every frame.
 
 **4. It arrives in Unity as an asset.** The window saves a patch as an `SfxPreset` (into `Assets/SfxForge`, named like
 `Pad03_SciFiFm`) and a song as an `SfxSong` named `Song`. A preset's Inspector has a slider for every value, **Play**,
@@ -87,14 +108,21 @@ public class FromTheDevice : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space)) player.Play(1f, 7f);   // live: full velocity, 7 semitones up
         if (Input.GetKeyDown(KeyCode.Return) && baked != null) GetComponent<AudioSource>().PlayOneShot(baked, 0.7f);
         music.intensity = Mathf.PingPong(Time.time * 0.1f, 1f);     // the song's layers come in and go out
-        if (Input.GetKeyDown(KeyCode.Tab)) music.CuePattern(2);     // pattern C, from the next bar line
+        if (Input.GetKeyDown(KeyCode.Tab)) music.CuePattern(2);     // pattern C from the next bar line; see below
     }
 }
 ```
 
+A cue does not hold by itself in a song that has an arrangement, and the song SEND delivers has one: the cued
+pattern plays, then the song walks on in its own order after a bar or two. To stay on a pattern, cue it again on
+every bar ([the manual, "Holding a pattern"](Documentation~/UNITY.md#holding-a-pattern-cue-it-again-on-every-bar)).
+
 That is the whole path. The manual's sections [4](Documentation~/UNITY.md#4-playing-sounds-three-routes),
 [5](Documentation~/UNITY.md#5-music) and [6](Documentation~/UNITY.md#6-from-the-device-to-the-game) are the long
-version; the showcase sample is a whole game built this way. While the two are linked the game can also drive the
+version. The showcase sample is a whole game that plays its sounds and a device-made song with these calls. It was
+not itself made over the link: its 19 sounds are patches written in code, and its song asset was built from a file
+of the bytes the device sends on SEND ([the manual, "A song without MIDI"](Documentation~/UNITY.md#a-song-without-midi)).
+The MIDI path was tested separately, against the emulator. While the two are linked the game can also drive the
 device (`SfxTelemetrySender`, `SfxLink.Shared.SendIntensity`), so you tune a sound on the device's knobs while the
 game plays it.
 
@@ -129,7 +157,8 @@ generated meshes; the folder holds no audio file, texture or model. It is writte
   Framework package (`com.unity.test-framework`) is in the project; an empty project does not have it (Package
   Manager > Unity Registry > Test Framework).
 - **Play**: open `Showcase.unity` in the imported folder, press Play. Arrows or A/D run, Space jumps, Down tucks
-  into a roll. A gamepad works too.
+  into a roll. A gamepad is read through the Input Manager's default axes and buttons (left stick, a face button);
+  that was not tried with a real pad.
 - **Build**: **SFX Forge > Showcase > Build for Windows** writes `Builds/Brio/Brio.exe` beside `Assets`. The build
   settings are left as they are.
 - **The build checks itself**: started with `-sfxforge-probe <path>\probe.json` the game plays by itself for 14
@@ -189,7 +218,8 @@ Tested on this package as generated, on the same machine, with the editor run he
   the scene in the build settings all 32 pass, on the scene as shipped and on a scene rebuilt in that project.
   With the Test Framework (1.6.0) added: 20 Play mode tests passed, none failed, and 14 were skipped, which are the
   capture and link takes that only run when asked for by name. The Windows build made from there passed its probe:
-  native library found, 7 bars of the song, 14 of 14 baked clips, output peak 0.55 of full scale, not silent.
+  native library found, 7 bars of the song, 14 of 14 baked clips, not silent; the output peak was 0.55 of full scale
+  in one build and 0.62 in a second one, made after the plugin's import settings were written down.
 
 Not tested:
 
@@ -200,7 +230,7 @@ Not tested:
   device (`onPad`, `onEncoder`, `SfxEncoderBinding`), `SendPatch`, and the buttons of the SFX Forge window were not
   tried against a device.
 - Any Unity version other than 6000.3.8f1, any platform other than Windows x64, any render pipeline other than
-  the built-in one.
+  the built-in one. A gamepad.
 - The Package Manager's window itself: nobody clicked **Add package from disk**, **Import** or the menu items; the
   calls behind them were run from the command line. Installing from a git URL (there is no published repository
   yet). A project made from a template that has another render pipeline or the Input System alone.
@@ -209,8 +239,9 @@ Not tested:
 
 ## Requirements and limits
 
-- **Windows x64 only.** The engine is a native library (`Runtime/Plugins/x86_64/sfxforge.dll`). Elsewhere the package
-  compiles, `SfxNative.Available` is false and the players stay silent with a warning.
+- **Windows x64 only.** The engine is a native library (`Runtime/Plugins/x86_64/sfxforge.dll`), and its import
+  settings name the editor and Windows x64 only. Elsewhere the code is written to compile and stay silent with a
+  warning (`SfxNative.Available` is false); that was not tried.
 - **MIDI on Windows only** (winmm), and only needed for the link. Playing sounds and songs needs no device.
 - **Unity 6000.3**: developed and tested with 6000.3.8f1, nothing older.
 - Live players are not spatialized (for 3D, bake a clip); one patch per `SfxPlayer`; a song is made on the device and
@@ -218,6 +249,9 @@ Not tested:
 
 ## License
 
-MIT, see [LICENSE.md](LICENSE.md). The device shown in the videos is drawn by the VIBE FM SDK's emulator
-(Apache-2.0), and the firmware was built with that SDK: [Third Party Notices](Third%20Party%20Notices.md). "VIBE FM"
-is its owner's trademark; this package is not affiliated with it.
+MIT, see [LICENSE.md](LICENSE.md). Two binaries in the package hold other people's code in compiled form: the
+firmware holds the VIBE FM SDK's runtime and display fonts (Apache-2.0, SIL OFL 1.1), and `sfxforge.dll` holds
+start-up code of the mingw-w64 runtime. The device shown in the videos is drawn by the SDK's emulator. All of it is
+in [Third Party Notices](Third%20Party%20Notices.md), with the licence texts in
+[`Documentation~/licenses`](Documentation~/licenses). "VIBE FM" is its owner's trademark; this package is not
+affiliated with it.

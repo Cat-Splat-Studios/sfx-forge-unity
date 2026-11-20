@@ -157,12 +157,14 @@ does not compare the sound with the editor's, and nobody has listened to the bui
 | `Docs` | `DESIGN.md` (what the game is), `ARCHITECTURE.md` (how the code is organised, and the rules), and one notes file per discipline: `GAMEPLAY-NOTES.md`, `LEVEL-NOTES.md`, `ART-NOTES.md`, `AUDIO-NOTES.md`. |
 
 The four runtime folders reference only `Scripts/Core`, never each other, and gameplay never calls
-SFX FORGE. Outside `Scripts/Audio` the sound is known only in editor and test code: in four files,
-`Editor/ShowcaseAudio.cs`, `Tests/ShowcaseAudioTests.cs` and the capture rig's `Tests/CaptureTakes.cs`
-and `Tests/CaptureTelemetry.cs`, and in two lines of `ShowcaseBuilder` (`ShowcaseAudio.Install` and
-`ShowcaseAudio.Check`). Delete the folder, those four files and those two lines and the game is the
-same game, silent. (This is by construction – no other file has a `using` for the audio code – and
-has not been tried by actually deleting them.)
+SFX FORGE. Outside `Scripts/Audio` the sound is known only in editor and test code: in six files,
+`Editor/ShowcaseAudio.cs`, `Tests/ShowcaseAudioTests.cs`, the capture rig's `Tests/CaptureTakes.cs`
+and `Tests/CaptureTelemetry.cs` and the link takes' `Tests/LinkTakes.cs` and `Tests/LinkSession.cs`,
+in two lines of `ShowcaseBuilder` (`ShowcaseAudio.Install` and `ShowcaseAudio.Check`), and in the
+references of the `Editor` and `Tests` assembly definitions. Delete the folder, those six files,
+those two lines and the two references and the game is the same game, silent. (This is by
+construction – no other file has a `using` for the audio code – and has not been tried by actually
+deleting them.)
 
 ## Use SFX FORGE in your own Unity game
 

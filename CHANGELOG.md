@@ -15,7 +15,8 @@ and the Unity code live there) by `tools/make_unity_package.py`; nothing in it i
 - **Sample** "Showcase": a one-level game whose every sound is SFX FORGE, with its own song, editor checks, Play
   mode tests, a Windows build command and a self-check in the built game.
 - **Documentation~**: the Unity manual, the device's manual with the cheat sheet, the link's protocol, five videos.
-- **Firmware~**: the built instrument, firmware 1.3.1.
+- **Firmware~**: the built instrument, firmware 1.3.1, without debug information.
+- The native library's import settings name the editor and Windows x64 only.
 
 The code is the package that was `com.catsplat.sfxforge` 0.1.0 inside the source repository. The id, the display name and the
 version are new; namespaces, assembly names and asset GUIDs are unchanged.

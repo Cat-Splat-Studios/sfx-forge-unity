@@ -7,7 +7,9 @@ Everything is synthesized. There are no samples and no recordings in it.
 
 > **In the Unity package.** This is the manual of the instrument, as it is in the repository the package is
 > generated from. The built instrument (firmware 1.3.1) is in the package's `Firmware~` folder:
-> `sfx-forge.zip`, with `sfx-forge.wasm` inside it. The game's side is [the Unity manual](UNITY.md).
+> `sfx-forge.zip`, with `sfx-forge.wasm` inside it. The game's side is [the Unity manual](UNITY.md). The
+> instrument's and the engine's C source (`sfx-forge/`, `core/`) and the scripts under `tests/` and `docs/` are
+> in that repository, not in the package; here the engine is the compiled `Runtime/Plugins/x86_64/sfxforge.dll`.
 
 | I want to … | Go to |
 |---|---|

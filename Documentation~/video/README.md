@@ -7,6 +7,12 @@ say what happens. Nobody has listened to them: their levels were measured, not j
 The device in the two device videos and in the link video is drawn by the VIBE FM SDK's emulator
 (see [Third Party Notices](../../Third%20Party%20Notices.md)).
 
+**The videos were recorded in the repository this package is generated from, and their pages name things there.**
+Where a video shows the package id `com.catsplat.sfxforge`, read `com.catsplatstudios.sfxforge`, and install it as
+[the package's README](../../README.md#install) says, not with the manifest line on the video's "INSTALL" page. Where it shows `unity/Demo` or
+`unity/Demo/Assets/Showcase`, read the imported sample ([`Samples~/Showcase`](../../Samples~/Showcase/README.md)); where it shows `docs/UNITY.md` or "the
+manual in the repository", read [`Documentation~/UNITY.md`](../UNITY.md).
+
 ## The link: device and game, joined over MIDI
 
 [![The link: device and game, joined over MIDI](../img/readme/sfx-forge-unity-link.jpg)](sfx-forge-unity-link.mp4)
