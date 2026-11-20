@@ -59,6 +59,7 @@ namespace CatSplat.SfxForge.Editor
         IntensityStrip heat, layer;
         MasterView master;
         SfxFooter soundNote, linkNote;
+        SfxBanner newer;
         SoftKey playKey, barKey, sendKey;
 
         sealed class Lane
@@ -132,6 +133,12 @@ namespace CatSplat.SfxForge.Editor
         public string ArrangementCaption => arrCap.text;
         /// <summary>True while there is one valid song to show (else: a message).</summary>
         public bool ShowsSong => builtValid;
+        /// <summary>The notice under the top line: shown for a song asset from a newer SFX Forge.</summary>
+        public SfxBanner NewerBanner => newer;
+        /// <summary>What is said in place of a song: "NO SONG YET | …", "A NEWER SONG | …". "" while a song shows.</summary>
+        public string MessageText { get; private set; } = "";
+        /// <summary>The two lines under the keys: the link's state, or why SEND would be refused. "" while no song shows.</summary>
+        public string LinkText => linkNote != null && builtValid ? linkNote.Bold + " | " + linkNote.Small : "";
 
         // ---- building --------------------------------------------------------------------------------------------------------
         void Build()
@@ -143,6 +150,10 @@ namespace CatSplat.SfxForge.Editor
             Add(root);
             header = new SfxHeader();
             root.Add(header);
+            newer = new SfxBanner();
+            root.Add(newer);
+            ShowNewer();
+            MessageText = "";
             if (!builtValid) { Message(root); return; }
 
             if (Song.ArrangementBars > 0) pattern = Mathf.Clamp(Song.ArrangementPattern(0), 0, Patterns - 1);
@@ -252,15 +263,33 @@ namespace CatSplat.SfxForge.Editor
             Refresh();
         }
 
+        // a song (or one of several that are selected) that a newer SFX Forge made: say so, and what saving it here costs
+        void ShowNewer()
+        {
+            if (!Alive) return;
+            int count = 0, highest = 0, many = so.targetObjects.Length;
+            foreach (var target in so.targetObjects)
+                if (target is SfxSong one && one.IsFromNewerVersion) { count++; highest = Mathf.Max(highest, one.Format); }
+            if (count == 0) return;
+            string bold = many == 1 ? "FROM A NEWER SFX FORGE" : (count == 1 ? "ONE OF THESE " + many + " SONGS IS" : count + " OF THESE " + many + " SONGS ARE") + " FROM A NEWER SFX FORGE";
+            newer.Set(bold, (many == 1 ? "This song was " : "Such a song was ") + SfxAssetFormat.NewerText(highest));
+        }
+
         // no song to show: none yet in this asset, or several are selected
         void Message(VisualElement root)
         {
             int many = Alive ? so.targetObjects.Length : 0;
             header.Set("-", many > 1 ? many + " SONGS" : Alive ? so.targetObject.name.ToUpperInvariant() : "", "SONG", SfxColors.Dim);
             header.HideLink();
-            root.Add(SfxUI.Text(many > 1 ? "SELECT ONE SONG" : "NO SONG YET", "sfx-song-message"));
-            root.Add(SfxUI.Text(many > 1 ? "A song is shown one at a time."
-                : "Make one on SFX FORGE and press SEND on its SONG page (or FETCH SONG in Window > SFX Forge) – it arrives as an asset like this one.", "sfx-song-message-small"));
+            // a packed song with a format above ours is a newer song, not a broken one and not "none yet"
+            bool newerSong = many == 1 && Song != null && Song.IsNewer;
+            string bold = many > 1 ? "SELECT ONE SONG" : newerSong ? "A NEWER SONG" : "NO SONG YET";
+            string small = many > 1 ? "A song is shown one at a time."
+                : newerSong ? "Its song is in format " + Song.data[0] + ", this version of SFX Forge knows up to " + SfxProtocol.SongVersion + ": it does not play here and nothing of it shows. It is kept as it is. Update the package to use it."
+                : "Make one on SFX FORGE and press SEND on its SONG page (or FETCH SONG in Window > SFX Forge) – it arrives as an asset like this one.";
+            MessageText = bold + " | " + small;
+            root.Add(SfxUI.Text(bold, "sfx-song-message"));
+            root.Add(SfxUI.Text(small, "sfx-song-message-small"));
         }
 
         void BuildSteps(VisualElement into)
@@ -529,10 +558,12 @@ namespace CatSplat.SfxForge.Editor
             if (!builtValid || !Alive) return;
             bool linked = SfxLink.Shared.HasOutput, whole = Song != null && Song.data.Length == SfxProtocol.SongBytes;
             header.SetLink(linked, linked ? "Linked: " + SfxLink.Shared.OutputName : "Not connected");
+            string refusal = linked && whole ? SfxLink.Refusal(SfxLink.Shared.Device, true) : null;     // (the device said it speaks another format)
             if (!whole) linkNote.Set("AN OLDER SONG", SfxColors.Warn, "It plays here and in the game. The device takes a song only in its newest form: fetch it again from there.");
+            else if (refusal != null) linkNote.Set("ANOTHER FORMAT", SfxColors.Warn, "SEND is off: " + refusal + ".");
             else if (linked) linkNote.Set("LINKED", SfxColors.Linked, "SEND replaces the 16 sounds and the song on " + SfxLink.Shared.OutputName);
             else linkNote.Set("NOT CONNECTED", SfxColors.Dim, "Choose the MIDI ports in Window > SFX Forge.");
-            sendKey.Off = !linked || !whole;
+            sendKey.Off = !linked || !whole || refusal != null;
             playKey.Off = !NativeThere; barKey.Off = !NativeThere;
         }
 

@@ -77,6 +77,8 @@ namespace CatSplat.SfxForge
 
         void Load()                                                 // (inside the lock)
         {
+            if (song != null && song.IsNewer)             // newer is not broken, and not silence without a word
+                Debug.LogWarning($"SFX Forge: '{song.name}' holds a song in format {song.data[0]}, this version of SFX Forge knows up to {SfxProtocol.SongVersion}: it does not play here. Update the package to play it.", this);
             if (song == null || !song.IsValid) return;
             for (int i = 0; i < SfxProtocol.Slots; i++) SfxNative.PlayerSetPatch(memory, i, song.sounds[i].Pack());
             if (!SfxNative.PlayerSetSong(memory, song.data)) Debug.LogWarning($"SFX Forge: '{song.name}' is not a valid song.", this);

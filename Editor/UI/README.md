@@ -12,6 +12,7 @@ Texts are `TextElement`s made with `SfxUI.Text(text, class)`, so the editor's th
 | `SfxColors` | SfxKit.cs | the palette, `Engine(e)`, `Mix(a, b, t)` (= `vg_mix`), `Hex(0xRRGGBB)` | for anything drawn with a painter; the USS has the same colours as `--sfx-…` variables |
 | `SfxUI` | SfxKit.cs | – | `Panel()`, `Text()`, `Box(class)`, `Menu(under, names, ticked, picked)`, `RoundRect` / `Rect` for a `Painter2D`; `NativeThere`: the device's engine is here (every panel asks this one) |
 | `SfxHeader` | SfxKit.cs | the top line: number tile, NAME, ENGINE, the link dot | `Set(number, name, sub, colour)`, `SetLink(on)`, `numberClicked`, `Slot` for more |
+| `SfxBanner` | SfxKit.cs | – (the device has no such notice) | a strip with an orange edge for what must not be missed: `Set(bold, small)`, `Set(null)` takes it away; `Shown`, `Bold`, `Small`. The inspectors show one for an asset from a newer SFX Forge |
 | `SfxFooter` | SfxKit.cs | the two lines under the values (`footer()`) | `Set(bold, colour, small)` |
 | `PageTabs` | SoftKeys.cs | the stage's page tabs | `new PageTabs("OSC", …)`, `Accent`, `SetIndex`, `SetAvailable`, `changed` |
 | `SoftKey`, `SoftKeyRow` | SoftKeys.cs | F1 – F6 | `row.Add("PLAY", action, tooltip)`; `Lit` (green: it is on), `Off` (dim: nothing to do, no click). `new SoftKeyRow(true)`: a smaller second row. A row wraps into rows of the same number of keys (3 + 3, 2 + 2 – never 3 + 1) |
@@ -68,6 +69,7 @@ The pattern, the sound and the intensity it is looked at with are not part of th
 
 Window > SFX Forge is `SfxForgeView` over a `SfxForgeModel` (both in `SfxForgeView.cs`): the model is what is shown (the
 ports, the link's state, the knobs' last values, the pads held, the patches and messages that came) and what can be
-asked for (`connect`, `playPad`, `fetchPad`, `save` …, as actions). The view never touches a MIDI port: `SfxForgeWindow`
+asked for (`connect`, `playPad`, `fetchPad`, `save` …, as actions). `model.identity` is the line under the link's state: what the
+device said it is, or that it did not answer (null: no line). The view never touches a MIDI port: `SfxForgeWindow`
 fills the model from `SfxLink` and answers the actions, a test or a picture fills it with anything
 (`SfxForgeWindow.Build(model)`). After the model changed: `view.Refresh()`.

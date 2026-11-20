@@ -365,7 +365,37 @@ namespace SfxShowcase.Tests
             Debug.Log("LINK: ok pads, intensity, a cue and text were sent to the device");
         }
 
-        /// <summary>What came in, in order and in short: "p3" a patch for pad 4, "s7/208" piece 7 of the song and its length, otherwise the first byte and the length.</summary>
+        /// <summary>
+        /// Unity asks the device what it is; the device answers with its identity: its hardware, its firmware's version,
+        /// its profile and its flags. A firmware before 1.4.0 does not answer, and this test fails there by design.
+        /// </summary>
+        [UnityTest, Explicit]
+        public IEnumerator TheDeviceSaysWhatItIs()
+        {
+            int answers = 0;
+            SfxDeviceInfo said = default;
+            link.IdentityReceived += device => { answers++; said = device; };
+
+            Assert.IsTrue(link.SendText("UNITY: WHO?"), "text goes out");
+            Assert.IsTrue(link.RequestIdentity(), "the request goes out");     // (Open asked once already: a second answer says the same)
+            yield return Until(() => answers > 0, AnswerSeconds);
+
+            Assert.Greater(answers, 0, $"the device said what it is within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, firmware 1.4.0 or later, with its MIDI in and out on these ports?");
+            Assert.IsTrue(link.Device.HasValue && link.Device.Value.Equals(said), "and the link keeps what it said");
+            Debug.Log($"LINK: ok the device said what it is: {said} ({said.profile}; flags {said.flags})");
+
+            Assert.AreEqual(SfxDeviceInfo.HardwareVibeFm, said.hardware, "it is SFX FORGE on VIBE FM");
+            Assert.IsTrue(said.IsAtLeast(1, 4, 0), $"its firmware is 1.4.0 or later (it says {said.major}.{said.minor}.{said.patch})");
+            Assert.AreEqual(SfxProfile.VibeFm1, said.profile, "its profile is the one this package is made for");
+            Assert.IsTrue(said.HasPads, "it has pads");
+            Assert.IsTrue(said.HasEncoders, "it has encoders for the game");
+            Assert.IsTrue(said.TakesSongSounds, "it takes a song's sounds");
+            Assert.IsTrue(said.TakesTelemetry, "it takes telemetry");
+            Assert.IsNull(SfxLink.Refusal(link.Device, true), "so nothing stands against sending it a patch or a song");
+            Debug.Log("LINK: ok firmware 1.4.0 or later, the profile of this package, pads, encoders, a song's sounds, telemetry");
+        }
+
+        /// <summary>What came in, in order and in short: "p3" a patch for pad 4, "s7/208" piece 7 of the song and its length, "id/24" an identity and its length, otherwise the first byte and the length.</summary>
         public static string Describe(List<byte[]> incoming)
         {
             var text = new System.Text.StringBuilder();
@@ -373,6 +403,7 @@ namespace SfxShowcase.Tests
             {
                 if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.Dump) text.Append('p').Append(m[5]);
                 else if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.SongChunk) text.Append('s').Append(m[5]).Append('/').Append(m.Length);
+                else if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.Identity) text.Append("id/").Append(m.Length);
                 else text.Append(m.Length > 0 ? m[0].ToString("X2") : "--").Append('/').Append(m.Length);
                 text.Append(' ');
             }

@@ -195,6 +195,14 @@ namespace CatSplat.SfxForge
         }
 
         /// <summary>
+        /// At least 28 bytes that begin with a version above this one's: a patch from a newer SFX FORGE, not a broken one
+        /// (a later format may be longer, it will not be shorter). Fewer bytes than a patch has are a cut-off one, whatever
+        /// they begin with. TryUnpack refuses it all the same – what its bytes mean is not known here.
+        /// </summary>
+        public static bool IsNewer(byte[] src, int offset)
+            => src != null && offset >= 0 && offset <= src.Length - Bytes && src[offset] > Version && src[offset] <= 127;
+
+        /// <summary>
         /// Every parameter moves by at most 15 % of its range (as MUTATE on the device). What kind of sound it is stays:
         /// the engine, the table, its level, and whether it is a one-shot or a sustained sound.
         /// </summary>

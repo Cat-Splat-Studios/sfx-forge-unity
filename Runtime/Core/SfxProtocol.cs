@@ -31,6 +31,11 @@ namespace CatSplat.SfxForge
         public const int MaxText = 24;
 
         public const byte Dump = 0x01, Load = 0x02, Text = 0x03, Request = 0x04, SongChunk = 0x05, RequestSong = 0x06;
+        public const byte RequestIdentity = 0x07, Identity = 0x08;      // firmware 1.4.0 on: an older one ignores the request
+        public const int IdentityBytes = 18;        // what an identity says today; a later one may say more, at its end
+        public const int SongVersion = 5;           // the first byte of a packed song (core/sfx_song.h, SFX_SONG_VERSION)
+        // what SFX FORGE 1.x holds on VIBE FM (core/sfx_song.h): SfxProfile.VibeFm1 is made of these
+        public const int Kits = 2, Steps = 16, Lanes = 24, Bars = 32, Voices = 16;
         public const int SongBytesV1 = 2455;        // a song from before the mixer: still played
         public const int SongBytesV2 = 2498;        // … and one from before velocity and length
         public const int SongBytesV3 = 4546;        // … and one from before automation and the arrangement
@@ -149,6 +154,66 @@ namespace CatSplat.SfxForge
             Array.Copy(m, 7, song, k * SongChunkBytes, n);
             seen |= piece;
             return seen == (1UL << SongChunks) - 1;
+        }
+
+        /// <summary>
+        /// A packed song of a format above this one's (SongVersion): at least as many bytes as a song has today,
+        /// beginning with a higher number. A song from a newer SFX FORGE, not a broken one: a later format may be
+        /// longer, it will not be shorter, so fewer bytes are a cut-off song whatever they begin with.
+        /// </summary>
+        public static bool IsNewerSong(byte[] song)
+            => song != null && song.Length >= SongBytes && song[0] > SongVersion && song[0] <= 127;
+
+        /// <summary>
+        /// A message that carries a patch (a dump or a load) or the first piece of a song in a format above this
+        /// one's: what it is and its number ("a patch in format 3"), null for any other message. A device with a
+        /// newer firmware sends these; nothing of them is read here.
+        /// </summary>
+        public static string NewerIn(byte[] m)
+        {
+            if (!IsOurs(m)) return null;
+            if ((m[4] == Dump || m[4] == Load) && SfxPatch.IsNewer(m, 6) && m.Length >= 7 + SfxPatch.Bytes) return "a patch in format " + m[6];
+            if (m[4] == SongChunk && m.Length >= 9 && m[5] == 0 && m[7] > SongVersion && m[7] <= 127) return "a song in format " + m[7];
+            return null;
+        }
+
+        /// <summary>F0 7D 56 42 07 F7 – asks the device what it is; the answer is an identity. A firmware before 1.4.0 does not answer.</summary>
+        public static byte[] BuildRequestIdentity() => new byte[] { 0xF0, 0x7D, 0x56, 0x42, RequestIdentity, 0xF7 };
+
+        /// <summary>
+        /// F0 7D 56 42 08 [18] F7 – what a device answers: its hardware, its firmware's version, its profile (the formats
+        /// it speaks and what it holds), its flags. Here for tests and for a device made in software. Every value is cut to 0..127.
+        /// </summary>
+        public static byte[] BuildIdentity(SfxDeviceInfo d)
+        {
+            var m = new byte[6 + IdentityBytes];
+            Header.CopyTo(m, 0);
+            m[4] = Identity;
+            var p = d.profile;
+            int[] v = { d.hardware, d.major, d.minor, d.patch, p.id, p.patchFormat, p.songFormat, p.sounds, p.kits, p.patterns, p.steps,
+                        p.lanes, p.bars, p.voices, p.engines, p.wavetables, p.patchValues, d.flags };
+            for (int i = 0; i < IdentityBytes; i++) m[5 + i] = (byte)(v[i] < 0 ? 0 : v[i] > 127 ? 127 : v[i]);
+            m[m.Length - 1] = 0xF7;
+            return m;
+        }
+
+        /// <summary>
+        /// An identity: at least 18 bytes between the command and the F7, each 0..127. What follows the first 18 is from
+        /// a later version and is not read (fields are only ever added at the end). Shorter, or a byte over 127: not one.
+        /// </summary>
+        public static bool TryParseIdentity(byte[] m, out SfxDeviceInfo device)
+        {
+            device = default;
+            if (!IsOurs(m) || m[4] != Identity || m.Length < 6 + IdentityBytes) return false;
+            for (int i = 5; i < m.Length - 1; i++) if (m[i] > 127) return false;
+            device.hardware = m[5]; device.major = m[6]; device.minor = m[7]; device.patch = m[8];
+            device.profile = new SfxProfile
+            {
+                id = m[9], patchFormat = m[10], songFormat = m[11], sounds = m[12], kits = m[13], patterns = m[14], steps = m[15],
+                lanes = m[16], bars = m[17], voices = m[18], engines = m[19], wavetables = m[20], patchValues = m[21]
+            };
+            device.flags = m[22];
+            return true;
         }
 
         /// <summary>The telemetry value that cues pattern 0..7 (A..H) on the device.</summary>

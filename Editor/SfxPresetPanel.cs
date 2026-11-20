@@ -31,6 +31,7 @@ namespace CatSplat.SfxForge.Editor
         readonly SerializedProperty engineProp, holdProp;
         readonly SerializedProperty[] props = new SerializedProperty[SfxPatch.ParamCount];
         readonly SfxHeader header = new SfxHeader();
+        readonly SfxBanner newer = new SfxBanner();
         readonly TextElement title;
         readonly PageTabs tabs = new PageTabs(SfxUnits.PageNames);
         readonly ValueTile[] tiles = new ValueTile[4];
@@ -69,6 +70,7 @@ namespace CatSplat.SfxForge.Editor
             header.NumberTile.tooltip = "The pad of the device SEND goes to. Click: another pad.";
             header.numberClicked += PickPad;
             root.Add(header);
+            root.Add(newer);
             title = SfxUI.Text("", "sfx-title");
             root.Add(title);
             tabs.changed += i => { page = i; Refresh(); };
@@ -152,6 +154,22 @@ namespace CatSplat.SfxForge.Editor
         static bool NativeThere => SfxUI.NativeThere;
         SfxPreset First => so.targetObject as SfxPreset;
         float FirstHold => First != null ? First.holdSeconds : DefaultHold;
+        /// <summary>The notice over the pages: shown for a sound from a newer SFX Forge.</summary>
+        public SfxBanner NewerBanner => newer;
+        /// <summary>The two lines under the keys: the link's state, or why SEND would be refused.</summary>
+        public string LinkText => linkNote.Bold + " | " + linkNote.Small;
+
+        // a sound (or one of several) that a newer SFX Forge made: say so, and what saving it here costs
+        void ShowNewer()
+        {
+            int count = 0, highest = 0;
+            foreach (var target in so.targetObjects)
+                if (target is SfxPreset preset && preset.IsFromNewerVersion) { count++; highest = Mathf.Max(highest, preset.Format); }
+            if (count == 0) { newer.Set(null); return; }
+            int many = so.targetObjects.Length;
+            string bold = many == 1 ? "FROM A NEWER SFX FORGE" : (count == 1 ? "ONE OF THESE " + many + " SOUNDS IS" : count + " OF THESE " + many + " SOUNDS ARE") + " FROM A NEWER SFX FORGE";
+            newer.Set(bold, (many == 1 ? "This sound was " : "Such a sound was ") + SfxAssetFormat.NewerText(highest));
+        }
 
         // ---- what is shown -----------------------------------------------------------------------------------------------
         /// <summary>Reads the sound again and shows it. Cheap: the picture follows a moment later.</summary>
@@ -204,6 +222,7 @@ namespace CatSplat.SfxForge.Editor
             else holdTile.Show("HOLD", SfxUnits.HoldText(holdProp.floatValue), holdProp.floatValue / 4f, false, accent);
 
             wave.SetColour(accent, page == SfxUnits.PageOsc || page == SfxUnits.PageFx);
+            ShowNewer();
             Line();
             UpdateKeys();
             UpdateLink();
@@ -212,7 +231,7 @@ namespace CatSplat.SfxForge.Editor
 
         void UpdateKeys()
         {
-            bool native = NativeThere, linked = SfxLink.Shared.HasOutput;
+            bool native = NativeThere, linked = SfxLink.Shared.HasOutput && SfxLink.Refusal(SfxLink.Shared.Device, false) == null;
             playKey.Off = !native; bakeKey.Off = !native;
             undoKey.Off = !OursOnTop;
             sendKey.Off = !linked; deviceKey.Off = !linked;
@@ -223,10 +242,12 @@ namespace CatSplat.SfxForge.Editor
         void UpdateLink()
         {
             bool linked = SfxLink.Shared.HasOutput;
+            string refusal = linked ? SfxLink.Refusal(SfxLink.Shared.Device, false) : null;     // (the device said it speaks another patch format)
             header.SetLink(linked, linked ? "Linked: " + SfxLink.Shared.OutputName : "Not connected");
-            if (linked) linkNote.Set("LINKED", SfxColors.Linked, "SEND goes to pad " + (pad + 1) + " of " + SfxLink.Shared.OutputName);
+            if (refusal != null) linkNote.Set("ANOTHER PATCH FORMAT", SfxColors.Warn, "SEND is off: " + refusal + ".");
+            else if (linked) linkNote.Set("LINKED", SfxColors.Linked, "SEND goes to pad " + (pad + 1) + " of " + SfxLink.Shared.OutputName);
             else linkNote.Set("NOT CONNECTED", SfxColors.Dim, "Choose the MIDI ports in Window > SFX Forge.");
-            sendKey.Off = !linked; deviceKey.Off = !linked;
+            sendKey.Off = !linked || refusal != null; deviceKey.Off = !linked || refusal != null;
             undoKey.Off = !OursOnTop;                       // (looked at again here: something else may have been done in Unity since)
         }
 

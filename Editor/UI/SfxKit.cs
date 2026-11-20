@@ -162,6 +162,37 @@ namespace CatSplat.SfxForge.Editor
         public void HideLink() { dot.style.display = DisplayStyle.None; linkText.style.display = DisplayStyle.None; }
     }
 
+    /// <summary>
+    /// A notice across the panel, for what must not be missed (an asset from a newer version): a panel-coloured strip
+    /// with an orange edge, one bold orange line, one small dim line. Not shown until Set gives it a text.
+    /// </summary>
+    public class SfxBanner : VisualElement
+    {
+        readonly TextElement a, b;
+
+        public SfxBanner()
+        {
+            AddToClassList("sfx-banner");
+            a = SfxUI.Text("", "sfx-banner__a");
+            b = SfxUI.Text("", "sfx-banner__b");
+            Add(a); Add(b);
+            style.display = DisplayStyle.None;
+        }
+
+        /// <summary>What its two lines say now, and whether it shows.</summary>
+        public string Bold => a.text;
+        public string Small => b.text;
+        public bool Shown => style.display != DisplayStyle.None;
+
+        /// <summary>bold null or "": the banner is gone.</summary>
+        public void Set(string bold, string small = null)
+        {
+            a.text = bold ?? ""; b.text = small ?? "";
+            b.style.display = string.IsNullOrEmpty(small) ? DisplayStyle.None : DisplayStyle.Flex;
+            style.display = string.IsNullOrEmpty(bold) ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+    }
+
     /// <summary>Two lines, as under the display's column of values: one bold and coloured, one small and dim.</summary>
     public class SfxFooter : VisualElement
     {

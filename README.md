@@ -71,7 +71,7 @@ play or fetch, a text for the device's top line, the patches that arrived as til
 messages, and CONNECT, REFRESH PORTS, FETCH SONG.
 
 **These three pictures are not photographs of the Unity editor.** They are the same element tree and stylesheet
-the Inspector hosts, rendered in a panel to a texture by the editor UI's tests (88 EditMode tests, in the source
+the Inspector hosts, rendered in a panel to a texture by the editor UI's tests (100 EditMode tests, in the source
 repository). Nobody has opened the real Inspector or the real window yet. The window's picture shows a model the
 test filled in: its ports, patches and messages are the test's, and no device was connected. Also not tried: the
 menus (ENGINE, TABLE, the pad, the MIDI ports), typing into a value, any key (the arrow keys on a tile, ENTER in
@@ -236,13 +236,22 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   same was done with the showcase's folder copied to another place in an otherwise empty project.
 - The link, end to end against the VIBE FM SDK's emulator over a virtual MIDI cable (loopMIDI): patches and the song
   from the device to Unity, a song and its sounds from Unity to the device, the game's intensity driving the device,
-  SEND and EXPORT pressed on the device arriving in a running game.
+  SEND and EXPORT pressed on the device arriving in a running game, and the device saying what it is. That was done
+  with the firmware in this package (1.4.0).
 - The code in the manual was compiled against the package.
-- The editor UI: 88 EditMode tests in a project of their own build the two Inspectors and the window as elements,
+- The editor UI: 100 EditMode tests in a project of their own build the two Inspectors and the window as elements,
   call what their knobs and keys call, send them mouse and wheel events, check the asset and Undo afterwards, and
   compare the value texts with 46 values read off the device's own pictures and with a table of the firmware's
   arithmetic in 32-bit floats. They also render the pictures of the editor UI on this page and
   in the manual; those are not photographs of the editor.
+- The identity and the format numbers, on the Unity side and without a device: the bytes of the two messages,
+  what is an identity and what is not, an identity arriving in the middle of a song, and when a patch or a song is
+  not sent, a patch and a song of a higher format arriving and being said to be newer (the checks of the
+  engine-independent code, run with plain .NET); asset files without a format line and with a higher one,
+  imported by Unity, and the banner the Inspectors show for them (12 of the 100 tests above).
+- The firmware's side of the identity, on the built `.wasm` without the emulator: a check of the source
+  repository hands it the request and reads the answer, and a pad's patch asked for right after the request
+  still arrives.
 
 Tested on this package as generated, on the same machine, with the editor run headless:
 
@@ -266,13 +275,17 @@ Tested on this package as generated, on the same machine, with the editor run he
 - **The editor UI.** The source repository's test project of the editor UI was copied and pointed at this package
   by a `file:` line under the id `com.catsplatstudios.sfxforge`: 88 of 88 EditMode tests passed, the stylesheet was found (it is
   looked up by its GUID, not by a path), and the 51 pictures the tests rendered are byte for byte the ones rendered
-  from the source. That is still a test panel: the Inspector and the window themselves were not opened.
+  from the source. That is still a test panel: the Inspector and the window themselves were not opened. This was
+  done before the identity and the format numbers were added (the project has 100 tests and renders 58 pictures
+  since) and was not repeated with them. The sample has 15 capture and link takes since, so 15 are skipped now.
 
 Not tested:
 
 - **Nobody has listened to any of it.** The levels and every "it sounds" in these pages come from measurements: peak
   and RMS of recorded takes, the build's probe, tests that read the output buffer. They say that sound comes out and
   does not clip. They do not say that it sounds good or is balanced.
+- A device with another format or another profile. None exists, so refusing to send to one was only tried with
+  identities made up by the tests.
 - Hardware, and the VIBE FM plugin. The link was only run against the emulator. Pads and encoders coming from the
   device (`onPad`, `onEncoder`, `SfxEncoderBinding`), `SendPatch`, and the keys of the SFX Forge window and of the
   two Inspectors (SEND, PLAY ON DEVICE, the pads, FETCH SONG) were not tried against a device.
@@ -286,7 +299,7 @@ Not tested:
 - A project without Unity's built-in modules. Every project the package ran in lists all of them in its own
   manifest, so the list of modules in this package's `package.json` was never what brought one in: nothing shows
   that it is enough.
-- The 14 capture and link takes of the sample outside the source repository. They need that repository's scripts
+- The 15 capture and link takes of the sample outside the source repository. They need that repository's scripts
   and the emulator.
 
 ## Requirements and limits

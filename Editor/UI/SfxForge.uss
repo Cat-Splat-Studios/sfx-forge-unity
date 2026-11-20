@@ -125,6 +125,11 @@
 .sfx-footer__a { font-size: 11px; -unity-font-style: bold; padding: 0; white-space: normal; }
 .sfx-footer__b { font-size: 10px; color: var(--sfx-dim); padding: 0; margin-top: 1px; white-space: normal; }
 
+/* a notice across the panel: an asset from a newer version */
+.sfx-banner { background-color: var(--sfx-panel); border-left-width: 3px; border-left-color: #FF8A3C; border-radius: 6px; padding: 5px 8px 6px 8px; margin: 2px 0 6px 0; flex-shrink: 0; }
+.sfx-banner__a { font-size: 11px; -unity-font-style: bold; color: #FF8A3C; padding: 0; white-space: normal; }
+.sfx-banner__b { font-size: 10px; color: var(--sfx-dim); padding: 0; margin-top: 2px; white-space: normal; }
+
 /* ---- the 16 pads as tiles ---- */
 .sfx-pads { flex-direction: row; flex-wrap: wrap; margin-right: -4px; }
 .sfx-pad-cell { width: 25%; padding-right: 4px; padding-bottom: 4px; }
@@ -208,6 +213,8 @@
 .sfx-link__side { flex-grow: 1; flex-shrink: 1; flex-basis: 0; margin-left: 6px; }
 .sfx-link__side > .sfx-tile { flex-grow: 0; flex-shrink: 0; flex-basis: auto; margin-bottom: 4px; }
 .sfx-link__side > .sfx-footer { margin: 2px 4px 0 4px; }
+.sfx-identity { font-size: 10px; color: var(--sfx-dim); padding: 0; margin: 4px 4px 0 4px; white-space: normal; }
+.sfx-identity--known { color: var(--sfx-text); }
 .sfx-narrow .sfx-link { flex-direction: column; }
 .sfx-narrow .sfx-link__box { flex-basis: auto; }
 .sfx-narrow .sfx-link__side { flex-basis: auto; margin-left: 0; margin-top: 6px; }

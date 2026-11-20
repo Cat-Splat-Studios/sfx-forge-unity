@@ -756,7 +756,7 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > **What is tested, and what is not.** MIDI is implemented for Windows only (winmm).
 >
 > **Tested end to end against the emulator**, over two loopMIDI ports, with Unity 6000.3 on Windows 11
-> (`Tests/LinkTakes.cs` in the showcase, run against `tests/emulator-link.mjs`; firmware 1.3.1):
+> (`Tests/LinkTakes.cs` in the showcase, run against `tests/emulator-link.mjs`; firmware 1.4.0, and 1.3.1 before it):
 > - Unity asks for a pad's patch and for the song, and both arrive. The song that arrived was the demo project's
 >   song, byte for byte, and an `SfxMusicPlayer` played it. Twenty transfers in a row all arrived.
 > - A song sent *to* the device comes back the same when asked for: sent piece by piece, last piece first, after a
@@ -769,6 +769,17 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > **Not tested:** the hardware and the plugin; pads and encoders coming *from* the device (`onPad`, `onEncoder`,
 > `SfxEncoderBinding`); `SendPatch`; the SFX Forge window and the two Inspectors, whose keys nobody has pressed
 > against a device. The window has only been shown a model filled in by its own tests.
+>
+> **The identity** ([below](#what-the-device-is-the-identity), firmware 1.4.0) is tested on the Unity side without
+> a device: its bytes, what is and is not one, and what the link does with one that arrives in the middle of a
+> song (`tests/dotnet`). Against the emulator with firmware 1.4.0, `TheDeviceSaysWhatItIs` in `Tests/LinkTakes.cs`
+> asked for it and got: VIBE FM, firmware 1.4.0, profile 1, all four flags.
+>
+> **The takes above were repeated with firmware 1.4.0** and this package, whose `Open` sends the identity request
+> before anything else: the six link tests and the recorded session all passed. That a pad's patch asked for right
+> after the request still arrives (the host sends one SysEx a block, so the dump waits for the identity) is also
+> checked on the built firmware by `tests/check-identity.mjs` in the source repository, which hands it the
+> messages directly.
 >
 > **Found by these tests**, all three in how the emulator moves MIDI, none of them in the hardware's path:
 > - Its MIDI output sometimes delivers two neighbouring SysEx messages in the wrong order: 3 of the first 60 song
@@ -799,7 +810,7 @@ From the top:
 |---|---|
 | **The top line** | the pad touched last, here or on the device, the engine of the patch that came from it, and the link dot |
 | **FROM THE DEVICE** | six bars: what the device's knobs 1 – 4, A and B sent last on its LINK page (CC 20 – 25). `-` until one has sent |
-| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows) |
+| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows). While linked, one more line says what the device is, as it answered: `VIBE FM, firmware 1.4.0, profile 1`. If nothing answered within a second it reads `no identity: firmware before 1.4, or nothing answers` ([below](#what-the-device-is-the-identity)) |
 | **PADS PLAY** · **PADS FETCH THEIR PATCH** | two tabs over 16 pad tiles. On the first, a pad plays on the device for as long as the mouse holds it. On the second, a click asks the device for that pad's patch. A pad whose patch has come carries its engine's short name and colour. The pads need the port TO DEVICE |
 | **The text field** · **SHOW ON DEVICE** | writes up to 24 characters on the device's top line. ENTER in the field does the same |
 | **PATCHES FROM THE DEVICE** | what arrived, newest first (the last 32), each a tile: pad number, engine, time, the sound's waveform, **PLAY** and **SAVE** (**SHOW** once it is an asset). With **SAVE AS THEY ARRIVE** on (green; it is on at first), a patch is saved as soon as it arrives, into **FOLDER** (default `Assets/SfxForge`), named like `Pad03_SciFiFm` |
@@ -816,6 +827,54 @@ photograph of the window. What needs the device is dark.*
 
 The window was tested only in that way: shown a model, with a test standing in for the link. Its menus were not
 opened, and none of its keys was pressed against a device or the emulator.
+
+### What the device is: the identity
+
+From firmware 1.4.0 on, a game can ask the device what it is before it sends anything. `SfxLink.Open` asks by
+itself as soon as an output is open; `RequestIdentity()` asks again. Asking again forgets the earlier answer:
+`Device` is `null` until the new one arrives, because another firmware may sit behind the same ports by then.
+
+| Message | Bytes | |
+|---|---|---|
+| request, game → device | `F0 7D 56 42 07 F7` | `SfxProtocol.BuildRequestIdentity()` |
+| identity, device → game | `F0 7D 56 42 08 <18 bytes> F7` | `SfxProtocol.TryParseIdentity(message, out SfxDeviceInfo device)` |
+
+The 18 bytes, each 0 … 127, become an `SfxDeviceInfo`:
+
+| Byte | `SfxDeviceInfo` | Today |
+|---|---|---|
+| 0 | `hardware`: 0 unknown, 1 VIBE FM. That is the SDK's host – the emulator, the plugin or the hardware; the firmware cannot tell them apart | 1 |
+| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 4 0 |
+| 4 … 16 | `profile`, an `SfxProfile`: its `id`, the patch format and the song format it speaks, and how much it holds: sounds in a kit, kits, patterns, steps, automation lanes, bars in an arrangement, voices, engines, wavetables, values in a patch | 1 · 2, 5 · 16, 2, 8, 16, 24, 32, 16, 5, 6, 25 |
+| 17 | `flags`: `HasPads`, `HasEncoders` (CC 20 – 25 from its LINK page), `TakesSongSounds` (what `SendSong` sends before the song), `TakesTelemetry` (CC 10 – 17 on channel 2) | all four |
+
+```csharp
+SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.4.0, profile 1"
+SfxLink.Shared.RequestIdentity();                                   // Open has asked already
+// later, any time:
+SfxDeviceInfo? device = SfxLink.Shared.Device;                      // null: it has not answered
+if (device.HasValue && !device.Value.TakesSongSounds) Debug.Log("this device takes a song, but not its sounds");
+```
+
+Three rules hold for every later version:
+
+- **Fields are only added at the end.** This package reads the first 18 bytes and ignores what follows. Fewer than
+  18, or a byte above 127: not an identity.
+- **No answer has a meaning.** A firmware before 1.4.0 ignores the request. `Device` stays `null`, and after a
+  second `IdentityUnanswered` is true. That device is taken for SFX FORGE on VIBE FM with a firmware before 1.4 and
+  profile 1 (`SfxDeviceInfo.AssumedBefore14`), and everything works with it as before. The same is seen when
+  nothing listens on the port at all, or when no input is open for the answer to come in on: the link cannot tell
+  these apart.
+- **An identity is never anything else.** It is not taken for a patch or for a piece of a song, whatever its
+  length, and one that arrives while a song is coming in leaves that transfer alone. The emulator delivers every
+  message twice; the second identity says what the first said.
+
+**When the device speaks another format.** Once a device has said that its patch format or its song format is not
+this package's (2 and 5), `SendPatch` and `SendSong` send nothing and return `false`, and `LastRefusal` says why
+(`SfxLink.Refusal(device, song)` gives the same text for any `SfxDeviceInfo`). The Inspectors then show the
+reason under their keys and SEND stays dark. A device that has not answered is refused nothing. With firmware
+1.4.0 and this package the formats are the same, so this never happens today; it is there for the day one side is
+updated and the other is not.
 
 ### Receiving a patch or a song
 
@@ -848,7 +907,8 @@ update. In a scene, `SfxForgeLink` polls every frame.
 | `SendIntensity(value01)` · `CuePattern(0 … 7)` | the same as the music player's two, on the device |
 
 Every call returns `false` when no output is open. `SendTelemetry` only sends when the 7-bit value changes, so
-calling it every frame is fine.
+calling it every frame is fine. `SendPatch` and `SendSong` also return `false`, and send nothing, to a device that
+said it speaks another format ([above](#what-the-device-is-the-identity)).
 
 ### Telemetry: the game drives the device while you listen
 
@@ -900,6 +960,19 @@ The ports chosen in the window are stored in PlayerPrefs. In a built player, nam
 `SfxLink.SendSong` and the **SEND** key of a song's Inspector need a 7699-byte song, and only a song in 39 pieces is
 received. For an older song the Inspector says AN OLDER SONG and SEND stays dark.
 
+A packed song that begins with a number above 5 and is at least as long as a song is today (7699 bytes) was
+written by a newer SFX FORGE. It is **newer, not broken**: `SfxSong.IsNewer` is true
+(`SfxProtocol.IsNewerSong(bytes)` for any array), `IsValid` is false, it does not play, and its Inspector says
+A NEWER SONG instead of NO SONG YET. An `SfxMusicPlayer` given such a song stays silent and writes one warning
+to the Console that says why. The same for a patch: `SfxPatch.IsNewer(bytes, offset)` is true when at least 28
+bytes follow the offset and the first is above 2, and `TryUnpack` still refuses them, because this version does
+not know what they mean. Fewer bytes than a song or a patch has are a cut-off one, whatever they begin with.
+
+**Over the link** a patch or a song in a higher format is not taken: no `PatchReceived`, no `SongReceived`.
+`SfxLink.NewerReceived` fires instead, once for what arrives within two seconds, with a text such as "the device
+sent a patch in format 3, this SFX Forge knows up to 2: it was not taken. Update the package to use it." The SFX
+Forge window writes that text to the Console and into its list of messages.
+
 ### A song without MIDI
 
 The showcase's song was not fetched over MIDI. A script in the source repository (`tests/make-demo-song.mjs`) wrote
@@ -921,6 +994,40 @@ AssetDatabase.CreateAsset(song, "Assets/MySong.asset");
 
 The Inspector of an `SfxSong` shows the whole song ([section 5](#the-song-in-the-inspector)). An `SfxSong` made with
 **Assets > Create > SFX Forge > Song** is empty until a song is put into it; its Inspector then says NO SONG YET.
+
+### Made for more than one device
+
+Today there is one device: SFX FORGE 1.x on VIBE FM. The Unity side and the device hold exactly the same things,
+and every sound and song made on one works on the other. That will not stay so. The Unity side can grow past what
+a device holds, and a firmware for other hardware may hold less. Version 1.0 does not do either. It reserves what
+both need, so that a project made with 1.0 does not break when they come.
+
+**What exists now:**
+
+| | |
+|---|---|
+| **The identity** | a device says what it is and what it holds ([above](#what-the-device-is-the-identity)). `SfxLink.Device` has it; the window shows it |
+| **Format numbers on the wire** | a patch and a packed song begin with their format (2 and 5). A higher number is reported as newer, not as broken: `SfxPatch.IsNewer`, `SfxSong.IsNewer`, and `SfxLink.NewerReceived` for one that arrives over the link |
+| **A format number in the assets** | `SfxPreset` and `SfxSong` keep a serialized `format`, read as `Format`; `CurrentFormat` is 1. An asset file without the line – every asset made before the number was kept – is format 1. A file with a higher number was made by a newer SFX Forge: `IsFromNewerVersion` is true, its Inspector shows a banner, and the Console warns once for that asset: in the editor once a session for each asset file, in a built game once for each type and name. What this version reads of it plays. Both also keep `savedBy`, the asset format that wrote the file last; this version always writes 1 there |
+| **The profile type** | `SfxProfile` is a description of limits: the numbers of the identity. `SfxProfile.VibeFm1` is built from this package's own constants. `Fits(SfxPatch)` and `Fits(byte[] packedSong)` say whether a sound or a packed song is within a profile's limits |
+
+**Saving a newer asset here loses data.** Unity writes only the fields this version's classes have. If you change
+and save an asset that a newer SFX Forge made, what the newer version kept in it and this one does not know is
+gone from the file. The `format` number in the file stays as it was, and `savedBy` becomes 1: a newer SFX Forge
+that finds its own format with `savedBy: 1` can tell that the file went through this version and was cut down.
+Nothing in this version reads `savedBy`. The banner says that saving loses data; nothing stops you.
+
+**What does not exist:**
+
+- **No target switch.** There is nothing to set that says "this project is for device X". A profile cannot be
+  chosen anywhere, and nothing is checked against one when you edit, bake or play.
+- **No Unity-only features.** Everything the package plays, the device plays. No sound or song made with 1.0 can
+  fail to fit `SfxProfile.VibeFm1`, so `Fits` answers true for all of them; it only says false for bytes that are
+  not of this version or out of range. The type is there so that a later version has a question to ask.
+- **No second device.** No firmware for other hardware exists, and no other profile than 1. The identity's
+  `hardware` byte has only ever been 1.
+- **Nothing converts.** A newer patch, song or asset is recognised and named, not read. To use it, update the
+  package.
 
 ---
 
@@ -1612,8 +1719,8 @@ Only one Unity process can have the project open.
 
 ### The inspectors are tested in a project of their own
 
-The editor UI has its own tests: 88 EditMode tests in a small Unity project in the source repository,
-`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 88 passed
+The editor UI has its own tests: 100 EditMode tests in a small Unity project in the source repository,
+`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 100 passed
 with Unity 6000.3.8f1 on Windows x64.
 
 | What is checked | How |
@@ -1629,8 +1736,13 @@ with Unity 6000.3.8f1 on Windows x64.
 | the five numbers of a song change the asset, and Undo takes them back | on the demo song's asset |
 | one bar sounds, and less intensity is less | `SfxSongPanel.RenderBar`, by what it renders |
 | the window shows its model | not connected, without ports, without MIDI, linked with patches and messages; and without the native library |
+| the window says what the device is | a model with an identity, one that says none answered, and none at all |
+| an asset file without a format line is format 1, one that says 2 is from a newer version | copies of this project's own asset files, as they are and with `format: 2` put in, imported by Unity; then one of them is saved, and the file is read back |
+| the banner of a newer asset, and A NEWER SONG | a sound, several sounds, a song, several songs, and a packed song that begins with 6; a cut-off one that begins with a higher number is not a newer song |
+| the warning is said once | counted, for an asset loaded twice and asked again; two newer files of the same name in two folders give two |
+| a newer asset saved here says who saved it | a file with `format: 2` and `savedBy: 2` is changed and saved; it is read back with `format: 2` and `savedBy: 1` |
 
-**The pictures.** The same run writes 51 pictures to `out/inspector-shots` in the source repository: the sound
+**The pictures.** The same run writes 58 pictures to `out/inspector-shots` in the source repository: the sound
 inspector on every page, the song inspector on every page, the window in its states and a sheet of the kit, each
 at several widths. A picture is the element tree and stylesheet the Inspector hosts, put into a panel that renders
 into a texture. The eight pictures of the editor UI in this manual are copies of eight of them.
@@ -1728,6 +1840,10 @@ What this does not tell you:
 | a port tile says NOT FOUND | the port chosen earlier is not there now. Start the device or the virtual cable, then **REFRESH PORTS** |
 | the window says NO MIDI PORTS | no MIDI device and no virtual cable. The window says what to install |
 | SEND, PLAY ON DEVICE or the window's pads are dark | no MIDI output is open: **CONNECT** in the window first |
+| the window says `no identity: firmware before 1.4, or nothing answers` | the device did not say what it is within a second. A firmware before 1.4.0 never does, and works all the same. Otherwise nothing listens on the port TO DEVICE, or the port FROM DEVICE is not the one the device sends on |
+| under the keys it says ANOTHER FORMAT (or ANOTHER PATCH FORMAT) and SEND is dark | the device said it speaks another patch or song format than this package. The line says which side to update |
+| an Inspector shows FROM A NEWER SFX FORGE, and the Console warned once | the asset file says a higher asset format than this package writes. It plays as far as this version reads it. Saving it here loses the rest: update the package first |
+| a song's Inspector says A NEWER SONG | its packed song is in a format above 5. It does not play here. Update the package |
 | PLAY and BAKE WAV are dark, and the picture says NATIVE LIBRARY NOT FOUND | not Windows x64: the engine is not there. The values can still be edited |
 | the UNDO key is dark | Unity's next undo step is not a change made to this sound here. Ctrl+Z undoes whatever it is |
 | a value in the song's Inspector does not turn | it is one of those that only show (an outline, a dim ring): it is made on the device |
@@ -1757,6 +1873,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `static string Label(SfxParam p, SfxEngine engine)` | a value's name for an engine |
 | `static readonly string[] EngineNames`, `TableNames` | |
 | `byte[] Pack()` · `static bool TryUnpack(byte[] src, int offset, out SfxPatch patch)` | the 28 bytes |
+| `static bool IsNewer(byte[] src, int offset)` | at least 28 bytes from the offset, beginning with a version above `Version` (2): a newer patch, not a broken one. `TryUnpack` refuses it all the same |
 | `const int Bytes = 28`, `ParamCount = 25`, `EngineCount = 5`, `TableCount = 6` | |
 
 ### SfxPreset (ScriptableObject)
@@ -1765,6 +1882,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 |---|---|
 | `SfxPatch patch` | the sound. A new preset holds `SfxPatch.Default` |
 | `float holdSeconds = 1.5f` | how long a baked clip holds a held sound |
+| `int Format` · `const int CurrentFormat = 1` · `bool IsFromNewerVersion` | the asset format the file was written in (a file without the number: 1), and whether it is above this version's |
 | `AudioClip Bake(int sampleRate = 48000, float semitones = 0f, float velocity = 1f, int midiNote = 0)` | a stereo clip with its effects; null without the native library |
 
 ### SfxPlayer (component, needs an AudioSource)
@@ -1808,6 +1926,8 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `SfxPatch[] sounds` | the 16 sounds |
 | `byte[] data` | the packed song |
 | `bool IsValid` | |
+| `bool IsNewer` | the packed song begins with a format above 5 and has at least 7699 bytes: a newer song, not a broken one. It is not valid here |
+| `int Format` · `const int CurrentFormat = 1` · `bool IsFromNewerVersion` | the asset format the file was written in (a file without the number: 1), and whether it is above this version's |
 | `int Bpm` · `int StepsPerPattern` · `int Chain` | |
 | `int ArrangementBars` · `int ArrangementPattern(int bar)` | 0 bars: no arrangement |
 | `float Layer(int sound)` | from which intensity a sound plays; 0 = always |
@@ -1862,13 +1982,33 @@ The `Player…` and voice functions under them are what the two components call.
 | `event Action<int, float> PadDown` · `event Action<int> PadUp` | pad 0 … 15, velocity 0 … 1 |
 | `event Action<int, float> EncoderChanged` | 0 … 5 (encoders 1 – 4, A, B), value 0 … 1 |
 | `event Action<byte[]> MessageReceived` | everything, as it is |
+| `bool RequestIdentity()` · `event Action<SfxDeviceInfo> IdentityReceived` | asks the device what it is (`Open` does it too) · its answer. Firmware 1.4.0 on |
+| `SfxDeviceInfo? Device` | what it answered; `null` until it did, and again after `Close` and after each `RequestIdentity` until its answer |
+| `event Action<string> NewerReceived` | a patch or a song in a format above this version's arrived and was not taken; the text says which |
+| `bool IdentityUnanswered` · `const double IdentityAnswerSeconds = 1.0` | asked, and that long without an answer: a firmware before 1.4, or nothing listens |
 | `bool SendPatch(int slot, SfxPatch patch)` · `bool RequestPatch(int slot)` | |
 | `bool SendSong(SfxPatch[] patches, byte[] song)` · `bool RequestSong()` | |
+| `string LastRefusal` · `static string Refusal(SfxDeviceInfo? device, bool song)` | why the last `SendPatch` or `SendSong` sent nothing to a device that speaks another format; `null` when it was not refused · the same question for any device |
 | `bool SendTelemetry(SfxTelemetry channel, float value01)` | |
 | `bool SendIntensity(float value01)` · `bool CuePattern(int pattern)` | the device's music |
 | `bool SendText(string text)` | 24 ASCII characters |
 | `bool PlayPad(int slot, float velocity = 0.8f)` · `bool ReleasePad(int slot)` | |
 | `MidiPorts.Inputs()` · `MidiPorts.Outputs()` · `MidiPorts.Supported` | the port names (a separate static class) |
+
+### SfxDeviceInfo and SfxProfile (structs)
+
+| Member | |
+|---|---|
+| `SfxDeviceInfo`: `int hardware` · `major`, `minor`, `patch` · `SfxProfile profile` · `int flags` | what an identity says. `hardware`: `HardwareUnknown` (0) or `HardwareVibeFm` (1) |
+| `bool HasPads` · `HasEncoders` · `TakesSongSounds` · `TakesTelemetry` | the flags, one by one |
+| `bool IsAtLeast(int major, int minor, int patch)` | the firmware is that version or later. False for an assumed device |
+| `static SfxDeviceInfo AssumedBefore14` · `bool assumed` | what a device that does not answer is taken for: VIBE FM, profile 1, pads, encoders, telemetry, no version. Whether it takes a song's sounds is not known (1.3.1 does), so that flag is off |
+| `string ToString()` | `"VIBE FM, firmware 1.4.0, profile 1"` |
+| `SfxProfile`: `int id` · `patchFormat`, `songFormat` · `sounds`, `kits`, `patterns`, `steps`, `lanes`, `bars` · `voices`, `engines`, `wavetables`, `patchValues` | the formats a device speaks and how much it holds |
+| `static SfxProfile VibeFm1` | SFX FORGE 1.x on VIBE FM: 1 · 2, 5 · 16, 2, 8, 16, 24, 32 · 16, 5, 6, 25 |
+| `bool Fits(SfxPatch patch)` · `bool Fits(byte[] packedSong)` | within the profile's limits. Every sound and song of this version fits `VibeFm1` |
+| `SfxProtocol.BuildRequestIdentity()` · `BuildIdentity(SfxDeviceInfo)` · `TryParseIdentity(byte[], out SfxDeviceInfo)` | the two messages (`SfxProtocol` is a static class) |
+| `SfxProtocol.IsNewerSong(byte[] song)` · `SfxProtocol.NewerIn(byte[] message)` | a packed song of a higher format and at least today's length · what a message carries in a higher format ("a patch in format 3"), `null` for any other message |
 
 ### SfxForgeLink (component)
 
@@ -1908,6 +2048,8 @@ The `Player…` and voice functions under them are what the two components call.
 | **Window > SFX Forge** | `SfxForgeWindow`. `SfxForgeWindow.Build(SfxForgeModel model)` gives the whole window as one `VisualElement` (an `SfxForgeView`) over a model you fill: it touches no MIDI port |
 | `SfxPresetEditor.Build(SerializedObject)` · `SfxSongEditor.Build(SerializedObject)` | a sound's or a song's Inspector as one `VisualElement` (`SfxPresetPanel`, `SfxSongPanel`): what `CreateInspectorGUI` returns, and what a window or a test of yours can host |
 | `SfxPresetPanel`: `Page`, `Nudge(tile, steps)`, `Typed(tile, text)`, `ResetValue(tile)`, `SetHold(…)`, `Mutate()`, `Randomize()`, `UndoOwn()`, `static RandomPatch(System.Random)` | what the tiles and keys of a sound call |
+| `SfxPresetPanel.NewerBanner` · `SfxSongPanel.NewerBanner` (an `SfxBanner`: `Shown`, `Bold`, `Small`) · `SfxSongPanel.MessageText` | the notice of an asset from a newer version · what a song's Inspector says in place of a song |
+| `SfxForgeModel.identity`, `identityKnown` · `SfxForgeView.IdentityText` | the window's line that says what the device is |
 | `SfxSongPanel`: `Page`, `Pattern`, `Sound`, `Intensity`, `SetTempo(bpm)`, `SetSwing(swing)`, `SetLayer(sound, value)`, `SetVolume(sound, value)`, `SetPan(sound, value)` | what is looked at, and the five numbers that can be changed (the last three 0 … 127) |
 | `static float[] SfxSongPanel.RenderBar(SfxSong song, int pattern, float intensity01, int sampleRate = 48000)` | one bar as the game would play it, with what rings after it: stereo, L R L R …; null without the native library |
 | `SfxUnits.ParamText(SfxParam, int value)` · `ParamName(SfxParam, SfxEngine)` · `TryParse(SfxParam, string typed, out int value)` | a value as the device writes it, its name there, and a typed text back to a value |

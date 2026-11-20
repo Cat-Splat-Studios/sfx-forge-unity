@@ -10,6 +10,18 @@ and the Unity code live there) by `tools/make_unity_package.py`; nothing in it i
 - **Runtime** (`CatSplat.SfxForge`): `SfxPatch`, `SfxPreset`, `SfxSong`, `SfxPlayer`, `SfxMusicPlayer`, `SfxNative`
   with the native library for Windows x64, `SfxWav`, and the link: `SfxLink`, `SfxProtocol`, `SfxForgeLink`,
   `SfxTelemetrySender`, `SfxEncoderBinding`.
+- **Reserved for later versions**, so that a project made with this one does not break when the Unity side can do
+  more than a device, or a firmware for other hardware appears:
+  - The identity (firmware 1.4.0): the link asks the device what it is (`SfxLink.RequestIdentity`, `Device`,
+    `IdentityReceived`; `SfxDeviceInfo`). A firmware before 1.4.0 does not answer and works as before. A device that
+    says it speaks another patch or song format is sent none (`SfxLink.LastRefusal`).
+  - `SfxProfile`: a device's limits as numbers; `SfxProfile.VibeFm1` is the only one there is. Every sound and
+    song of this version fits it.
+  - `SfxPreset` and `SfxSong` keep the asset format that wrote them (`Format`, 1) and the one that saved them
+    last. An asset from a newer SFX Forge says so in its Inspector and once in the Console.
+  - A patch or a song with a higher format number is reported as newer, not as broken (`SfxPatch.IsNewer`,
+    `SfxSong.IsNewer`, `SfxLink.NewerReceived` for one that arrives from the device).
+  - There is no target switch and no feature the device lacks: this version only reserves the room.
 - **Editor** (`CatSplat.SfxForge.Editor`): the Inspectors of presets and songs and the window **Window > SFX
   Forge**, built with UI Toolkit to look like the device's display, and `SfxForgeEditorLink`.
   - The sound inspector (`SfxPresetPanel`): the pages OSC, TONE, FILTER, WAVE, ENV, LFO and FX with the engine and
@@ -18,8 +30,9 @@ and the Unity code live there) by `tools/make_unity_package.py`; nothing in it i
   - The song inspector (`SfxSongPanel`): tempo, steps, swing, chain, the patterns A – H, the arrangement, and the
     pages STEPS, MIX, MASTER and AUTO. It is a viewer: TEMPO, SWING and a sound's LAYER, VOLUME and PAN can be
     changed in it, nothing else.
-  - The window (`SfxForgeView` over an `SfxForgeModel`): the link's state, the device's knobs, 16 pads that play
-    or fetch, a text for the device, the patches that arrived with their waveform, the last messages.
+  - The window (`SfxForgeView` over an `SfxForgeModel`): the link's state, what the device says it is, the
+    device's knobs, 16 pads that play or fetch, a text for the device, the patches that arrived with their
+    waveform, the last messages.
   - The kit they are built from, in `Editor/UI` (`Knob`, `ValueTile`, `WaveformView`, `PadGrid`, `SoftKeyRow`,
     `SfxUnits`, `SfxForge.uss`), with a README of its own.
   - `SfxSong` has read-only accessors for what the song inspector shows: steps, notes, velocities, lengths, the
@@ -27,7 +40,7 @@ and the Unity code live there) by `tools/make_unity_package.py`; nothing in it i
 - **Sample** "Showcase": a one-level game whose every sound is SFX FORGE, with its own song, editor checks, Play
   mode tests, a Windows build command and a self-check in the built game.
 - **Documentation~**: the Unity manual, the device's manual with the cheat sheet, the link's protocol, five videos.
-- **Firmware~**: the built instrument, firmware 1.3.1, without debug information.
+- **Firmware~**: the built instrument, firmware 1.4.0, without debug information.
 - The native library's import settings name the editor and Windows x64 only.
 
 The code is the package that was `com.catsplat.sfxforge` 0.1.0 inside the source repository. The id, the display name and the
@@ -40,7 +53,9 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
   plugin.
 - Nobody has listened to the audio. Levels and "sound comes out" are measured (peaks, RMS, the build's probe).
 - If a song transfer breaks off and a different song follows within two seconds, pieces of the two can be mixed.
-- The Inspectors and the window were tested as elements in a test panel (88 EditMode tests in the source
+- The identity was not asked of a device by the package's own tests, only built and read. There is one profile
+  and one device; nothing can be targeted at another, and nothing converts a newer patch, song or asset.
+- The Inspectors and the window were tested as elements in a test panel (100 EditMode tests in the source
   repository), and the pictures of them in these pages were rendered there. Nobody has opened them in the editor
   itself; their menus, typing into a value, and their keys against a device were not tried. No keys: the arrow
   keys on a tile, ENTER in the window's text field and the double-click that opens a value's field were never

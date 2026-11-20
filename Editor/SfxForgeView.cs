@@ -33,6 +33,14 @@ namespace CatSplat.SfxForge.Editor
         public string[] inputs = new string[0], outputs = new string[0];
         /// <summary>The ports chosen ("": none), and the ones that are open (null: none).</summary>
         public string inputPort = "", outputPort = "", inputName, outputName;
+        /// <summary>
+        /// What the device said it is ("VIBE FM, firmware 1.4.0, profile 1"), or NoIdentity once a request went
+        /// unanswered for a second. Null: nothing to say (not connected, or asked a moment ago).
+        /// </summary>
+        public string identity;
+        /// <summary>True: identity is what a device said. False: it is that none answered.</summary>
+        public bool identityKnown;
+        public const string NoIdentity = "no identity: firmware before 1.4, or nothing answers";
 
         // ---- the device ----
         /// <summary>0: a pad plays. 1: a pad fetches its patch.</summary>
@@ -125,7 +133,7 @@ namespace CatSplat.SfxForge.Editor
         readonly PadGrid pads = new PadGrid();
         readonly TextField textField = new TextField(), folderField = new TextField { isDelayed = true };
         readonly VisualElement patchGrid = SfxUI.Box("sfx-patches"), log = SfxUI.Box("sfx-log");
-        readonly TextElement title, padCap, patchHint, logNone;
+        readonly TextElement title, padCap, patchHint, logNone, identity;
         readonly TextElement[] logLines = new TextElement[SfxForgeModel.MaxMessages];
         readonly SoftKey showTextKey, autoKey, connectKey, fetchKey, showSongKey;
         readonly Dictionary<SfxForgeModel.Patch, PatchTile> tiles = new Dictionary<SfxForgeModel.Patch, PatchTile>();
@@ -154,7 +162,10 @@ namespace CatSplat.SfxForge.Editor
             outTile.tooltip = "The MIDI port the device listens to. A click chooses it (not while connected).";
             inTile.clicked += () => Ports(inTile, model.inputs, model.inputPort, model.pickInput);
             outTile.clicked += () => Ports(outTile, model.outputs, model.outputPort, model.pickOutput);
-            side.Add(inTile); side.Add(outTile); side.Add(status);
+            identity = SfxUI.Text("", "sfx-identity");
+            identity.pickingMode = PickingMode.Position;    // (for its tooltip)
+            identity.tooltip = "What the device answered when it was asked what it is (firmware 1.4.0 on): its hardware, its firmware, its profile. An older firmware does not answer; it works all the same.";
+            side.Add(inTile); side.Add(outTile); side.Add(status); side.Add(identity);
             link.Add(box); link.Add(side);
             root.Add(link);
 
@@ -224,6 +235,8 @@ namespace CatSplat.SfxForge.Editor
         public TextField FolderField => folderField;
         /// <summary>The state under the ports: "LINKED | in: … out: …".</summary>
         public string StatusText => status.Bold + " | " + status.Small;
+        /// <summary>The line under the state: what the device said it is, or that it did not answer. "" while it is not shown.</summary>
+        public string IdentityText => identity.style.display == DisplayStyle.None ? "" : identity.text;
         public string HeaderNumber => ((TextElement)header.NumberTile).text;
         /// <summary>The tiles of the patches shown, the newest first.</summary>
         public int PatchCount => patchGrid.childCount;
@@ -311,6 +324,10 @@ namespace CatSplat.SfxForge.Editor
             else if (m.inputs.Length + m.outputs.Length == 0)
                 status.Set("NO MIDI PORTS", SfxColors.Warn, "Without the hardware, SFX FORGE runs in the browser or the plugin: install a virtual MIDI cable (e.g. loopMIDI) with two ports, give one to the browser's MIDI out and the other to its MIDI in.");
             else status.Set("NOT CONNECTED", SfxColors.Dim, "Choose the two ports, then CONNECT.");
+            bool says = m.isOpen && !string.IsNullOrEmpty(m.identity);
+            identity.style.display = says ? DisplayStyle.Flex : DisplayStyle.None;
+            identity.text = says ? m.identity : "";
+            identity.EnableInClassList("sfx-identity--known", says && m.identityKnown);
 
             padTabs.SetIndex(m.padMode);
             for (int i = 0; i < SfxForgeModel.Pads; i++)

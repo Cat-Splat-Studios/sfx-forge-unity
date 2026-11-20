@@ -3,7 +3,8 @@
 What travels between the device and a game engine. The Unity package implements it in
 `Runtime/Core/SfxProtocol.cs` and `Runtime/Core/SfxLink.cs`; [section 6 of the Unity manual](UNITY.md#6-from-the-device-to-the-game)
 says how to use it and what of it is tested. The C functions named here (`sfx_song_pack`, `sfx_player_note_on`)
-are the engine's, in the source repository.
+are the engine's, and `tests/check-identity.mjs` and `build.sh` are the firmware's check and its build script:
+all of them are in the source repository, not in this package.
 
 Plain MIDI, so it works over USB, the plugin's MIDI ports and Web MIDI. SysEx uses the non-commercial ID `7D`, then `56 42`.
 
@@ -22,6 +23,8 @@ Plain MIDI, so it works over USB, the plugin's MIDI ports and Web MIDI. SysEx us
 | game → device | `F0 7D 56 42 04 <slot> F7` | request a dump of a pad |
 | both ways | `F0 7D 56 42 05 <piece> <pieces> <≤ 200 bytes> F7` | the song with its mix, in 39 pieces (7699 bytes, `sfx_song_pack`). Only this format travels; the older, shorter songs are read from files. A receiver puts each piece where it belongs and takes the song when all 39 are there: in any order, twins ignored. It forgets a transfer that stops for two seconds; a *different* song sent sooner than that after one that broke off can be mixed with it |
 | game → device | `F0 7D 56 42 06 F7` | request the 16 sounds and the song (as SEND does) |
+| game → device | `F0 7D 56 42 07 F7` | request the identity (firmware 1.4.0). Exactly these 6 bytes; with any other length it is ignored |
+| device → game | `F0 7D 56 42 08 <18 bytes> F7` | the identity: which hardware, which firmware, what it holds (below). A device that receives one ignores it |
 
 `<slot>` is 0–15, a pad of the kit the device shows. SEND and the request `06` always give the MUSIC kit: the song's
 sounds. A game plays sound effects beside the song with slots 16–31 of the player (`sfx_player_note_on`). Telemetry also arrives as the DAW parameters Mod Pitch / Cutoff / FM / Level and Intensity.
@@ -32,3 +35,55 @@ filter_res decay bitcrush attack sustain release filter_env filter_env_time lfo_
 spread chorus delay reverb level table`. `pitch_env_amt` and `filter_env`: 64 = none. `sustain` 0 = a one-shot.
 `level` 100 = as designed. `a` / `b` are the engine's own two controls (FM ratio / depth, arpeggio step / speed, grain
 rate / amount, wavetable position / warp). Engines: 0 IMPACT, 1 UI BLIP, 2 SCI-FI FM, 3 FOLEY, 4 WAVETABLE.
+
+### The identity, and what is reserved for later
+
+SFX FORGE 1.x runs on one hardware and both sides hold the same things. That will not stay so: the Unity side can grow
+past what a device holds, and firmwares for other hardware will hold less or other things. So that neither breaks a
+project made today, a game can ask a device what it is before it sends anything, and every format says which
+version wrote it. Nothing about the sound or the messages above changes.
+
+**Identity bytes** (18, each 0–127), the answer to `07`:
+
+| Byte | | Today |
+|---|---|---|
+| 0 | hardware: 0 unknown, 1 VIBE FM (the SDK's host – emulator, plugin, VIBE Box; the firmware cannot tell them apart) | 1 |
+| 1 2 3 | firmware version: major, minor, patch | 1 4 0 |
+| 4 | profile: 1 = what SFX FORGE 1.x offers on VIBE FM | 1 |
+| 5 | patch format (`SFX_PATCH_VERSION`) | 2 |
+| 6 | song format (`SFX_SONG_VERSION`) | 5 |
+| 7 8 | sounds in a kit, kits | 16, 2 |
+| 9 10 | patterns, steps in a pattern | 8, 16 |
+| 11 12 | automation lanes, bars in an arrangement | 24, 32 |
+| 13 14 15 | voices, engines, wavetables | 16, 5, 6 |
+| 16 | values in a patch (`SFX_P_COUNT`) | 25 |
+| 17 | flags: bit 0 has pads, bit 1 has encoders for the game (LINK page), bit 2 takes a song's sounds (`02` with slot 16–31), bit 3 takes telemetry (CC 10–17, ch 2) | 15 |
+
+The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 04 00 01 02 05 10 02 08 10 18 20 10 05 06 19 0F F7`.
+
+- **Fields are only ever added at the end.** A reader takes the first 18 bytes and ignores what follows. A message
+  with fewer than 18, or with a byte above 127, is not an identity.
+- **No answer has a meaning.** A firmware before 1.4.0 ignores `07` and never answers: that is a VIBE FM with a
+  firmware before 1.4 and profile 1.
+- **A profile is a description of limits** – the numbers above. Profile 1 is everything 1.x can make, so today every
+  sound and song fits every device. A later, larger Unity side can ask whether a sound or song fits the device in
+  front of it before it sends it.
+- **Requests and answers may come twice.** The emulator hands a device's own output back to it and delivers every
+  message twice. A device ignores an identity that comes in, and answering a request twice is harmless. The host
+  takes one SysEx a block, so a second answer, or one asked for while a song goes out, follows a moment later.
+  A pad's dump that is asked for (`04`, or EXPORT on the device) waits in the same way: asked for right after the
+  identity it follows it, and asked for while the sounds and the song go out it comes after them.
+- **Patches and songs carry their format** in their first byte (2 and 5 today). A higher number was written by a
+  newer SFX FORGE: it is newer, not broken. This firmware does not take it and keeps what it has. A newer patch
+  of 28 bytes shows BAD PATCH, and one of another length is ignored without a word. A newer song whose pieces
+  have the sizes of today's is put together and then refused with BAD SONG; one whose pieces have another size
+  is not put together at all. The Unity side does not take it either and says that it is newer: the link raises
+  `NewerReceived` for a patch or a song that arrives in a higher format, the SFX Forge window writes it to the
+  Console, a song asset that holds one says A NEWER SONG, and the music player warns instead of staying silent
+  without a word. A game that got an identity knows the formats a device takes (bytes 5 and 6) before it sends.
+- **What the device stores** (`kits.bin`, `song.bin`) has no format number of its own: the kits are 32 patches, each
+  with its format byte and checksum, and the song is a packed song with its format byte. A stored file of another
+  size is not read, a stored patch of another format keeps its pad's factory sound, and the next SAVE writes this
+  firmware's format over it.
+
+`tests/check-identity.mjs` (run by `build.sh`) sends these messages into the built firmware and reads what it sends.

@@ -8,8 +8,31 @@ namespace CatSplat.SfxForge
     /// Captured from the device in Window > SFX Forge; played in the game by SfxMusicPlayer.
     /// </summary>
     [CreateAssetMenu(menuName = "SFX Forge/Song", fileName = "New Song", order = 221)]
-    public class SfxSong : ScriptableObject
+    public class SfxSong : ScriptableObject, ISerializationCallbackReceiver
     {
+        /// <summary>The asset format this version of SFX Forge writes.</summary>
+        public const int CurrentFormat = SfxAssetFormat.Current;
+
+        // Which asset format wrote this file. A file without the line (every asset from before the number was kept) is format 1.
+        [SerializeField, HideInInspector] int format = CurrentFormat;
+
+        // Which asset format saved this file last: always this version's number when this version writes the file.
+        // A newer SFX Forge that finds its own "format" with a lower number here knows the file went through an older
+        // version, which wrote back only what it knew. (Nothing reads it in this version.)
+        [SerializeField, HideInInspector] int savedBy = CurrentFormat;
+        void ISerializationCallbackReceiver.OnBeforeSerialize() { savedBy = CurrentFormat; }
+        void ISerializationCallbackReceiver.OnAfterDeserialize() { }
+
+        /// <summary>The asset format the file was written in: 1 today.</summary>
+        public int Format => format;
+        /// <summary>
+        /// A newer SFX Forge made this asset: there may be more in its file than this version reads. What is read
+        /// plays; saving the asset here writes only that, and what this version does not know is lost.
+        /// </summary>
+        public bool IsFromNewerVersion => format > CurrentFormat;
+
+        void OnEnable() => SfxAssetFormat.WarnIfNewer(this, format);
+
         [Tooltip("The 16 sounds the song plays (pads 1-16 of the device).")]
         public SfxPatch[] sounds = new SfxPatch[SfxProtocol.Slots];
 
@@ -19,6 +42,12 @@ namespace CatSplat.SfxForge
         public bool IsValid => data != null && sounds != null && sounds.Length == SfxProtocol.Slots
             && ((data.Length == SfxProtocol.SongBytes && data[0] == 5) || (data.Length == SfxProtocol.SongBytesV4 && data[0] == 4) || (data.Length == SfxProtocol.SongBytesV3 && data[0] == 3)
                 || (data.Length == SfxProtocol.SongBytesV2 && data[0] == 2) || (data.Length == SfxProtocol.SongBytesV1 && data[0] == 1));
+        /// <summary>
+        /// The packed song begins with a format above the one this version knows (5) and is at least as long as a song
+        /// is today: a song from a newer SFX FORGE, not a broken one. It is not valid here all the same – it does not
+        /// play, and nothing of it shows.
+        /// </summary>
+        public bool IsNewer => SfxProtocol.IsNewerSong(data);
         /// <summary>Bars in its arrangement (0: none, it walks its chain).</summary>
         public int ArrangementBars => IsValid && data[0] >= 4 ? data[Arr] : 0;
         int Arr => data[0] == 4 ? 66 + SfxProtocol.Slots : 66;                 // (format 4 kept one lane target for each sound before it)
@@ -51,7 +80,7 @@ namespace CatSplat.SfxForge
         /// The most steps a pattern can have (this song's own length is StepsPerPattern), the automation lanes of a song,
         /// the most bars of an arrangement.
         /// </summary>
-        public const int MaxSteps = 16, Lanes = 24, MaxBars = 32;
+        public const int MaxSteps = SfxProtocol.Steps, Lanes = SfxProtocol.Lanes, MaxBars = SfxProtocol.Bars;
 
         /// <summary>How far the off-beat steps wait: 0..100.</summary>
         public int Swing => IsValid ? data[4] : 0;

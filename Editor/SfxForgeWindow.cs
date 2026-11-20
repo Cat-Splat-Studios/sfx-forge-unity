@@ -35,6 +35,7 @@ namespace CatSplat.SfxForge.Editor
             link.EncoderChanged += OnKnob;
             link.PadDown += OnPadDown;
             link.PadUp += OnPadUp;
+            link.NewerReceived += OnNewer;
 
             model.midiSupported = MidiPorts.Supported;
             model.autoSave = EditorPrefs.GetBool(AutoSavePref, true);
@@ -64,6 +65,7 @@ namespace CatSplat.SfxForge.Editor
         {
             var link = SfxLink.Shared;
             if (view != null) view.LetGo();                 // (a pad held with the mouse must not stay held on the device)
+            link.NewerReceived -= OnNewer;
             link.PadUp -= OnPadUp;
             link.PadDown -= OnPadDown;
             link.EncoderChanged -= OnKnob;
@@ -96,6 +98,10 @@ namespace CatSplat.SfxForge.Editor
         {
             var link = SfxLink.Shared;
             bool song = lastSong != null;
+            // what the device said it is; or, a second after it was asked, that it did not say
+            var device = link.Device;
+            string identity = device.HasValue ? device.Value.ToString() : link.IdentityUnanswered ? SfxForgeModel.NoIdentity : null;
+            if (model.identity != identity) { model.identity = identity; model.identityKnown = device.HasValue; changed = true; }
             if (model.isOpen == link.IsOpen && model.hasOutput == link.HasOutput && model.inputName == link.InputName && model.outputName == link.OutputName && model.hasSong == song) return;
             if (model.isOpen && !link.IsOpen) { model.ForgetKnobs(); Array.Clear(model.padDown, 0, model.padDown.Length); }
             model.isOpen = link.IsOpen; model.hasOutput = link.HasOutput;
@@ -121,6 +127,14 @@ namespace CatSplat.SfxForge.Editor
         void OnMessage(byte[] m)
         {
             model.TakeMessage(SfxLink.Describe(m));
+            changed = true;
+        }
+
+        // a patch or a song in a format above this version's came in: it is not an asset here, and the user is told why
+        void OnNewer(string what)
+        {
+            Debug.LogWarning("SFX Forge: " + what);
+            model.TakeMessage("NEWER: " + what);
             changed = true;
         }
 
