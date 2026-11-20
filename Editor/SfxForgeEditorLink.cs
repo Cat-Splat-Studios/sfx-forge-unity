@@ -45,18 +45,31 @@ namespace CatSplat.SfxForge.Editor
         {
             float[] samples = SfxNative.BakeInterleaved(patch, 48000, 1f, 0, 0f, holdSeconds);
             if (samples == null || samples.Length == 0) { Debug.LogWarning("SFX Forge: the native library (sfxforge) is not available on this platform."); return; }
+            PreviewSamples(samples, 48000);
+        }
+
+        /// <summary>Plays stereo samples (L R L R …) through the computer's speakers, in place of what the preview played.</summary>
+        public static void PreviewSamples(float[] interleaved, int sampleRate)
+        {
+            if (interleaved == null || interleaved.Length < 2) return;
             if (preview == null)
             {
                 var go = EditorUtility.CreateGameObjectWithHideFlags("SFX Forge Preview", HideFlags.HideAndDontSave, typeof(AudioSource));
                 preview = go.GetComponent<AudioSource>();
             }
-            var clip = AudioClip.Create("SFX Forge Preview", samples.Length / 2, 2, 48000, false);
+            var clip = AudioClip.Create("SFX Forge Preview", interleaved.Length / 2, 2, sampleRate, false);
             clip.hideFlags = HideFlags.HideAndDontSave;
-            clip.SetData(samples, 0);
+            clip.SetData(interleaved, 0);
             preview.Stop();
             if (preview.clip != null) Object.DestroyImmediate(preview.clip);
             preview.clip = clip;
             preview.Play();
+        }
+
+        /// <summary>Silence: what the preview plays stops.</summary>
+        public static void StopPreview()
+        {
+            if (preview != null) preview.Stop();
         }
 
         public static SfxPreset CreatePreset(SfxPatch patch, string folder, string name)

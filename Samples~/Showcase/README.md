@@ -151,8 +151,8 @@ does not compare the sound with the editor's, and nobody has listened to the bui
 | `Scripts/Art` | The art kit: every mesh, the `Palette`, Brio's visual, the background, the HUD with its generated font. |
 | **`Scripts/Audio`** | **The SFX FORGE example.** The only assembly that references `CatSplat.SfxForge`. |
 | `Editor` | `ShowcaseBuilder.cs` (builds the scene; `Verify` and `SelfTest`) and `ShowcaseAudio.cs` (the builder's two calls into the sound: install it, check it). |
-| `Generated` | Written by the builder: `ArtKit.asset` with the two materials, `ShowcaseMeshes.asset`, and `Presets/<sound>.asset` – every sound effect as a clickable `SfxPreset`. |
-| `Song` | The music: `DemoSong.bytes` (16 sounds and the packed song, as the device sent them) and `DemoSong.asset`, the `SfxSong` the builder writes from it. The same song as the older demo's `Assets/SfxDemo/DemoSong.*`, as a separate pair of files with their own GUIDs, so the folder is complete by itself. |
+| `Generated` | Written by the builder: `ArtKit.asset` with the two materials, `ShowcaseMeshes.asset`, and `Presets/<sound>.asset` – every sound effect as an `SfxPreset`: select one and its Inspector shows the sound as the device does (pages of four knobs, the waveform, PLAY, MUTATE, BAKE WAV). |
+| `Song` | The music: `DemoSong.bytes` (16 sounds and the packed song, as the device sent them) and `DemoSong.asset`, the `SfxSong` the builder writes from it (select it: its Inspector shows the patterns, the arrangement, the steps, the mix and the automation; only TEMPO, SWING and a sound's LAYER, VOLUME and PAN can be changed there, and a rebuild writes the asset from `DemoSong.bytes` again, so a change made there does not last, and until then the editor check that compares the asset with that file fails). The same song as the older demo's `Assets/SfxDemo/DemoSong.*`, as a separate pair of files with their own GUIDs, so the folder is complete by itself. |
 | `Tests` | The PlayMode tests: `ShowcaseTests.cs` (the game), `ShowcaseAudioTests.cs` (the sound), and what they share. Also the capture rig: `CaptureTakes.cs`, `CaptureRecorder.cs`, `CaptureTelemetry.cs`, `CapturePilot.cs`. Its takes are marked `[Explicit]`; see [Recording it](#recording-it). |
 | `Docs` | `DESIGN.md` (what the game is), `ARCHITECTURE.md` (how the code is organised, and the rules), and one notes file per discipline: `GAMEPLAY-NOTES.md`, `LEVEL-NOTES.md`, `ART-NOTES.md`, `AUDIO-NOTES.md`. |
 
@@ -198,6 +198,9 @@ good starting points. A bare `new SfxPatch()` has level 0 and is silent: always 
 
 To keep a sound as an asset you can click and tune, put the patch in an `SfxPreset`
 (`ScriptableObject`): the builder does that for every entry (`ShowcaseAudio.CreatePresetAsset` in `Editor`).
+The preset's Inspector is the device's sound page: seven pages of four knobs with the values in the device's
+units, the waveform, and keys to play, mutate and bake it (the Unity manual, "The inspectors look like the
+device"). A rebuild writes these presets from `SoundLibrary.cs` again.
 
 ### 2. One-shots – [`SoundEffects.cs`](Scripts/Audio/SoundEffects.cs)
 
@@ -247,7 +250,7 @@ speed) and the Wind-Up rev (retriggered on each tap; pitch, `fm` and filter from
 ### 4. Adaptive music – [`MusicDirector.cs`](Scripts/Audio/MusicDirector.cs)
 
 An `SfxMusicPlayer` plays an `SfxSong` asset (16 sounds and a sequenced song, made on the device; the
-package cannot edit one). The showcase plays its own `Song/DemoSong.asset`, the firmware's demo song; the
+package cannot write one, and its Inspector changes only the tempo, the swing and a sound's layer, volume and pan). The showcase plays its own `Song/DemoSong.asset`, the firmware's demo song; the
 builder writes the asset from `Song/DemoSong.bytes`, the song as the device sent it. The
 director turns the game into five calls:
 

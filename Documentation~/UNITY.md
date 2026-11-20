@@ -18,7 +18,8 @@ package `com.catsplatstudios.sfxforge` and the example game built with it.
 >   [LINK-PROTOCOL.md](LINK-PROTOCOL.md);
 > - **not in the package:** the older demo scene the manual mentions (a hovercraft, `SfxDemo`, with its tests
 >   `SfxDemoTests`), and the scripts under `docs/`, `tests/`, `core/` and `out/`: the engine's C source, the
->   emulator script of the link tests, and the scripts that draw the figures and cut the videos.
+>   emulator script of the link tests, the test project of the editor UI (`tests/unity-inspectors`, with
+>   the pictures it writes to `out/inspector-shots`), and the scripts that draw the figures and cut the videos.
 
 | I want to … | Go to |
 |---|---|
@@ -45,6 +46,11 @@ All sound in them is what SFX FORGE produces in Unity. There is no voice-over.
 
 **The pictures** in this manual are built by a script in the source repository (`docs/unity_figures.py`). The charts are drawn from recordings of the
 showcase game, not by hand: where a picture says "as recorded", its curves are the game's own values, frame by frame.
+
+The pictures of the editor UI (`img/unity-inspector-…`) are made another way. The tests of the inspectors
+([section 9](#the-inspectors-are-tested-in-a-project-of-their-own)) build the same element tree, with the same
+stylesheet, that the Inspector hosts, and render it in a panel to a texture. They are not photographs of the
+Inspector or of the SFX Forge window: nobody has opened either of them yet.
 
 ---
 
@@ -164,11 +170,95 @@ flowchart LR
 | `SfxTelemetrySender` | component | one game value → the device, and to local players |
 | `SfxEncoderBinding` | component | one of the device's encoders → an AudioMixer parameter or an event |
 | `SfxProtocol` | static class | the MIDI messages, byte by byte. You rarely call it yourself |
-| **Editor** | | `Window > SFX Forge`, the Inspectors of `SfxPreset` and `SfxSong`, and `SfxForgeEditorLink` (preview, bake a WAV, make assets) |
+| **Editor** | | `Window > SFX Forge` and the Inspectors of `SfxPreset` and `SfxSong`, all three drawn like the device's display ([below](#the-inspectors-look-like-the-device)); `SfxForgeEditorLink` (preview, bake a WAV, make assets) |
 
 Everything is in the namespace `CatSplat.SfxForge`; the editor code in `CatSplat.SfxForge.Editor`.
 
 **No device is needed.** Patches, presets, both players and baking work on their own. The link is for tuning live.
+
+### The inspectors look like the device
+
+The Inspector of a sound, the Inspector of a song and **Window > SFX Forge** are built with UI Toolkit and drawn as
+the device draws its display: the firmware's colours (one for each engine), its pages of four values, its names
+and its units. What you learned on the device you find again in Unity, and the other way round.
+
+![The Inspector of a sound, page OSC](img/unity-inspector-sound-osc.png)
+
+*The Inspector of an `SfxPreset` at 640 pixels, page OSC: the showcase's Jump. This picture and the others in this
+section are the panel's element tree and stylesheet rendered in a panel to a texture by the inspectors' tests. They
+are not photographs of the Inspector window.*
+
+![Page ENV of a held sound](img/unity-inspector-sound-env.png)
+
+*Page ENV of a held sound, the showcase's RollHum, rendered the same way. The white line is the envelope the four
+values make. HOLD appears because the sound is held.*
+
+| | |
+|---|---|
+| **The pages** | a sound has seven: OSC, TONE, FILTER, WAVE, ENV, LFO, FX. Each has four values, as the device has four encoders; together they hold the engine and all 25 values, each once ([section 3](#the-patch-as-an-asset-sfxpreset) has the table). A song has four: STEPS, MIX, MASTER, AUTO |
+| **The knobs** | a value is a tile: a ring that stands where the value stands, the encoder's number in it, a dim name, and the value in large letters. The ring is a picture; the whole tile is the control (below) |
+| **The units** | the value is written as the device writes it: `448Hz`, `3.6kHz`, `36ms`, `1.4s`, `-20`, `100%`, `OFF`, `SAW-SQ`. The texts are worked out with the firmware's own arithmetic, and the tests compare them with values read off the device's own pictures |
+| **The waveform** | the sound as the device draws it: one dry voice, without chorus, delay or reverb, mono, 1.5 seconds at most, a held sound let go after 0.8 seconds. Under it, how long it is. It is not what PLAY and BAKE WAV render: those have the effects. On most pages a white line shows what the page's four values shape |
+| **The soft keys** | the rows of keys at the bottom, as F1 – F6 on the device. A green key is a switch that is on. A dark key has nothing to do and takes no click: SEND while no device is connected, UNDO while there is nothing of this sound to take back |
+| **The link dot** | top right: green while a MIDI output to the device is open |
+
+**Turning a knob.** What a value tile does with the mouse and the keys (`Editor/UI/ValueTile.cs`):
+
+| You | The value |
+|---|---|
+| drag the tile up or down | goes up or down, one step for every 2 pixels (ENGINE and TABLE: a name for every 16 or 14 pixels; HOLD: 0.05 s for every 3). With SHIFT held it takes four times as far: finer. A whole drag is one step for Undo |
+| turn the wheel over the ring | one step a notch; up is more. Only over the ring, so the Inspector still scrolls everywhere else |
+| press an arrow key while the tile has the focus | up or right: one step more; down or left: one less. With SHIFT: eight |
+| double-click the value | it becomes a field to type in; ENTER takes what you typed. Type it as the display writes it: `200Hz`, `1.2s`, `40%`, `+12`, `OFF`. The nearest value the knob can have is taken |
+| double-click the ring | back to the value of a plain patch of that engine ([section 3](#every-value)). In a song: TEMPO 120, SWING 0 %, LAYER 0 %, VOLUME 100, PAN C |
+| click the value of ENGINE or TABLE | a menu of the names. Dragging and the wheel go through them too, round and round |
+
+A tile that only shows, such as STEPS in a song, is an outline with a dim ring, and takes neither the mouse nor the
+focus.
+
+Every change goes through Unity's `SerializedObject`: the asset is marked changed, **Edit > Undo** takes it back, and
+with several presets selected each of them is changed. A value in which they differ reads `-`.
+
+![The Inspector of a song, page STEPS](img/unity-inspector-song.png)
+
+*The Inspector of an `SfxSong`, the demo song, page STEPS, pattern A, sound 7 chosen. Rendered by the tests, as
+above.*
+
+**A song is shown, not edited.** The song's Inspector is a viewer of what was made on the device, with five numbers
+you can change ([section 5](#the-song-in-the-inspector) goes through it):
+
+| Editable here | Only shown: made on the device |
+|---|---|
+| **TEMPO** (40 – 240 BPM) and **SWING** (0 – 100 %) | STEPS (the pattern's length) and CHAIN |
+| the chosen sound's **LAYER** (0 – 100 %), **VOLUME** (0 – 127, 100 = as designed) and **PAN** (L64 … C … R63) | the steps with their notes, velocities and lengths; the patterns A – H; the arrangement |
+| | which sounds are muted; the master effects (DELAY TIME, FEEDBACK, ROOM SIZE, DAMPING, DRIVE); the automation lanes |
+
+The INTENSITY bar on the STEPS page can be dragged, but it is not part of the song: it is the intensity you look at
+the song with, and PLAY BAR plays with. In the game, the game sets it. The same goes for the pattern and the sound
+you chose.
+
+![The SFX Forge window, shown with a filled-in model](img/unity-inspector-window.png)
+
+*Window > SFX Forge at 700 pixels, rendered by the tests from a model they filled in: the port names, the knob
+values, the patches and the messages in it are the test's, and no device was connected.
+[Section 6](#the-sfx-forge-window) describes its parts.*
+
+![The Inspector of a sound at 340 pixels](img/unity-inspector-sound-narrow.png)
+
+*At 340 pixels the soft keys wrap into rows of three and the picture is lower: below 400 pixels a panel uses its
+narrow layout. The tests render the inspectors at 300, 340, 640 and 700 pixels and the window at 340, 420 and 700.*
+
+> **What was tried, and what was not.** The tests build these panels, call what the knobs and keys call, send
+> mouse and wheel events to them in a test panel, and check the asset and Undo afterwards
+> ([section 9](#the-inspectors-are-tested-in-a-project-of-their-own)). Not tried: the real Inspector and the real
+> window, which nobody has opened; the menus (ENGINE, TABLE, the pad, the MIDI ports), which were never opened;
+> typing into a value's field with a keyboard; and anything sent to a device from these panels: SEND, PLAY ON
+> DEVICE, SEND CHANGES, the pads, the text. Only Unity 6000.3.8f1 on Windows x64 was used, and nobody has
+> listened to what PLAY plays.
+
+The kit these panels are built from (`Knob`, `ValueTile`, `WaveformView`, `PadGrid`, `SoftKeyRow`, `SfxUnits`
+and the stylesheet `SfxForge.uss`) is in the package's `Editor/UI` folder, with a `README.md` that says how to use
+it for an inspector of your own.
 
 ---
 
@@ -242,7 +332,8 @@ LFO RATE 50 ≈ 1 Hz, 105 ≈ 11 Hz.
 ### The five engines, and what A and B mean
 
 `fmRatio` and `fmDepth` are named after their job in the FM engines. In the other engines they do something else.
-`SfxPatch.Label(param, engine)` gives the right name; the Inspector uses it.
+`SfxPatch.Label(param, engine)` gives the name in the table below. The Inspector writes the device's own, shorter
+words (FM RATIO, ARP STEP, GRAIN AMT, POSITION …).
 
 | `SfxEngine` | On the device | What it is | A = `fmRatio` | B = `fmDepth` | Good for |
 |---|---|---|---|---|---|
@@ -279,17 +370,50 @@ variation.Mutate(rng);
 
 ### The patch as an asset: SfxPreset
 
-**Assets > Create > SFX Forge > Preset** makes an `SfxPreset`. Its Inspector has the engine, a slider for every value
-(named for the engine), and:
+**Assets > Create > SFX Forge > Preset** makes an `SfxPreset`. Its Inspector is the device's sound page
+([the pictures, and how a knob is turned](#the-inspectors-look-like-the-device)). From the top:
 
-| Control | What it does |
+| Part | What it is |
 |---|---|
-| **Play** | plays it through the editor's speakers, with the engine and its effects |
-| **Mutate** | a variation. Undo takes it back |
-| **Bake WAV** | writes a stereo 16-bit `.wav` next to the asset |
-| **Play when a value changes** | you hear every slider move |
-| **Hold Seconds** | shown for a held sound: how long a baked clip or a preview holds it (`holdSeconds`, default 1.5) |
-| **Send to pad** · **Play on device** | shown while a device is connected ([section 6](#6-from-the-device-to-the-game)) |
+| **The top line** | a pad's number, the asset's name, the engine, the link dot. The number is the pad of the device that SEND goes to: a click on it opens a menu of the 16 pads. It is one choice for all presets, and it is not saved |
+| **The page tabs** | OSC · TONE · FILTER · WAVE · ENV · LFO · FX. WAVE is dim, and cannot be opened, unless the engine is WAVETABLE |
+| **Four value tiles** | the page's values, two above the picture and two below, numbered 1 – 4 as the device's encoders |
+| **The picture** | the sound's waveform as the device draws it, and how long it is (`0.14s long`) |
+| **HOLD** | shown for a held sound only: how long a baked clip or a preview holds it (`holdSeconds`; 0.05 to 12 seconds, default 1.50 s) |
+| **The soft keys** | two rows, below |
+
+What is on each page. Knob 1 is top left, 2 top right, 3 bottom left, 4 bottom right:
+
+| Page | 1 | 2 | 3 | 4 | The white line over the picture |
+|---|---|---|---|---|---|
+| **OSC** | ENGINE | FREQ | PITCH ENV | ENV TIME | none: "the whole sound" |
+| **TONE** | **A** | **B** | NOISE | CRUSH | 10 ms of the wave itself, taken where the sound is loud |
+| **FILTER** | CUTOFF | RESO | FILTER ENV | F.ENV TIME | the filter's curve; with FOLEY, the noise's band |
+| **WAVE** | TABLE | SPREAD | | | 10 ms of the wave itself |
+| **ENV** | ATTACK | DECAY | SUSTAIN | RELEASE | the envelope: "a one-shot", or "held, then released" with a thin upright line where it is let go |
+| **LFO** | LFO RATE | > PITCH | > FILTER | > TIMBRE | the slow wave; dim, "LFO: off", while none of the three depths is set |
+| **FX** | CHORUS | DELAY | REVERB | LEVEL | none |
+
+A and B carry the engine's own names: FM RATIO and FM DEPTH, ARP STEP and ARP SPEED (UI BLIP), GRAIN RATE and
+GRAIN AMT (FOLEY), POSITION and WARP (WAVETABLE). With FOLEY, CUTOFF reads BAND. The values are written in the
+units of the table above: FREQ and CUTOFF in Hz or kHz, the times in ms or s, PITCH ENV and FILTER ENV as −64 … +63
+around 0, A, B and LEVEL as the bare number, SUSTAIN and CRUSH as `OFF` at 0, the rest in per cent.
+
+| Soft key | What it does |
+|---|---|
+| **PLAY** | plays the sound through the editor's speakers, with the engine and its effects. A held sound is held for HOLD |
+| **MUTATE** | a variation: every value moves by up to 15 % (`SfxPatch.Mutate`) |
+| **UNDO** | Unity's own Undo, lit only while Unity's next undo step is a change made to this sound here. Ctrl+Z does the same |
+| **RANDOM** | a new one-shot from nothing, inside ranges that stay audible. The engine changes too |
+| **BAKE WAV** | writes a stereo 16-bit `.wav` next to the asset |
+| **SEND** | sends the patch to the chosen pad of the device. Dark while no device is connected ([section 6](#6-from-the-device-to-the-game)) |
+| **HEAR CHANGES** | a switch, on at first: the sound plays a moment after a value changed. Not in Play mode |
+| **PLAY ON DEVICE** | sends the patch to the chosen pad and plays it there. Dark while no device is connected |
+| **SEND CHANGES** | a switch, off at first: the patch is sent to that pad a moment after every change |
+
+Under the keys the panel says LINKED, with the port SEND goes to, or NOT CONNECTED. Without the native library
+(anything but Windows x64) PLAY and BAKE WAV are dark and the picture's place says NATIVE LIBRARY NOT FOUND; the
+values can still be edited and sent.
 
 A preset edited in Play mode is heard at once on an `SfxPlayer` that is sounding it. A baked clip does not change.
 
@@ -401,8 +525,9 @@ value. Put the `SfxPlayer` into its `localPlayers`. The demo's hovercraft engine
 ## 5. Music
 
 An `SfxMusicPlayer` plays an `SfxSong`: 16 instruments and a sequenced song, made on the device
-([MANUAL sections 9 – 13](MANUAL.md#9-tutorial-a-beat)). The package cannot edit a song. It plays one, and lets the
-game shape it as it runs.
+([MANUAL sections 9 – 13](MANUAL.md#9-tutorial-a-beat)). The package cannot write a song: steps, patterns and the
+arrangement are made on the device. It plays one, shows it, and lets the game shape it as it runs. Five numbers of
+a song can be changed in its Inspector ([below](#the-song-in-the-inspector)).
 
 ### A first song
 
@@ -411,7 +536,7 @@ demo song. Every example in this section, recipes 6 to 10 and the showcase use i
 
 | | Do this | What happens |
 |---|---|---|
-| **1** | Import the sample "Showcase" (Package Manager > SFX Forge > Samples) and find `Song/DemoSong.asset` in the imported folder | an `SfxSong` named DemoSong appears. Its Inspector shows Tempo 120 BPM and the 16 sounds, each with a Play button |
+| **1** | Import the sample "Showcase" (Package Manager > SFX Forge > Samples) and find `Song/DemoSong.asset` in the imported folder | an `SfxSong` named DemoSong appears. Its Inspector shows TEMPO 120 BPM, the patterns A – H and a row of steps for each of the 16 sounds; a click on a sound's name plays it |
 | **2** | Make an empty GameObject and add the component **SfxMusicPlayer** | Unity adds an `AudioSource` with it |
 | **3** | Drag DemoSong onto the player's **Song** field. Leave `playOnEnable` on and `intensity` at 1 | |
 | **4** | Press Play | the whole band plays: drums, FM bass, FM keys, strings, then brass, bells and choir as the song goes on |
@@ -443,6 +568,48 @@ music.intensity = danger01;            // every frame
 music.CuePattern(2);                   // pattern C, from the next bar line
 music.PlaySound(13, 0.9f, 76);         // the song's sound 14, as the note E5, on top of the music
 ```
+
+### The song in the Inspector
+
+![The song's MIX page](img/unity-inspector-song-mix.png)
+
+*The Inspector of the demo song, page MIX: a tile for each sound with its fader (the mark is 100, as designed) and
+its pan. Like every picture of the editor UI in this manual, it is the panel's elements rendered to a texture by
+the tests, not a photograph of the Inspector.*
+
+Select an `SfxSong`. From the top ([the STEPS page is pictured in section 2](#the-inspectors-look-like-the-device)):
+
+| Part | What it shows | Editable |
+|---|---|---|
+| **The top line** | the chosen sound's number, the asset's name, that sound's engine, the link dot | |
+| **TEMPO · STEPS · SWING · CHAIN** | the song's four numbers. CHAIN reads "(unused)" while the song has an arrangement | **TEMPO**, **SWING** |
+| **Patterns A – H** | a tile each; along its foot, how many sounds play on each step. A click looks at that pattern | |
+| **ARRANGEMENT** | the bars as a row of letters, or what the song does without one. A click on a bar looks at its pattern | |
+| **STEPS** | a row for each sound over the pattern looked at: a step is as high as it is hard, a line says how long it holds, and the chosen sound's notes are written on its steps. A row is dim while its sound's layer is silent at the INTENSITY below, or the sound is muted. A click on a name chooses the sound and plays it. Under the rows: INTENSITY, with a mark for every sound's LAYER, and the chosen sound's LAYER as a bar | INTENSITY can be dragged, but it is not in the song |
+| **MIX** | a tile for each sound: fader, pan, muted or not. A click chooses the sound and plays it | |
+| **MASTER** | two drawings, the delay's echoes and the reverb's fading, and DELAY TIME, FEEDBACK, ROOM SIZE, DAMPING, DRIVE | |
+| **AUTO** | a block for every automation lane: the sound, the knob it moves, its points over the pattern looked at and their range, or in which patterns it moves | |
+| **LAYER · VOLUME · PAN** | the chosen sound's layer mark and its place in the song's mix | all three |
+| **The line under them** | the chosen sound's steps in words: a note, `x` for a step as designed, `·` for a rest | |
+
+![The song's AUTO page](img/unity-inspector-song-auto.png)
+
+*Page AUTO with pattern F looked at, rendered by the tests in the same way: the FM bass's cutoff rises over the bar;
+the second lane has no points in F.*
+
+| Soft key | What it does |
+|---|---|
+| **PLAY SOUND** | plays the chosen sound through the editor's speakers |
+| **PLAY BAR** | plays the pattern looked at, once, as the game would at the INTENSITY set on the STEPS page, with the song's mix and effects (`SfxSongPanel.RenderBar`) |
+| **STOP** | silence |
+| **SEND** | replaces the 16 sounds and the song on the device. Dark while no device is connected, and for a song in an older format ([section 6](#the-song-formats-the-package-reads)) |
+
+The five numbers are written into the packed song (`SfxSong.data`) through Unity's `SerializedObject`, so Undo
+takes them back. An `SfxMusicPlayer` that is already playing keeps the song it took until its next `Reload()` or
+start. VOLUME and PAN only show in a song from before the mixer (`HasMix` false). Everything else in this
+Inspector is read through `SfxSong`'s accessors ([section 10](#sfxsong-scriptableobject)) and cannot be changed
+here: for that, send the song to the device, change it there, and fetch it back. With several songs selected, or
+an empty one, the Inspector only says so.
 
 ### Intensity and layers
 
@@ -598,7 +765,8 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 >   sent in the same session, but the page that was open does not show it, so nobody saw it arrive.
 >
 > **Not tested:** the hardware and the plugin; pads and encoders coming *from* the device (`onPad`, `onEncoder`,
-> `SfxEncoderBinding`); `SendPatch`; the SFX Forge window's buttons, which nobody has clicked against a device.
+> `SfxEncoderBinding`); `SendPatch`; the SFX Forge window and the two Inspectors, whose keys nobody has pressed
+> against a device. The window has only been shown a model filled in by its own tests.
 >
 > **Found by these tests**, all three in how the emulator moves MIDI, none of them in the hardware's path:
 > - Its MIDI output sometimes delivers two neighbouring SysEx messages in the wrong order: 3 of the first 60 song
@@ -622,15 +790,30 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 
 ### The SFX Forge window
 
-**Window > SFX Forge.**
+**Window > SFX Forge.** It is drawn as the device's LINK page ([pictured in section 2](#the-inspectors-look-like-the-device)).
+From the top:
 
 | Part | What it does |
 |---|---|
-| **Connection** | choose **From device** and **To device**, then **Connect**. **Refresh ports** reads the list again. The choice is remembered, and the editor reconnects after scripts reload |
-| **Device** | 16 buttons. **Pads play**: a click plays that pad on the device. **Pads fetch their patch**: a click asks for it. A text field and **Show on device** write on the device's top line |
-| **Patches from the device** | what arrived, newest first, each with **Play** and **Save** / **Show**. With the toggle on, a patch is saved as soon as it arrives, into **Folder** (default `Assets/SfxForge`), named like `Pad03_SciFiFm` |
-| **Music** | **Fetch the song** asks for the 16 sounds and the song; they arrive as an `SfxSong` asset named `Song` |
-| **Last messages in** | the last six MIDI messages, as hex |
+| **The top line** | the pad touched last, here or on the device, the engine of the patch that came from it, and the link dot |
+| **FROM THE DEVICE** | six bars: what the device's knobs 1 – 4, A and B sent last on its LINK page (CC 20 – 25). `-` until one has sent |
+| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows) |
+| **PADS PLAY** · **PADS FETCH THEIR PATCH** | two tabs over 16 pad tiles. On the first, a pad plays on the device for as long as the mouse holds it. On the second, a click asks the device for that pad's patch. A pad whose patch has come carries its engine's short name and colour. The pads need the port TO DEVICE |
+| **The text field** · **SHOW ON DEVICE** | writes up to 24 characters on the device's top line. ENTER in the field does the same |
+| **PATCHES FROM THE DEVICE** | what arrived, newest first (the last 32), each a tile: pad number, engine, time, the sound's waveform, **PLAY** and **SAVE** (**SHOW** once it is an asset). With **SAVE AS THEY ARRIVE** on (green; it is on at first), a patch is saved as soon as it arrives, into **FOLDER** (default `Assets/SfxForge`), named like `Pad03_SciFiFm` |
+| **LAST MESSAGES IN** | the last six MIDI messages, as hex |
+| **CONNECT** / **DISCONNECT** | opens or closes the two ports |
+| **REFRESH PORTS** | reads the list of ports again |
+| **FETCH SONG** | asks for the 16 sounds and the song; they arrive as an `SfxSong` asset named `Song` in the folder |
+| **SHOW SONG** | points at the song fetched last, while the window is open |
+
+![The SFX Forge window, not connected](img/unity-inspector-window-off.png)
+
+*The window before CONNECT, rendered by its tests from a model in which two ports named VIBE FM exist. It is not a
+photograph of the window. What needs the device is dark.*
+
+The window was tested only in that way: shown a model, with a test standing in for the link. Its menus were not
+opened, and none of its keys was pressed against a device or the emulator.
 
 ### Receiving a patch or a song
 
@@ -712,8 +895,8 @@ The ports chosen in the window are stored in PlayerPrefs. In a built player, nam
 | 1 | 2455 | before the mixer |
 
 `SfxSong.IsValid` accepts all five and `SfxMusicPlayer` plays them. **Over MIDI only the current format travels**:
-`SfxLink.SendSong` and the song's **Send to device** button need a 7699-byte song, and only a song in 39 pieces is
-received.
+`SfxLink.SendSong` and the **SEND** key of a song's Inspector need a 7699-byte song, and only a song in 39 pieces is
+received. For an older song the Inspector says AN OLDER SONG and SEND stays dark.
 
 ### A song without MIDI
 
@@ -734,9 +917,8 @@ song.Set(sounds, packed);
 AssetDatabase.CreateAsset(song, "Assets/MySong.asset");
 ```
 
-The Inspector of an `SfxSong` shows its tempo, pattern length, chain, and each sound's engine and layer, with a
-**Play** button for each sound. An `SfxSong` made with **Assets > Create > SFX Forge > Song** is empty until a song is
-put into it.
+The Inspector of an `SfxSong` shows the whole song ([section 5](#the-song-in-the-inspector)). An `SfxSong` made with
+**Assets > Create > SFX Forge > Song** is empty until a song is put into it; its Inspector then says NO SONG YET.
 
 ---
 
@@ -1325,7 +1507,7 @@ public class ImpactSound : MonoBehaviour
 ### 12. Exporting a WAV in the editor
 
 Put this in an `Editor` folder. Select one or more presets, then **Assets > SFX Forge > Export Selected Presets as
-WAV**. The **Bake WAV** button of a preset does the same for one preset; this also lets you choose the note.
+WAV**. The **BAKE WAV** key of a preset's Inspector does the same for the presets selected; this also lets you choose the note.
 
 ```csharp
 using CatSplat.SfxForge;
@@ -1426,6 +1608,42 @@ Four rules that make such tests reliable:
 The commands, headless, are in [the showcase's README](../Samples~/Showcase/README.md#check-it-test-it-rebuild-it).
 Only one Unity process can have the project open.
 
+### The inspectors are tested in a project of their own
+
+The editor UI has its own tests: 88 EditMode tests in a small Unity project in the source repository,
+`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 88 passed
+with Unity 6000.3.8f1 on Windows x64.
+
+| What is checked | How |
+|---|---|
+| every value's text is the device's | `SfxUnits` against values read off the device's own pictures, and against a table of the firmware's arithmetic worked out in 32-bit floats for every curved value |
+| the pages hold the engine and all 25 values, once | counted |
+| a knob changes the asset, marks it changed, and Undo takes it back | the panel's own calls on an `SfxPreset` asset, then Unity's Undo |
+| the UNDO key takes back only what was done in that panel | another change is made in between |
+| the mouse on a tile, on the song and on the window | pointer and wheel events sent to the panel the elements stand in |
+| typed values | the texts `SfxUnits.TryParse` understands, and the panel's own call for a typed text. No key was pressed in a field |
+| the picture is the device's dry voice, and as long as the device says | compared with the lengths written on two of the device's own pictures |
+| the song panel shows what the song's bytes say | the demo song, and the same song in its older formats |
+| the five numbers of a song change the asset, and Undo takes them back | on the demo song's asset |
+| one bar sounds, and less intensity is less | `SfxSongPanel.RenderBar`, by what it renders |
+| the window shows its model | not connected, without ports, without MIDI, linked with patches and messages; and without the native library |
+
+**The pictures.** The same run writes 51 pictures to `out/inspector-shots` in the source repository: the sound
+inspector on every page, the song inspector on every page, the window in its states and a sheet of the kit, each
+at several widths. A picture is the element tree and stylesheet the Inspector hosts, put into a panel that renders
+into a texture. The eight pictures of the editor UI in this manual are copies of eight of them.
+
+**What these tests do not show.**
+
+| | |
+|---|---|
+| **Not the Inspector itself** | the panels were never hosted by a real Inspector or by the real window. How Unity's own Inspector lays them out, scrolls them and themes what is around them has not been seen by anyone |
+| **No menus** | the menus of ENGINE, TABLE, the pad and the MIDI ports were never opened |
+| **No typing** | nobody typed into a value's field; the code behind it was called directly |
+| **No device** | SEND, PLAY ON DEVICE, SEND CHANGES, the window's pads, its text and FETCH SONG were not tried against a device or the emulator. The link tests of [section 6](#6-from-the-device-to-the-game) call `SfxLink` directly, not these keys |
+| **No ears** | PLAY, PLAY SOUND and PLAY BAR were not listened to |
+| **One Unity** | 6000.3.8f1 only, on Windows x64 |
+
 ### The mix is measured, not heard
 
 Unity limits its output to full scale before a script can read it. A recording made at listener volume 1 can
@@ -1474,7 +1692,7 @@ What this does not tell you:
 | **Memory** | each `SfxPlayer` and `SfxMusicPlayer` holds its own engine with its effects: about 0.6 MB |
 | **Baking blocks** | it renders on the calling thread; a clip is at most 12 seconds |
 | **`volume` is not smoothed** | on either player. Fade a sound with `level`; ramp the music's `volume` yourself |
-| **No song editor** | a song is made on the device. In Unity you play it and shape it |
+| **No song editor** | a song is made on the device. In Unity you play it, look at it and shape it; its Inspector changes TEMPO, SWING and a sound's LAYER, VOLUME and PAN, nothing else |
 | **What the engine itself cannot do** | [MANUAL section 18](MANUAL.md#18-what-it-does-not-do): no samples, 16 steps a bar, 8 patterns, 16 voices |
 
 ### The silence checklist
@@ -1503,8 +1721,14 @@ What this does not tell you:
 | transposing a noise does nothing | pure noise has no pitch. Change its band (`filterCutoff`), or the AudioSource's pitch for a baked clip |
 | a cued pattern lasts only a bar or two | the song has an arrangement that contains it, and walks on. Cue it again on every bar |
 | a note by hand is off the beat | `PlaySound` is not quantised. Wait for `Step` or `Bar` to change |
-| "could not open every MIDI port" | another program holds the port, or its name changed. Choose it again in **Window > SFX Forge** |
-| the window lists no ports | no MIDI device and no virtual cable. The window says what to install |
+| "could not open every MIDI port" | another program holds the port, or its name changed. Choose it again in **Window > SFX Forge**: a click on the FROM DEVICE or TO DEVICE tile, while not connected |
+| a port tile says NOT FOUND | the port chosen earlier is not there now. Start the device or the virtual cable, then **REFRESH PORTS** |
+| the window says NO MIDI PORTS | no MIDI device and no virtual cable. The window says what to install |
+| SEND, PLAY ON DEVICE or the window's pads are dark | no MIDI output is open: **CONNECT** in the window first |
+| PLAY and BAKE WAV are dark, and the picture says NATIVE LIBRARY NOT FOUND | not Windows x64: the engine is not there. The values can still be edited |
+| the UNDO key is dark | Unity's next undo step is not a change made to this sound here. Ctrl+Z undoes whatever it is |
+| a value in the song's Inspector does not turn | it is one of those that only show (an outline, a dim ring): it is made on the device |
+| the WAVE page cannot be opened | it is for the WAVETABLE engine only |
 | the emulator in the browser sends nothing | its tab is hidden or minimized: the browser throttles it and the firmware stops sending. Keep the tab visible. Also check that **MIDI** is on in its top bar and **MIDI out** names the port Unity listens on |
 | the browser never offers MIDI | Web MIDI needs Chrome or Edge, and the page must be allowed to use MIDI devices (with SysEx) |
 | a song never arrives, though messages come in | an old package or a firmware before 1.3.1: they wanted a song's pieces once each and in order, and the emulator's MIDI swaps and repeats messages. Update both |
@@ -1588,6 +1812,25 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `int AutomationLanes(int sound)` | |
 | `void Set(SfxPatch[] newSounds, byte[] packedSong)` | fill the asset |
 
+Reading the packed song, as the Inspector does. None of these changes it. `pattern` is 0 … 7, `sound` 0 … 15,
+`step` 0 … 15, `lane` 0 … 23:
+
+| Member | |
+|---|---|
+| `const int MaxSteps = 16`, `Lanes = 24`, `MaxBars = 32` | the most steps of a pattern, the automation lanes of a song, the most bars of an arrangement |
+| `int Swing` | 0 … 100 |
+| `int Scale` | the scale notes were entered in on the device: 0 chromatic, 1 major, 2 minor, 3 pentatonic |
+| `int LayerRaw(int sound)` · `int VolumeRaw(int sound)` · `int PanRaw(int sound)` | as the song keeps them, 0 … 127: layer 0 = always, volume 100 = as designed, pan 64 = the middle |
+| `bool Muted(int sound)` | muted in the song's mix |
+| `int Master(SfxMaster what)` | `DelayTime` 0 … 5, the others 0 … 127. For a song from before the mixer: the values it plays with |
+| `bool StepOn(int pattern, int sound, int step)` | the sound plays on that step |
+| `int StepNote(int pattern, int sound, int step)` | 0 = the sound as designed, else a MIDI note |
+| `int StepVelocity(int pattern, int sound, int step)` | 0 … 7, soft … full; 5 in a song from before velocity |
+| `int StepLength(int pattern, int sound, int step)` | how many steps it holds; 0 = by itself |
+| `int LaneSound(int lane)` | the sound a lane moves a knob of; −1: the lane is free |
+| `int LaneTarget(int lane)` | which knob: 0 none, 1 … 25 the sound's own values (`SfxParam` + 1), then its fader, its pan and the master's five |
+| `int LanePoint(int pattern, int lane, int step)` | −1: no point there (the one before holds), else 0 … 126 |
+
 ### SfxNative (static)
 
 | Member | |
@@ -1659,8 +1902,16 @@ The `Player…` and voice functions under them are what the two components call.
 
 | Member | |
 |---|---|
-| **Window > SFX Forge** | `SfxForgeWindow` |
+| **Window > SFX Forge** | `SfxForgeWindow`. `SfxForgeWindow.Build(SfxForgeModel model)` gives the whole window as one `VisualElement` (an `SfxForgeView`) over a model you fill: it touches no MIDI port |
+| `SfxPresetEditor.Build(SerializedObject)` · `SfxSongEditor.Build(SerializedObject)` | a sound's or a song's Inspector as one `VisualElement` (`SfxPresetPanel`, `SfxSongPanel`): what `CreateInspectorGUI` returns, and what a window or a test of yours can host |
+| `SfxPresetPanel`: `Page`, `Nudge(tile, steps)`, `Typed(tile, text)`, `ResetValue(tile)`, `SetHold(…)`, `Mutate()`, `Randomize()`, `UndoOwn()`, `static RandomPatch(System.Random)` | what the tiles and keys of a sound call |
+| `SfxSongPanel`: `Page`, `Pattern`, `Sound`, `Intensity`, `SetTempo(bpm)`, `SetSwing(swing)`, `SetLayer(sound, value)`, `SetVolume(sound, value)`, `SetPan(sound, value)` | what is looked at, and the five numbers that can be changed (the last three 0 … 127) |
+| `static float[] SfxSongPanel.RenderBar(SfxSong song, int pattern, float intensity01, int sampleRate = 48000)` | one bar as the game would play it, with what rings after it: stereo, L R L R …; null without the native library |
+| `SfxUnits.ParamText(SfxParam, int value)` · `ParamName(SfxParam, SfxEngine)` · `TryParse(SfxParam, string typed, out int value)` | a value as the device writes it, its name there, and a typed text back to a value |
+| `SfxPicture.Render(SfxPatch patch, float[] into)` | the samples the device draws a sound from (one dry voice, 24 kHz, `SfxPicture.Max` samples at most); returns how many |
+| the kit: `SfxUI`, `SfxColors`, `Knob`, `ValueTile`, `WaveformView`, `PadGrid`, `SoftKey`, `SoftKeyRow`, `PageTabs` … | the pieces the panels are built from; `Editor/UI/README.md` in the package describes each |
 | `SfxForgeEditorLink.Preview(SfxPatch patch, float holdSeconds = 0.8f)` | plays a patch in the editor |
+| `SfxForgeEditorLink.PreviewSamples(float[] interleaved, int sampleRate)` · `StopPreview()` | plays stereo samples in the preview's place · silence |
 | `SfxForgeEditorLink.BakeWav(SfxPreset preset)` | a `.wav` next to the asset; returns the imported clip |
 | `SfxForgeEditorLink.CreatePreset(SfxPatch patch, string folder, string name)` | a preset asset |
 | `SfxForgeEditorLink.CreateSong(SfxPatch[] sounds, byte[] packedSong, string folder, string name)` | a song asset |

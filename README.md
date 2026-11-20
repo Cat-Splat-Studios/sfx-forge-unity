@@ -44,6 +44,39 @@ Where a video shows the package id `com.catsplat.sfxforge`, read `com.catsplatst
 `unity/Demo/Assets/Showcase`, read the imported sample ([The showcase sample](#the-showcase-sample)); where it shows `docs/UNITY.md` or "the
 manual in the repository", read [`Documentation~/UNITY.md`](Documentation~/UNITY.md).
 
+## In the editor: the device's own look
+
+The Inspector of a sound, the Inspector of a song and the window **Window > SFX Forge** are drawn as the device
+draws its display: the firmware's colours, its pages of four values, a knob for each value, every value in the
+device's units, the sound's waveform, and rows of soft keys.
+
+![The Inspector of a sound, page OSC](Documentation~/img/unity-inspector-sound-osc.png)
+
+**A sound** (`SfxPreset`). Seven pages, OSC TONE FILTER WAVE ENV LFO FX, hold the engine and all 25 values. Drag a
+value up or down to turn it, or turn the wheel over its ring; double-click the value to type one, double-click the
+ring to put it back. PLAY, MUTATE, UNDO, RANDOM and BAKE WAV work on the asset; SEND and PLAY ON DEVICE need the
+link. The picture is the sound as the device draws it: one voice, without its effects.
+
+![The Inspector of a song, page STEPS](Documentation~/img/unity-inspector-song.png)
+
+**A song** (`SfxSong`). Tempo, steps, swing and chain; the patterns A – H; the arrangement; and four pages: STEPS
+(the step grid, with INTENSITY and every sound's LAYER mark under it), MIX, MASTER and AUTO. It is a viewer: here
+you can change TEMPO, SWING and a sound's LAYER, VOLUME and PAN. Everything else only shows, and is made on the
+device.
+
+![The SFX Forge window, shown with a filled-in model](Documentation~/img/unity-inspector-window.png)
+
+**The window.** The link's state and the two MIDI ports, what the device's knobs send, its 16 pads as tiles that
+play or fetch, a text for the device's top line, the patches that arrived as tiles with their waveform, the last
+messages, and CONNECT, REFRESH PORTS, FETCH SONG.
+
+**These three pictures are not photographs of the Unity editor.** They are the same element tree and stylesheet
+the Inspector hosts, rendered in a panel to a texture by the editor UI's tests (88 EditMode tests, in the source
+repository). Nobody has opened the real Inspector or the real window yet. The window's picture shows a model the
+test filled in: its ports, patches and messages are the test's, and no device was connected. Also not tried: the
+menus (ENGINE, TABLE, the pad, the MIDI ports), typing into a value, and anything sent to a device from these
+panels. [The manual has more pictures, and what each control does](Documentation~/UNITY.md#the-inspectors-look-like-the-device).
+
 ## From the device to the game in five steps
 
 ![What flows between the device and Unity](Documentation~/img/unity-link.png)
@@ -56,11 +89,11 @@ the browser. Hit a pad, turn the knobs, press **F2 MUTATE** for variations; writ
 
 **2. Connect it over MIDI.** Unity talks to the device over two MIDI ports, one each way. Without the hardware, the
 device is the emulator or the plugin, and the two ports are a virtual MIDI cable (for example loopMIDI). In Unity:
-**Window > SFX Forge**, choose **From device** and **To device**, press **Connect**.
+**Window > SFX Forge**, click the **FROM DEVICE** and **TO DEVICE** tiles to choose the ports, press **CONNECT**.
 
 **3. EXPORT a sound, SEND the song.** On a sound page, **F5 EXPORT** sends the selected sound: one patch. On the SONG
 page, **F5 SEND** sends everything: the 16 patches, then the song with its arrangement, layers, mix and automation
-in 39 pieces (55 messages in all). Unity can also ask: **Fetch the song** in the window, or from code:
+in 39 pieces (55 messages in all). Unity can also ask: **FETCH SONG** in the window, or from code:
 
 ```csharp
 SfxLink.Shared.PatchReceived += (slot, patch) => Debug.Log($"pad {slot + 1}: {patch.engine}");
@@ -75,8 +108,9 @@ built game, put an `SfxForgeLink` component in the scene: it opens the ports (in
 `inputPort` and `outputPort`) and polls every frame.
 
 **4. It arrives in Unity as an asset.** The window saves a patch as an `SfxPreset` (into `Assets/SfxForge`, named like
-`Pad03_SciFiFm`) and a song as an `SfxSong` named `Song`. A preset's Inspector has a slider for every value, **Play**,
-**Mutate** and **Bake WAV**. A sound can also be written in code, as an engine and up to 25 numbers:
+`Pad03_SciFiFm`) and a song as an `SfxSong` named `Song`. A preset's Inspector has the device's pages with a knob for
+every value, and **PLAY**, **MUTATE** and **BAKE WAV**. A sound can also be written in code, as an engine and up to 25
+numbers:
 
 ```csharp
 SfxPatch coin = SfxPatch.Create(SfxEngine.UiBlip, 86, 64, 0, 26, 60, 0, 127, 0, 62, 0);
@@ -204,6 +238,10 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   from the device to Unity, a song and its sounds from Unity to the device, the game's intensity driving the device,
   SEND and EXPORT pressed on the device arriving in a running game.
 - The code in the manual was compiled against the package.
+- The editor UI: 88 EditMode tests in a project of their own build the two Inspectors and the window as elements,
+  call what their knobs and keys call, send them mouse and wheel events, check the asset and Undo afterwards, and
+  compare every value's text with the device's. They also render the pictures of the editor UI on this page and
+  in the manual; those are not photographs of the editor.
 
 Tested on this package as generated, on the same machine, with the editor run headless:
 
@@ -219,7 +257,13 @@ Tested on this package as generated, on the same machine, with the editor run he
   With the Test Framework (1.6.0) added: 20 Play mode tests passed, none failed, and 14 were skipped, which are the
   capture and link takes that only run when asked for by name. The Windows build made from there passed its probe:
   native library found, 7 bars of the song, 14 of 14 baked clips, not silent; the output peak was 0.55 of full scale
-  in one build and 0.62 in a second one, made after the plugin's import settings were written down.
+  in one build and 0.62 in a second one, made after the plugin's import settings were written down. With the new
+  editor UI in the package all of this was run again, with the same counts; that build's peak was 0.58, and it
+  holds no `CatSplat.SfxForge.Editor.dll`.
+- **The editor UI.** The source repository's test project of the editor UI was copied and pointed at this package
+  by a `file:` line under the id `com.catsplatstudios.sfxforge`: 88 of 88 EditMode tests passed, the stylesheet was found (it is
+  looked up by its GUID, not by a path), and the 51 pictures the tests rendered are byte for byte the ones rendered
+  from the source. That is still a test panel: the Inspector and the window themselves were not opened.
 
 Not tested:
 
@@ -227,8 +271,10 @@ Not tested:
   and RMS of recorded takes, the build's probe, tests that read the output buffer. They say that sound comes out and
   does not clip. They do not say that it sounds good or is balanced.
 - Hardware, and the VIBE FM plugin. The link was only run against the emulator. Pads and encoders coming from the
-  device (`onPad`, `onEncoder`, `SfxEncoderBinding`), `SendPatch`, and the buttons of the SFX Forge window were not
-  tried against a device.
+  device (`onPad`, `onEncoder`, `SfxEncoderBinding`), `SendPatch`, and the keys of the SFX Forge window and of the
+  two Inspectors (SEND, PLAY ON DEVICE, the pads, FETCH SONG) were not tried against a device.
+- **The Inspectors and the window in the editor itself.** Nobody has opened them: their tests host the same
+  elements in a test panel. Their menus were never opened, and nobody typed into a value.
 - Any Unity version other than 6000.3.8f1, any platform other than Windows x64, any render pipeline other than
   the built-in one. A gamepad.
 - The Package Manager's window itself: nobody clicked **Add package from disk**, **Import** or the menu items; the

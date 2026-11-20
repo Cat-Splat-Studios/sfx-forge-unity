@@ -178,7 +178,7 @@ and is started with note 0, at the patch's own FREQ.
 ## 5. Tuning a sound
 
 1. Open `SoundLibrary.cs`, change a value of the patch (the header comment explains each one), rebuild the scene.
-2. Or, in play mode, select `Generated/Presets/<name>.asset` and move a slider: live sounds (Chime, roll, wind,
+2. Or, in play mode, select `Generated/Presets/<name>.asset` and turn a knob in its Inspector (drag a value up or down): live sounds (Chime, roll, wind,
    rev) follow at once; baked sounds are re-rendered on the next start.
 3. Routes, notes and volumes are the table at the bottom of `SoundLibrary.cs`; behaviour numbers are on the three
    components under `Audio`.

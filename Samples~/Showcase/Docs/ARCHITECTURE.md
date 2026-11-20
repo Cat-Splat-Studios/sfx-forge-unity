@@ -282,7 +282,7 @@ version, with every step, is `../README.md` ("Use SFX FORGE in your own Unity ga
    `SfxPatch.Create(engine, …)` (through the named-argument wrapper `Make`, so every value says what it
    is), and one table gives each its route, the MIDI note it is tuned to and its volume. A bare
    `new SfxPatch()` is silent – always start from `Create`. To tune a sound, change a number there and
-   rebuild, or move a slider on `Generated/Presets/<name>.asset` in play mode.
+   rebuild, or turn a knob in the Inspector of `Generated/Presets/<name>.asset` in play mode.
 
 4. **Baked or live?** `SoundRoute.cs` names the three routes; `SoundEffects.cs` and `ContinuousSounds.cs`
    show them.
