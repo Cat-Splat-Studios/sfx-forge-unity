@@ -12,7 +12,7 @@ and the Unity code live there) by `tools/make_unity_package.py`; nothing in it i
   `SfxTelemetrySender`, `SfxEncoderBinding`.
 - **Editor** (`CatSplat.SfxForge.Editor`): the window **Window > SFX Forge**, the Inspectors of presets and songs,
   `SfxForgeEditorLink`.
-- **Sample** "Showcase: Brio - First Harmonic": a one-level game whose every sound is SFX FORGE, with its own song, editor checks, Play
+- **Sample** "Showcase": a one-level game whose every sound is SFX FORGE, with its own song, editor checks, Play
   mode tests, a Windows build command and a self-check in the built game.
 - **Documentation~**: the Unity manual, the device's manual with the cheat sheet, the link's protocol, five videos.
 - **Firmware~**: the built instrument, firmware 1.3.1.
@@ -27,5 +27,9 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
   plugin.
 - Nobody has listened to the audio. Levels and "sound comes out" are measured (peaks, RMS, the build's probe).
 - If a song transfer breaks off and a different song follows within two seconds, pieces of the two can be mixed.
-- Not yet tried when this was written: this package added to a fresh project, the sample imported through the
-  Package Manager, a project without the Test Framework.
+- Tried on the generated package, headless: added to an empty project from disk, the sample imported with the
+  Package Manager's import call, with and without the Test Framework, its checks, tests, Windows build and the
+  build's probe (the README, "What is tested", has the numbers). Not tried: the Package Manager's buttons clicked
+  by hand, a git URL, a project with another render pipeline or the Input System alone.
+- Straight after the import, one of the sample's 32 editor checks fails (the scene is not in the build settings)
+  until **SFX Forge > Rebuild Showcase Scene** is run or the scene is added by hand.

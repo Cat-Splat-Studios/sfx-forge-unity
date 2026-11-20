@@ -12,7 +12,7 @@ package `com.catsplatstudios.sfxforge` and the example game built with it.
 > **Where things are.** This manual is written in the repository the package is generated from, and a few of
 > its lines name things there. In the package:
 >
-> - the showcase game is the sample "Showcase: Brio - First Harmonic" (`Samples~/Showcase`; imported, it is a folder
+> - the showcase game is the sample "Showcase" (`Samples~/Showcase`; imported, it is a folder
 >   under `Assets/Samples`). Paths such as `Scripts/Audio` are inside that folder;
 > - the firmware is `Firmware~/sfx-forge.zip`, the videos are in [`video/`](video), the MIDI protocol is in
 >   [LINK-PROTOCOL.md](LINK-PROTOCOL.md);
@@ -411,7 +411,7 @@ demo song. Every example in this section, recipes 6 to 10 and the showcase use i
 
 | | Do this | What happens |
 |---|---|---|
-| **1** | Import the sample "Showcase: Brio - First Harmonic" (Package Manager > SFX Forge > Samples) and find `Song/DemoSong.asset` in the imported folder | an `SfxSong` named DemoSong appears. Its Inspector shows Tempo 120 BPM and the 16 sounds, each with a Play button |
+| **1** | Import the sample "Showcase" (Package Manager > SFX Forge > Samples) and find `Song/DemoSong.asset` in the imported folder | an `SfxSong` named DemoSong appears. Its Inspector shows Tempo 120 BPM and the 16 sounds, each with a Play button |
 | **2** | Make an empty GameObject and add the component **SfxMusicPlayer** | Unity adds an `AudioSource` with it |
 | **3** | Drag DemoSong onto the player's **Song** field. Leave `playOnEnable` on and `intensity` at 1 | |
 | **4** | Press Play | the whole band plays: drums, FM bass, FM keys, strings, then brass, bells and choir as the song goes on |

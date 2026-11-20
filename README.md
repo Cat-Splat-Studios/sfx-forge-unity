@@ -121,10 +121,13 @@ written as patches in code, and the device's demo song with its layers following
 generated meshes; the folder holds no audio file, texture or model. It is written to be read and copied:
 `Scripts/Audio` is the example, and [its README](Samples~/Showcase/README.md) is the guide.
 
-- **Import**: Package Manager > SFX Forge > Samples > **Showcase: Brio - First Harmonic** > Import. Unity copies it under
-  `Assets/Samples`. It needs the built-in render pipeline, and **Active Input Handling** set to the legacy Input
-  Manager or Both (Project Settings > Player). Its tests are compiled only if the Test Framework package
-  (`com.unity.test-framework`) is in the project.
+- **Import**: Package Manager > SFX Forge > Samples > **Showcase** > Import. Unity copies it under
+  `Assets/Samples/SFX Forge/1.0.0/Showcase`. It needs the built-in render pipeline, and **Active Input Handling**
+  set to the legacy Input Manager or Both (Project Settings > Player). An empty project made by Unity 6000.3.8f1
+  without a template has both already. A project made from a template with another render pipeline or with the
+  Input System alone does not, and the sample was not tried there. Its tests are compiled only if the Test
+  Framework package (`com.unity.test-framework`) is in the project; an empty project does not have it (Package
+  Manager > Unity Registry > Test Framework).
 - **Play**: open `Showcase.unity` in the imported folder, press Play. Arrows or A/D run, Space jumps, Down tucks
   into a roll. A gamepad works too.
 - **Build**: **SFX Forge > Showcase > Build for Windows** writes `Builds/Brio/Brio.exe` beside `Assets`. The build
@@ -133,8 +136,11 @@ generated meshes; the folder holds no audio file, texture or model. It is writte
   seconds, measures what comes out of its AudioListener, writes a report and quits with exit code 0 or 1. `"ok": true`
   means the native library was found, the title card was left, the song ran through at least two bar lines, every baked sound has its clip, a
   jump happened and the output was not silent. It does not say how it sounds.
-- **Check and rebuild**: **SFX Forge > Rebuild Showcase Scene** writes the scene and the generated assets again and
-  adds the scene to the build settings. The headless commands are in the sample's README.
+- **Check and rebuild**: **SFX Forge > Rebuild Showcase Scene** writes the scene and the generated assets again,
+  adds the scene to the build settings and runs the sample's 32 editor checks. Straight after the import one of
+  the 32 fails: the scene is not in the project's build settings yet. Playing and the build command above do not
+  need it there; the rebuild, or adding the scene by hand, settles it. The headless commands are in the sample's
+  README.
 
 ## The manual
 
@@ -170,6 +176,21 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   SEND and EXPORT pressed on the device arriving in a running game.
 - The code in the manual was compiled against the package.
 
+Tested on this package as generated, on the same machine, with the editor run headless:
+
+- **The package alone.** An empty project made by Unity (`-createProject`: Input Manager, built-in render pipeline,
+  no Test Framework) with the package added by a `file:` line in `Packages/manifest.json`: it compiles, and the
+  first script of the manual ([section 1](Documentation~/UNITY.md#1-five-minutes)) and the code on this page
+  compile in `Assets`. They were compiled, not run.
+- **The sample.** In a second such project the sample was imported with the Package Manager's own import call
+  (`UnityEditor.PackageManager.UI.Sample.Import`, what the Import button calls) and landed in
+  `Assets/Samples/SFX Forge/1.0.0/Showcase`. Without the Test Framework it compiles and the test assembly is left
+  out. As imported, 31 of the 32 editor checks pass and the one about the build settings fails, as said above. With
+  the scene in the build settings all 32 pass, on the scene as shipped and on a scene rebuilt in that project.
+  With the Test Framework (1.6.0) added: 20 Play mode tests passed, none failed, and 14 were skipped, which are the
+  capture and link takes that only run when asked for by name. The Windows build made from there passed its probe:
+  native library found, 7 bars of the song, 14 of 14 baked clips, output peak 0.55 of full scale, not silent.
+
 Not tested:
 
 - **Nobody has listened to any of it.** The levels and every "it sounds" in these pages come from measurements: peak
@@ -180,9 +201,11 @@ Not tested:
   tried against a device.
 - Any Unity version other than 6000.3.8f1, any platform other than Windows x64, any render pipeline other than
   the built-in one.
-- This package as generated here: adding it to a fresh project, importing the sample through the Package Manager,
-  and a project without the Test Framework. Those were checked on the source project's layout, not on this one, when
-  this page was written. The changelog says what was done since.
+- The Package Manager's window itself: nobody clicked **Add package from disk**, **Import** or the menu items; the
+  calls behind them were run from the command line. Installing from a git URL (there is no published repository
+  yet). A project made from a template that has another render pipeline or the Input System alone.
+- The 14 capture and link takes of the sample outside the source repository. They need that repository's scripts
+  and the emulator.
 
 ## Requirements and limits
 

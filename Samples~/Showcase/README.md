@@ -20,20 +20,22 @@ scatter when you are hit, Tuning Forks are checkpoints and the Resonator is the 
 
 ## Open it and play
 
-> **In the package.** This folder is the sample "Showcase: Brio - First Harmonic" of the package `com.catsplatstudios.sfxforge`.
+> **In the package.** This folder is the sample "Showcase" of the package `com.catsplatstudios.sfxforge`.
 > Import it from the Package Manager (SFX Forge > Samples > Import), open `Showcase.unity` in the imported
 > folder and press Play. The page below was written in the repository the package is generated from: where
 > it says `unity/Demo`, read "your project"; where it names `docs/`, `tests/`, `out/` or `.tools/`, those are
 > that repository's and are not in the package (the videos and figures are made there). The older demo it
 > mentions (`SfxDemo`) is not in the package either. The links to the manual work in the package's own
-> folder or repository, not from the imported copy under `Assets`.
+> folder or repository, not from the imported copy under `Assets`. The tests in `Tests/` are compiled
+> only when the Test Framework package (`com.unity.test-framework`) is in the project, and a new project
+> has to get the scene into its build settings once (**SFX Forge > Rebuild Showcase Scene** does it).
 
 1. Open the Unity project `unity/Demo` (Unity 6000.3.8f1).
 2. Open the scene `Assets/Showcase/Showcase.unity` and press Play.
 
 **In another place.** This page names paths as they are in the SFX FORGE repository, where the folder is
 `unity/Demo/Assets/Showcase`. Imported as the package's sample it is
-a folder under `Assets/Samples/SFX Forge/<version>/` of your own project (Unity names it after the sample), and it may be moved anywhere under `Assets`:
+`Assets/Samples/SFX Forge/<version>/Showcase` of your own project, and it may be moved anywhere under `Assets`:
 the editor script and the tests find the folder from their own assembly definition files, the song is inside it
 (`Song/`), and the game itself never looks at a path. Read `Assets/Showcase` below as "this folder" and
 `unity/Demo` as "your project". Two defaults differ outside the repository: a build goes to `Builds/Brio/` and
