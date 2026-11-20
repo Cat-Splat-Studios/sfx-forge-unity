@@ -1,0 +1,6 @@
+{
+  "name": "SfxShowcase.Gameplay",
+  "rootNamespace": "SfxShowcase.Gameplay",
+  "references": [ "SfxShowcase.Core" ],
+  "autoReferenced": false
+}

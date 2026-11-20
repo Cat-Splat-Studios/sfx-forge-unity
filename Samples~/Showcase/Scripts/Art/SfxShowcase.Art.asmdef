@@ -1,0 +1,6 @@
+{
+  "name": "SfxShowcase.Art",
+  "rootNamespace": "SfxShowcase.Art",
+  "references": [ "SfxShowcase.Core" ],
+  "autoReferenced": false
+}

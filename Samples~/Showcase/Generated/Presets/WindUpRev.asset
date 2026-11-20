@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bf0c3554e5ac694cac4de9d3fa527de, type: 3}
+  m_Name: WindUpRev
+  m_EditorClassIdentifier: CatSplat.SfxForge::CatSplat.SfxForge.SfxPreset
+  patch:
+    engine: 2
+    baseFreq: 60
+    pitchEnvAmount: 70
+    pitchEnvDecay: 30
+    fmRatio: 42
+    fmDepth: 35
+    noiseMix: 5
+    filterCutoff: 86
+    filterRes: 35
+    ampDecay: 60
+    bitcrush: 0
+    attack: 10
+    sustain: 110
+    release: 45
+    filterEnv: 64
+    filterEnvDecay: 40
+    lfoRate: 110
+    lfoPitch: 0
+    lfoFilter: 0
+    lfoTimbre: 40
+    spread: 0
+    chorus: 0
+    delay: 0
+    reverb: 0
+    level: 100
+    table: 0
+  holdSeconds: 1.5

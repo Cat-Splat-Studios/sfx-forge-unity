@@ -1,0 +1,7 @@
+{
+  "name": "SfxShowcase.Editor",
+  "rootNamespace": "SfxShowcase.Editor",
+  "references": [ "SfxShowcase.Core", "SfxShowcase.Gameplay", "SfxShowcase.Audio", "SfxShowcase.Level", "SfxShowcase.Art", "CatSplat.SfxForge", "CatSplat.SfxForge.Editor" ],
+  "includePlatforms": [ "Editor" ],
+  "autoReferenced": false
+}

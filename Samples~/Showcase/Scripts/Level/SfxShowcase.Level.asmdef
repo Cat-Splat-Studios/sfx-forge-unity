@@ -1,0 +1,6 @@
+{
+  "name": "SfxShowcase.Level",
+  "rootNamespace": "SfxShowcase.Level",
+  "references": [ "SfxShowcase.Core" ],
+  "autoReferenced": false
+}

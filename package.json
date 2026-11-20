@@ -1,0 +1,36 @@
+{
+  "name": "com.catsplatstudios.sfxforge",
+  "version": "1.0.0",
+  "displayName": "SFX Forge",
+  "description": "Plays the sounds and songs of SFX FORGE, a game-audio synthesizer for VIBE FM, in a Unity game with the device's own engine: patches written in code or exported from the device become assets, sound effects are synthesized live or baked to clips, and a song's layers follow the game. Includes a MIDI link to the device for tuning while the game runs, the manuals, and a showcase game as a sample. Windows x64 only.",
+  "unity": "6000.3",
+  "keywords": [
+    "audio",
+    "synthesizer",
+    "sound effects",
+    "procedural audio",
+    "adaptive music",
+    "midi",
+    "sysex",
+    "vibe fm"
+  ],
+  "author": {
+    "name": "Cat Splat Studios",
+    "url": "https://github.com/hisham-CSS"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.physics2d": "1.0.0"
+  },
+  "samples": [
+    {
+      "displayName": "Showcase: Brio - First Harmonic",
+      "description": "A one-level 2D platformer in which every sound is SFX FORGE at runtime: 19 sound effects written as patches in code and a song whose layers follow the player's speed. Needs the built-in render pipeline and the legacy Input Manager (or Both); its tests need the Test Framework package.",
+      "path": "Samples~/Showcase"
+    }
+  ]
+}

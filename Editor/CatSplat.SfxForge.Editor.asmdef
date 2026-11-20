@@ -1,0 +1,7 @@
+{
+  "name": "CatSplat.SfxForge.Editor",
+  "rootNamespace": "CatSplat.SfxForge.Editor",
+  "references": [ "CatSplat.SfxForge" ],
+  "includePlatforms": [ "Editor" ],
+  "autoReferenced": false
+}

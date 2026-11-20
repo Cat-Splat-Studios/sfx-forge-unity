@@ -1,0 +1,6 @@
+{
+  "name": "SfxShowcase.Audio",
+  "rootNamespace": "SfxShowcase.Audio",
+  "references": [ "SfxShowcase.Core", "CatSplat.SfxForge" ],
+  "autoReferenced": false
+}

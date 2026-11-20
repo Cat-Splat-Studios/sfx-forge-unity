@@ -1,0 +1,12 @@
+# Everything is stored byte for byte: the package is generated, and Unity's YAML and .meta files must not be
+# rewritten by line-ending conversion.
+* -text
+*.mp4 binary
+*.gif binary
+*.png binary
+*.jpg binary
+*.dll binary
+*.zip binary
+*.bytes binary
+*.cs diff=csharp
+*.md diff=markdown

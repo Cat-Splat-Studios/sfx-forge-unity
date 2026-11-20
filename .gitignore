@@ -1,0 +1,10 @@
+# A Unity package repository: Unity writes nothing here. Keep every .meta.
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.swp
+*~.bak
+.vs/
+.vscode/
+.idea/

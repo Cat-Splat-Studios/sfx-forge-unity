@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bf0c3554e5ac694cac4de9d3fa527de, type: 3}
+  m_Name: Respawn
+  m_EditorClassIdentifier: CatSplat.SfxForge::CatSplat.SfxForge.SfxPreset
+  patch:
+    engine: 2
+    baseFreq: 60
+    pitchEnvAmount: 34
+    pitchEnvDecay: 85
+    fmRatio: 40
+    fmDepth: 40
+    noiseMix: 0
+    filterCutoff: 100
+    filterRes: 20
+    ampDecay: 80
+    bitcrush: 0
+    attack: 0
+    sustain: 0
+    release: 34
+    filterEnv: 64
+    filterEnvDecay: 40
+    lfoRate: 50
+    lfoPitch: 0
+    lfoFilter: 0
+    lfoTimbre: 0
+    spread: 0
+    chorus: 0
+    delay: 25
+    reverb: 35
+    level: 100
+    table: 0
+  holdSeconds: 1.5
