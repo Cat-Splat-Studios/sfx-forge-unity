@@ -87,7 +87,7 @@ namespace CatSplat.SfxForge.Editor
         readonly VisualElement texts;
         readonly TextElement label, value;
         TextField entry;
-        bool dragging, moved, interactive = true;
+        bool dragging, moved, interactive = true, locked;
         float startY;
         int sent;
 
@@ -110,6 +110,12 @@ namespace CatSplat.SfxForge.Editor
                 EnableInClassList("sfx-tile--view", !value);
                 if (!value) { EndTyping(); EndDrag(); }
             }
+        }
+        /// <summary>True: a thin outline round the tile (the class sfx-tile--locked) - a value MUTATE and the variants leave alone. It turns as ever.</summary>
+        public bool Locked
+        {
+            get => locked;
+            set { if (locked == value) return; locked = value; EnableInClassList("sfx-tile--locked", value); }
         }
         /// <summary>How far the mouse moves for one step (SHIFT: four times as far).</summary>
         public float StepPixels = 2f;

@@ -67,6 +67,18 @@ namespace CatSplat.SfxForge.Editor
             Add(key);
             return key;
         }
+
+        /// <summary>
+        /// A key's place with nothing in it, at the end of a row whose number of keys does not divide (7, 10): the rows
+        /// are then of the same number all the same, and the last key is as wide as the others, not as wide as the page.
+        /// </summary>
+        public void AddBlank()
+        {
+            var blank = new VisualElement { pickingMode = PickingMode.Ignore };
+            blank.AddToClassList("sfx-key");
+            blank.AddToClassList("sfx-key--blank");
+            Add(blank);
+        }
     }
 
     /// <summary>

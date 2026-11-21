@@ -146,6 +146,42 @@ namespace SfxShowcase.Tests
         }
 
         [UnityTest]
+        public IEnumerator LoopPatternKeepsTheSongOnOnePatternAndLetsItGoAgain()
+        {
+            UseRealTime();
+            var music = UnityEngine.Object.FindFirstObjectByType<SfxMusicPlayer>();
+            Assert.IsNotNull(music, "the scene has its music player");
+            IgnoreWithoutTheNativeLibrary();
+
+            // a player of its own beside the game's: the same song, nothing cueing it
+            var go = new GameObject("loop test", typeof(AudioSource), typeof(SfxMusicPlayer));
+            try
+            {
+                go.GetComponent<AudioSource>().volume = 0f;
+                var own = go.GetComponent<SfxMusicPlayer>();
+                own.song = music.song;
+                own.loopPattern = true;
+                own.Reload();
+                own.Play();
+                yield return UntilRealTime(() => own.IsPlaying, 2f);
+                Assert.IsTrue(own.IsPlaying, "the song runs");
+
+                // The arrangement is A B A B …: without the loop it is on B in its second bar.
+                float barSeconds = own.song.StepsPerPattern * 60f / own.song.Bpm / 4f;
+                int first = own.Pattern;
+                bool left = false;
+                float until = Time.realtimeSinceStartup + 3.5f * barSeconds;
+                yield return UntilRealTime(() => { left |= own.Pattern != first; return Time.realtimeSinceStartup >= until; }, 4f * barSeconds);
+                Assert.IsFalse(left, "with loopPattern the song stays on its pattern for more than three bars");
+
+                own.loopPattern = false;
+                yield return UntilRealTime(() => own.Pattern != first, 2.5f * barSeconds);
+                Assert.AreNotEqual(first, own.Pattern, "and without it the arrangement goes on");
+            }
+            finally { UnityEngine.Object.Destroy(go); }
+        }
+
+        [UnityTest]
         public IEnumerator TheMusicsIntensityFollowsSpeedAndDropsOnAHit()
         {
             UseRealTime();

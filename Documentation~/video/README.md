@@ -41,7 +41,7 @@ The three ways to play a sound and the adaptive music, one at a time: a page of 
 
 [![The device: a tour](../img/readme/sfx-forge-tour.jpg)](sfx-forge-tour.mp4)
 
-[`sfx-forge-tour.mp4`](sfx-forge-tour.mp4) · 2:05 · 1920×1080, 30 frames a second, with sound.
+[`sfx-forge-tour.mp4`](sfx-forge-tour.mp4) · 2:12 · 1920×1080, 30 frames a second, with sound.
 
 The instrument itself: sound effects, MUTATE, the five engines, the sequencer, layers that follow INTENSITY, automation, the mixer, the link page.
 
@@ -49,6 +49,6 @@ The instrument itself: sound effects, MUTATE, the five engines, the sequencer, l
 
 [![The device: building the song](../img/readme/sfx-forge-build-a-song.jpg)](sfx-forge-build-a-song.mp4)
 
-[`sfx-forge-build-a-song.mp4`](sfx-forge-build-a-song.mp4) · 2:16 · 1920×1080, 30 frames a second, with sound.
+[`sfx-forge-build-a-song.mp4`](sfx-forge-build-a-song.mp4) · 3:03 · 1920×1080, 30 frames a second, with sound.
 
-The demo song played in from nothing with pads and keys, then arranged, layered, automated, mixed and sent to the game. It is the song the showcase plays.
+A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, then arranged, layered, automated, mixed and sent to the game.

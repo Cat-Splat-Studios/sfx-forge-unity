@@ -33,6 +33,7 @@ package `com.catsplatstudios.sfxforge` and the example game built with it.
 | copy a snippet | [8. Recipes](#8-recipes) |
 | test sound without ears | [9. Testing, limits, troubleshooting](#9-testing-limits-troubleshooting) |
 | look something up | [10. API at a glance](#10-api-at-a-glance) |
+| make, vary, level, bake and share sounds in the editor | [11. Tools for designing sounds](#11-tools-for-designing-sounds) |
 
 **Three videos** show the Unity side running. They are in the package, in `Documentation~/video`:
 
@@ -50,7 +51,7 @@ showcase game, not by hand: where a picture says "as recorded", its curves are t
 The pictures of the editor UI (`img/unity-inspector-…`) are made another way. The tests of the inspectors
 ([section 9](#the-inspectors-are-tested-in-a-project-of-their-own)) build the same element tree, with the same
 stylesheet, that the Inspector hosts, and render it in a panel to a texture. They are not photographs of the
-Inspector or of the SFX Forge window: nobody has opened either of them yet.
+Inspector or of the package's two windows: nobody has opened any of them yet.
 
 ---
 
@@ -125,10 +126,12 @@ flowchart LR
     PATCH["SfxPatch<br/>one sound, 28 bytes"]
     PRESET["SfxPreset<br/>a patch as an asset"]
     SONG["SfxSong<br/>16 sounds + a song, as an asset"]
+    VSET["SfxVariationSet<br/>one sound as several, as an asset"]
   end
   subgraph PLAY["Players (components)"]
     SP["SfxPlayer<br/>one patch, live"]
     MP["SfxMusicPlayer<br/>one song, live"]
+    VP["SfxVariationPlayer<br/>the next variant of a set"]
   end
   subgraph ENGINE["The engine"]
     NATIVE["SfxNative<br/>sfxforge.dll, Windows x64"]
@@ -144,6 +147,9 @@ flowchart LR
   PRESET --> SP
   SONG --> MP
   PRESET -- "Bake" --> CLIP["AudioClip"]
+  PRESET --> VSET
+  VSET --> VP
+  VP --> AS
   SP --> NATIVE
   MP --> NATIVE
   CLIP -.-> AS["AudioSource"]
@@ -161,20 +167,26 @@ flowchart LR
 | `SfxPatch` | struct | one sound: an engine and 25 values, each 0 – 127. The same 28 bytes the device keeps |
 | `SfxPreset` | asset | a patch you can click, hear and tune in the Inspector. `Bake` turns it into an `AudioClip` |
 | `SfxSong` | asset | a piece of music: 16 sounds and the packed song (patterns, arrangement, layers, mix, automation) |
+| `SfxVariationSet` | asset | one sound as several: a preset and a seed give a fixed row of variants, and BAKE writes them as clips ([section 11](#variation-sets)) |
 | `SfxPlayer` | component | synthesizes a patch as it plays. Its four live values bend the sound while it sounds |
 | `SfxMusicPlayer` | component | plays an `SfxSong`. The game sets its intensity, cues patterns, moves its mix |
+| `SfxVariationPlayer` | component | plays the next variant of an `SfxVariationSet` through an `AudioSource`, a little higher or lower, a little quieter |
 | `SfxNative` | static class | the engine: a native library, `Runtime/Plugins/x86_64/sfxforge.dll`. Also `Bake` to raw samples |
 | `SfxWav` | static class | writes samples as a 16-bit WAV file |
+| `SfxGenerator` · `SfxMutate` · `SfxRandom` · `SfxShuffle` | static classes, a struct, a class | a new sound of a kind from a seed; variants of a sound that can be made again; the device's own random numbers; an order that does not repeat ([section 11](#11-tools-for-designing-sounds)) |
+| `SfxBake` · `SfxLevels` | static classes | a patch as samples, with options (rate, mono, note, trim, normalise); peak and RMS, and what LEVEL does to them |
+| `SfxPatchText` | static class | a sound as 62 characters of text, and as a `.syx` file |
 | `SfxLink` | class | the MIDI connection to the device: `SfxLink.Shared`. Windows only |
 | `SfxForgeLink` | component | opens the link in a scene, polls it, hands out pad and encoder events |
 | `SfxTelemetrySender` | component | one game value → the device, and to local players |
 | `SfxEncoderBinding` | component | one of the device's encoders → an AudioMixer parameter or an event |
 | `SfxProtocol` | static class | the MIDI messages, byte by byte. You rarely call it yourself |
-| **Editor** | | `Window > SFX Forge` and the Inspectors of `SfxPreset` and `SfxSong`, all three drawn like the device's display ([below](#the-inspectors-look-like-the-device)); `SfxForgeEditorLink` (preview, bake a WAV, make assets) |
+| **Editor** | | `Window > SFX Forge` and the Inspectors of `SfxPreset` and `SfxSong`, all three drawn like the device's display ([below](#the-inspectors-look-like-the-device)); `SfxForgeEditorLink` (preview, bake a WAV, make assets). For designing sounds ([section 11](#11-tools-for-designing-sounds)): the tools in a sound's Inspector, the Inspector of `SfxVariationSet`, `Window > SFX Forge Bake`, `SfxBatchBake`, `SfxVariationBaker` |
 
 Everything is in the namespace `CatSplat.SfxForge`; the editor code in `CatSplat.SfxForge.Editor`.
 
-**No device is needed.** Patches, presets, both players and baking work on their own. The link is for tuning live.
+**No device is needed.** Patches, presets, the players, baking and the tools of section 11 work on their own. The link
+is for tuning live.
 
 ### The inspectors look like the device
 
@@ -200,6 +212,8 @@ values make. HOLD appears because the sound is held.*
 | **The units** | the value is written as the device writes it: `448Hz`, `3.6kHz`, `36ms`, `1.4s`, `-20`, `100%`, `OFF`, `SAW-SQ`. The texts are worked out with the firmware's own arithmetic, and the tests compare them with values read off the device's own pictures |
 | **The waveform** | the sound as the device draws it: one dry voice, without chorus, delay or reverb, mono, 1.5 seconds at most, a held sound let go after 0.8 seconds. Under it, how long it is. It is not what PLAY and BAKE WAV render: those have the effects. On most pages a white line shows what the page's four values shape |
 | **The soft keys** | the rows of keys at the bottom, as F1 – F6 on the device. A green key is a switch that is on. A dark key has nothing to do and takes no click: SEND while no device is connected, UNDO while there is nothing of this sound to take back |
+| **The level line** | in a sound's Inspector, under the picture: the peak and the RMS of the sound as PLAY and BAKE WAV render it, with its effects, and how long that is. Orange, with CLIPS, when it is over full scale ([section 11](#level)) |
+| **The tools** | in a sound's Inspector, at the foot: four tabs, NEW, VARY, LEVEL and SHARE, one shown at a time. Every Inspector shows the same tab ([section 11](#11-tools-for-designing-sounds)) |
 | **The link dot** | top right. In the two Inspectors: green while a MIDI output to the device is open. In the window: green while either port is open, so with the input alone it is green while SEND and the pads stay dark |
 
 **Turning a knob.** What a value tile does with the mouse and the keys (`Editor/UI/ValueTile.cs`):
@@ -246,7 +260,7 @@ values, the patches and the messages in it are the test's, and no device was con
 ![The Inspector of a sound at 340 pixels](img/unity-inspector-sound-narrow.png)
 
 *At 340 pixels the soft keys wrap into rows of three and the picture is lower: below 400 pixels a panel uses its
-narrow layout. The tests render every page at 340 and 640 pixels, some also at 300 and 700, and the window at 340, 420 and 700.*
+narrow layout. The tests render every page at 340 and 640 pixels, some also at 300 and 700, and the two windows at 340, 420 and 700.*
 
 > **What was tried, and what was not.** The tests build these panels, call what the knobs and keys call, send
 > mouse and wheel events to them in a test panel, and check the asset and Undo afterwards
@@ -370,6 +384,22 @@ SfxPatch variation = SfxPatch.Default;       // a struct: this is a copy
 variation.Mutate(rng);
 ```
 
+A second form takes an amount and locks, and draws from `SfxRandom`, the device's own generator. It is whole-number
+arithmetic, so a seed is written to give the same variation wherever it runs; it was run on one machine only.
+
+```csharp
+var seeded = new SfxRandom(7);
+SfxPatch wider = SfxPatch.Default;
+wider.Mutate(ref seeded, SfxPatch.StepOf(30), SfxMutate.Bit(SfxParam.BaseFreq));     // up to 30 %, and FREQ stays
+
+SfxPatch third = SfxMutate.Variant(SfxPatch.Default, 0xCF56CEED, 3, 15);             // variant 3 of a base, for a seed, at 15 %
+```
+
+`SfxPatch.StepOf(percent)` turns an amount in per cent into the step `Mutate` takes (15 gives 19 of 127, the device's
+own). `SfxMutate.Variant(base, seed, n, percent, locked)` is variant `n` of a base: 0 is the base itself, and a
+variant depends on the base, the seed, its number, the amount and the locks, not on the others. The VARY tool and the
+variation sets of [section 11](#11-tools-for-designing-sounds) are built on it.
+
 ### The patch as an asset: SfxPreset
 
 **Assets > Create > SFX Forge > Preset** makes an `SfxPreset`. Its Inspector is the device's sound page
@@ -381,8 +411,10 @@ variation.Mutate(rng);
 | **The page tabs** | OSC · TONE · FILTER · WAVE · ENV · LFO · FX. WAVE is dim, and cannot be opened, unless the engine is WAVETABLE |
 | **Four value tiles** | the page's values, two above the picture and two below, numbered 1 – 4 as the device's encoders |
 | **The picture** | the sound's waveform as the device draws it, and how long it is (`0.14s long`) |
+| **The level line** | under the picture: `PEAK -9.8dB   RMS -19.5dB`, and under it how long the sound is as PLAY and BAKE WAV render it, with its effects' tail. That is longer than the picture's dry voice ([section 11](#level)) |
 | **HOLD** | shown for a held sound only: how long a baked clip or a preview holds it (`holdSeconds`; 0.05 to 12 seconds, default 1.50 s) |
 | **The soft keys** | two rows, below |
+| **TOOLS** | four tabs under the keys and the link note: NEW, VARY, LEVEL, SHARE ([section 11](#11-tools-for-designing-sounds)) |
 
 What is on each page. Knob 1 is top left, 2 top right, 3 bottom left, 4 bottom right:
 
@@ -404,10 +436,10 @@ around 0, A, B and LEVEL as the bare number, SUSTAIN and CRUSH as `OFF` at 0, TA
 | Soft key | What it does |
 |---|---|
 | **PLAY** | plays the sound through the editor's speakers, with the engine and its effects. A held sound is held for HOLD |
-| **MUTATE** | a variation: every value except LEVEL and TABLE moves by up to 15 %; a one-shot stays a one-shot, the engine stays (`SfxPatch.Mutate`) |
+| **MUTATE** | a variation: every value except LEVEL and TABLE moves by up to the AMOUNT of the VARY tool, 15 % at first; a one-shot stays a one-shot, the engine stays (`SfxPatch.Mutate`). Values locked in VARY stay too ([section 11](#vary-mutates-amount-locks-and-more-like-this)) |
 | **UNDO** | Unity's own Undo, lit only while Unity's next undo step is a change made to this sound here. Ctrl+Z does the same |
 | **RANDOM** | a new one-shot from nothing, inside ranges that stay audible. The engine changes too |
-| **BAKE WAV** | writes a stereo 16-bit `.wav` next to the asset |
+| **BAKE WAV** | writes a stereo 16-bit `.wav` next to the asset, at 48 kHz, as designed. For another rate, mono, a note, a trimmed end or a normalised level, and for many sounds at once: [the Bake window](#the-bake-window) |
 | **SEND** | sends the patch to the chosen pad of the device. Dark while no device is connected ([section 6](#6-from-the-device-to-the-game)) |
 | **HEAR CHANGES** | a switch, on at first: the sound plays a moment after a value changed. Not in Play mode |
 | **PLAY ON DEVICE** | sends the patch to the chosen pad and plays it there. Dark while no device is connected |
@@ -445,6 +477,9 @@ of this manual that shows routes, yellow is baked, blue is a live voice, green i
 | Can it sustain as long as the game wants? | no: it holds for `holdSeconds`, then lets go | yes | **yes** |
 | Does it need the native library at play time? | no, only for the bake | yes | yes |
 | Can many overlap? | yes (`PlayOneShot`) | up to 16 notes of **one** patch per player | one sound per player |
+
+A sound that fires often and should not be the same twice, such as a footstep, is a row of baked clips played in a
+shuffled order: a variation set ([section 11](#variation-sets), [recipe 1](#1-footsteps-that-are-never-the-same)).
 
 ### Route 1: baked
 
@@ -560,6 +595,7 @@ Three words from the device, used below:
 | start and stop | `Play()` · `Stop()` · `playOnEnable` (on by default) · `startPattern` |
 | bring the band in and out | `intensity`, 0 … 1 |
 | change the music on the next bar | `CuePattern(0 … 7)` |
+| stay on one pattern | `loopPattern` |
 | play one of the song's instruments by hand | `PlaySound(sound, velocity, midiNote)` · `ReleaseSound(sound, midiNote)` |
 | move the mix | `SetTrackVolume` · `SetTrackPan` · `SetTrackMute` · `SetMaster` · `volume` |
 | know where the song is | `IsPlaying` · `Step` (0 … 15) · `Pattern` (0 = A) · `Bar` (bars since `Play`) |
@@ -658,8 +694,10 @@ volume; both come back by themselves.*
 
 ### Cueing patterns
 
-`CuePattern(n)` changes to pattern `n` on the next bar line (at once while the song is stopped). What happens after
-that bar depends on the song. This is what the engine does (`core/sfx_song.h`):
+`CuePattern(n)` changes to pattern `n` on the next bar line (at once while the song is stopped). With
+[`loopPattern`](#holding-a-pattern-looppattern) on, that pattern then repeats until the next cue, whatever the song
+is. With it off, as it is at first, what happens after that bar depends on the song. This is what the engine does
+(`core/sfx_song.h`):
 
 | The song has … | and the cued pattern is … | After the cue |
 |---|---|---|
@@ -677,13 +715,55 @@ a cue on every bar, which holds the pattern; a pattern outside the arrangement, 
 is a whole run of the showcase as recorded: the arrangement walks by itself, bar after bar, except in Static Field,
 where E is held, and from the last launch to the goal, where F is.*
 
-### Holding a pattern: cue it again on every bar
+### Holding a pattern: loopPattern
 
 The demo song has a 16-bar arrangement, A B A B C D C D E E A B C D C F, which contains every one of its patterns. A
 cue into such a song lasts only as long as the arrangement stays on that pattern from there: one bar for most of
 them, two for E, which the arrangement has twice in a row.
 
-The showcase lets the song play in this order for most of the level: the game does not choose the bars, only how
+To stay on a pattern, switch `loopPattern` on. It is a field of the player, so it can also be ticked in the
+Inspector.
+
+```csharp
+music.loopPattern = true;          // the pattern that plays repeats, bar after bar
+music.CuePattern(4);               // E takes over on the next bar line, and E is what repeats
+// later
+music.loopPattern = false;         // the song's own order again
+```
+
+| `loopPattern` | What plays |
+|---|---|
+| **on** | the pattern that plays repeats until `CuePattern` chooses another; that one takes over on the bar line and repeats in its turn. The arrangement and the chain are not followed. Intensity, layers, the mix and notes by hand work as always, and `Bar` goes on counting |
+| **off** (as it is at first) | the song's arrangement, or its chain: the table above |
+| **switched off while it plays** | a song with an arrangement goes on from the first bar of the arrangement that has the pattern that plays: the bar after it comes next. If no bar has that pattern, the arrangement starts from its top. A song without an arrangement goes on in its chain from the pattern that plays; from a pattern beyond the chain it lands where the count wraps (from H with a chain of 6: C) |
+
+With `playOnEnable` and `loopPattern` both on, the song starts on `startPattern` and stays there. `Play()`, `Stop()`
+and `Reload()` leave the switch as it is.
+
+The device has the same switch from firmware 1.5.0 on: LOOP or SONG, F1 on its SEQ, SONG and AUTO pages
+([the device's manual](MANUAL.md)). The two are separate: `loopPattern` is this player's, and is not sent to a device.
+
+> **What is tested, and what is not.** The switch is the engine's (`sfx_player_set_loop` in `core/sfx_song.h`, the
+> same code the firmware plays its LOOP mode with). `tests/dotnet` drives it through the native library, without
+> Unity: with it on, the demo song is still on A in its second bar; a cue changes the pattern on the bar line and
+> that pattern is still there three bars later; switched off, the arrangement goes on from that pattern's bar.
+>
+> Inside Unity, one Play mode test of the showcase runs it
+> (`LoopPatternKeepsTheSongOnOnePatternAndLetsItGoAgain` in `Tests/ShowcaseAudioTests.cs`): a second
+> `SfxMusicPlayer` with the demo song and `loopPattern` on stays on its pattern for more than three bars, and with
+> it off the arrangement goes on. That run was headless and muted. **Not done:** nobody has listened to it, and it
+> was not run in a built game.
+>
+> **With a library from before the switch, `loopPattern` does nothing, and says nothing**: the song plays in its own
+> order (`SfxNative.PlayerSetLoop` returns false there). The package's `sfxforge.dll` has the switch. An editor that
+> was open while the package was updated may still hold the older library, because Unity keeps a native library
+> loaded until it is closed: restart it.
+
+### The older way: cue it again on every bar
+
+The showcase was written before the switch and holds its patterns by hand. That still works, with any library.
+
+The showcase lets the song play in its own order for most of the level: the game does not choose the bars, only how
 much of the band plays them. It holds a pattern in two places: E, the breakdown, for as long as the player is in
 Static Field, and F, the turnaround, from the last launch to the goal. To hold one, its `MusicDirector` cues the
 pattern again whenever `Bar` changes:
@@ -701,7 +781,7 @@ void HoldPattern()                     // called from Update
 ```
 
 A cue is then always waiting at the next bar line, and the pattern stays. This works for every row of the table
-above, so it is the safe way to hold a pattern when you do not control how the song was arranged.
+above.
 
 Ending a hold needs no call: stop cueing. Each section of the showcase has a `SectionCue` whose `Pattern` says what
 happens on entering it:
@@ -754,6 +834,13 @@ call or event in Unity.*
 MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, one each way (for example loopMIDI).
 
 > **What is tested, and what is not.** MIDI is implemented for Windows only (winmm).
+>
+> **The firmware is 1.5.0 now; the link was last run against 1.4.0.** Firmware 1.5.0 changes how the device's
+> sequencer is used ([the device's manual](MANUAL.md)). Its song format, its messages and its identity are those of
+> 1.4.0, apart from the version it reports: the firmware's own checks (`sh build.sh` in the source repository) send
+> the built 1.5.0 the identity request and read its answer, and read the song it sends, 55 messages and 7699 bytes
+> of format 5. Everything below that names the emulator was done with 1.4.0 or 1.3.1 and was not repeated with
+> 1.5.0. Firmware 1.5.0 was not run on hardware or in the plugin either.
 >
 > **Tested end to end against the emulator**, over two loopMIDI ports, with Unity 6000.3 on Windows 11
 > (`Tests/LinkTakes.cs` in the showcase, run against `tests/emulator-link.mjs`; firmware 1.4.0, and 1.3.1 before it):
@@ -844,7 +931,7 @@ The 18 bytes, each 0 … 127, become an `SfxDeviceInfo`:
 | Byte | `SfxDeviceInfo` | Today |
 |---|---|---|
 | 0 | `hardware`: 0 unknown, 1 VIBE FM. That is the SDK's host – the emulator, the plugin or the hardware; the firmware cannot tell them apart | 1 |
-| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 4 0 |
+| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 5 0 (over the link it was read from 1.4.0 only: 1 4 0) |
 | 4 … 16 | `profile`, an `SfxProfile`: its `id`, the patch format and the song format it speaks, and how much it holds: sounds in a kit, kits, patterns, steps, automation lanes, bars in an arrangement, voices, engines, wavetables, values in a patch | 1 · 2, 5 · 16, 2, 8, 16, 24, 32, 16, 5, 6, 25 |
 | 17 | `flags`: `HasPads`, `HasEncoders` (CC 20 – 25 from its LINK page), `TakesSongSounds` (what `SendSong` sends before the song), `TakesTelemetry` (CC 10 – 17 on channel 2) | all four |
 
@@ -873,7 +960,7 @@ Three rules hold for every later version:
 this package's (2 and 5), `SendPatch` and `SendSong` send nothing and return `false`, and `LastRefusal` says why
 (`SfxLink.Refusal(device, song)` gives the same text for any `SfxDeviceInfo`). The Inspectors then show the
 reason under their keys and SEND stays dark. A device that has not answered is refused nothing. With firmware
-1.4.0 and this package the formats are the same, so this never happens today; it is there for the day one side is
+1.4.0 or 1.5.0 and this package the formats are the same, so this never happens today; it is there for the day one side is
 updated and the other is not.
 
 ### Receiving a patch or a song
@@ -1241,52 +1328,75 @@ this song and these effects: measure again.
 ## 8. Recipes
 
 Each is a complete script. They use only the package. The patches are taken from the demo and the showcase; change
-the numbers to taste. Every script here, and every code fragment in this manual, was compiled against the package in
-the demo project; none was played or listened to.
+the numbers to taste. Every script here, and every code fragment in this manual, was compiled against the package:
+the older ones in the demo project, those that use `loopPattern` or the tools of section 11 in the inspectors' test
+project. None was played or listened to.
 
 ### 1. Footsteps that are never the same
 
-Four mutations baked at load, one picked at random, the pitch moved a little. Baked, so it also works in 3D.
+A variation set ([section 11](#variation-sets)): six variants of one footstep, played in a shuffled order that never
+takes one of the last two again, each play up to 50 cents higher or lower and up to 2 dB quieter. The clips are
+baked, so it also works in 3D and on every platform.
+
+| | Do this |
+|---|---|
+| **1** | Make the footstep as an `SfxPreset`: **Assets > Create > SFX Forge > Preset**, then shape it, or start from **TOOLS > NEW > THUD**. From an editor script: `SfxForgeEditorLink.CreatePreset(SfxPatch.Create(SfxEngine.Foley, 30, 80, 18, 90, 30, 127, 68, 15, 22), "Assets/Audio", "Footstep")` |
+| **2** | In its Inspector: **TOOLS > VARY > MAKE SET**. A variation set appears next to the preset |
+| **3** | In the set's Inspector, listen with **PLAY NEXT**, then press **BAKE** |
+| **4** | On the character: add **SFX Variation Player** (it adds the `AudioSource`), and drag the set onto its **Set** field |
+| **5** | Call `PlayNext()` from an animation event, or `Play()` from code |
+
+Without a script of your own that is all. With the loudness following the speed:
+
+```csharp
+using CatSplat.SfxForge;
+using UnityEngine;
+
+[RequireComponent(typeof(SfxVariationPlayer))]
+public class Footsteps : MonoBehaviour
+{
+    SfxVariationPlayer steps;                    // its Set field holds the variation set
+
+    void Awake() => steps = GetComponent<SfxVariationPlayer>();
+
+    /// <summary>Call it from your animation or movement code. speed01: 0 walking … 1 flat out.</summary>
+    public void Step(float speed01) => steps.Play(Mathf.Lerp(0.2f, 0.35f, speed01));
+}
+```
+
+The player sets its `AudioSource`'s pitch on every play. To move the pitch with the speed as well, take the next
+variant yourself and play it on an `AudioSource` of your own:
 
 ```csharp
 using CatSplat.SfxForge;
 using UnityEngine;
 
 [RequireComponent(typeof(AudioSource))]
-public class Footsteps : MonoBehaviour
+public class FootstepsWithPitch : MonoBehaviour
 {
-    public int variations = 4;
-    AudioClip[] clips;
+    public SfxVariationSet set;
     AudioSource source;
+    SfxShuffle order;
 
     void Awake()
     {
         source = GetComponent<AudioSource>();
-        SfxPatch step = SfxPatch.Create(SfxEngine.Foley, 30, 80, 18, 90, 30, 127, 68, 15, 22);
-        var rng = new System.Random(1);
-        int rate = AudioSettings.outputSampleRate;
-        clips = new AudioClip[variations];
-        for (int i = 0; i < clips.Length; i++)
-        {
-            SfxPatch patch = step;                       // a struct: a copy
-            if (i > 0) patch.Mutate(rng);
-            float[] samples = SfxNative.BakeInterleaved(patch, rate);
-            if (samples == null || samples.Length == 0) continue;      // no native library: stay silent
-            clips[i] = AudioClip.Create("Footstep " + i, samples.Length / 2, 2, rate, false);
-            clips[i].SetData(samples, 0);
-        }
+        if (set != null) { set.Prepare(); order = set.NewOrder(); }      // Prepare: only an unbaked set has anything to make
     }
 
-    /// <summary>Call it from your animation or movement code. speed01: 0 walking … 1 flat out.</summary>
     public void Step(float speed01)
     {
-        AudioClip clip = clips[Random.Range(0, clips.Length)];
-        if (clip == null) return;
-        source.pitch = Mathf.Lerp(1f, 1.3f, speed01) * Random.Range(0.96f, 1.04f);
-        source.PlayOneShot(clip, 0.35f);
+        if (order == null) return;
+        AudioClip clip = set.Next(order, out float pitch, out float volume);
+        if (clip == null) return;                                        // not baked, and no native library here
+        source.pitch = pitch * Mathf.Lerp(1f, 1.3f, speed01);
+        source.PlayOneShot(clip, volume * 0.35f);
     }
 }
 ```
+
+The five steps were not gone through by hand in the editor: the tests call what the keys call
+([section 11](#variation-sets) says what was tried).
 
 ### 2. A pickup that rises with the combo
 
@@ -1504,8 +1614,9 @@ For a held instrument (brass, strings) call `music.ReleaseSound(instrument, note
 
 ### 8. A pattern per area, held
 
-Cue the area's pattern, and cue it again on every bar, so it stays whatever the song's arrangement does
-([section 5](#holding-a-pattern-cue-it-again-on-every-bar)).
+Switch `loopPattern` on and cue the area's pattern: it stays whatever the song's arrangement does
+([section 5](#holding-a-pattern-looppattern)). `loopPattern` is run by one Play mode test, headless and muted;
+this script itself was compiled, not run. The same section has the older way, which the showcase uses.
 
 ```csharp
 using CatSplat.SfxForge;
@@ -1514,21 +1625,12 @@ using UnityEngine;
 public class AreaMusic : MonoBehaviour
 {
     public SfxMusicPlayer music;                 // one that has a song, for example DemoSong.asset (section 5, "A first song")
-    int heldPattern = -1, lastBar = -1;
 
-    /// <summary>0 = A … 7 = H, from the next bar line. -1: let the song run by itself again.</summary>
+    /// <summary>0 = A … 7 = H, from the next bar line, and it stays. -1: let the song run by itself again.</summary>
     public void EnterArea(int pattern)
     {
-        heldPattern = pattern;
+        music.loopPattern = pattern >= 0;
         if (pattern >= 0) music.CuePattern(pattern);
-    }
-
-    void Update()
-    {
-        int bar = music.Bar;
-        if (bar == lastBar) return;
-        lastBar = bar;
-        if (heldPattern >= 0) music.CuePattern(heldPattern);
     }
 }
 ```
@@ -1564,7 +1666,7 @@ public class MusicDuck : MonoBehaviour
 ### 10. A boss theme
 
 On the device, write the theme in pattern H and leave H out of the arrangement. A pattern outside the arrangement
-stays until the next cue, so two calls are enough. (The demo song's patterns G and H are empty: with it, this recipe
+stays until the next cue, so two calls are enough, without `loopPattern`. (The demo song's patterns G and H are empty: with it, this recipe
 cues silence. It needs a song with a theme in H.)
 
 ```csharp
@@ -1616,7 +1718,9 @@ public class ImpactSound : MonoBehaviour
 ### 12. Exporting a WAV in the editor
 
 Put this in an `Editor` folder. Select one or more presets, then **Assets > SFX Forge > Export Selected Presets as
-WAV**. The **BAKE WAV** key of a preset's Inspector does the same for the presets selected; this also lets you choose the note.
+WAV**. The **BAKE WAV** key of a preset's Inspector does the same for the presets selected, and
+[the Bake window](#the-bake-window) does it with options: the note, the rate, mono, trim, normalise. This recipe is
+for a rule of your own.
 
 ```csharp
 using CatSplat.SfxForge;
@@ -1692,7 +1796,9 @@ public class TuneFromDevice : MonoBehaviour
 
 ### Testing sound without ears
 
-Sound can be asserted. The demo's and the showcase's Play mode tests do it in these ways.
+Sound can be asserted. The demo's and the showcase's Play mode tests do it in these ways. The demo project has 41
+of them: run headless on a copy of the project, 26 passed and 15 were skipped, which are the takes that need a
+device or the emulator or that record, and only run when asked for by name.
 
 | What to check | How | Where |
 |---|---|---|
@@ -1717,11 +1823,27 @@ Four rules that make such tests reliable:
 The commands, headless, are in [the showcase's README](../Samples~/Showcase/README.md#check-it-test-it-rebuild-it).
 Only one Unity process can have the project open.
 
+### The core is tested without Unity
+
+`tests/dotnet` in the source repository compiles the package's `Runtime/Core` folder with plain .NET, without Unity,
+and runs it against the native library: 143 checks. All 143 pass with the library built from this source, which is
+the one in the package.
+
+| What is checked | |
+|---|---|
+| patches, songs and the link's messages | packing and unpacking, the older song formats, the identity, what is newer and what is broken |
+| the engine through the native library | bakes that sound and end in silence, notes in tune, the mix, velocity, length, automation, the arrangement and cues |
+| the loop flag | on: the pattern stays; a cue changes it on the bar line and that one stays; off: the arrangement goes on ([section 5](#holding-a-pattern-looppattern)) |
+| the tools' arithmetic ([section 11](#11-tools-for-designing-sounds)) | generators, variants, the shuffle, levels and matching, the text and `.syx` forms, bake options and the resampler |
+
+They are numbers read from rendered samples. Nobody listened.
+
 ### The inspectors are tested in a project of their own
 
-The editor UI has its own tests: 100 EditMode tests in a small Unity project in the source repository,
-`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 100 passed
-with Unity 6000.3.8f1 on Windows x64.
+The editor UI has its own tests: 147 EditMode tests in a small Unity project in the source repository,
+`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 147 passed
+with Unity 6000.3.8f1 on Windows x64. 45 of them are about the tools of
+[section 11](#11-tools-for-designing-sounds), which lists what they cover tool by tool.
 
 | What is checked | How |
 |---|---|
@@ -1729,7 +1851,7 @@ with Unity 6000.3.8f1 on Windows x64.
 | the pages hold the engine and all 25 values, once | counted |
 | a knob changes the asset, marks it changed, and Undo takes it back | the panel's own calls on an `SfxPreset` asset, then Unity's Undo |
 | the UNDO key takes back only what was done in that panel | another change is made in between |
-| the mouse on a tile, on the song and on the window | pointer and wheel events sent to the panel the elements stand in |
+| the mouse on a tile, on the song, on the tools and on the two windows | pointer and wheel events sent to the panel the elements stand in |
 | typed values | the texts `SfxUnits.TryParse` understands, and the panel's own call for a typed text. No key was pressed in a field |
 | the picture is the device's dry voice, and as long as the device says | compared with the lengths written on two of the device's own pictures |
 | the song panel shows what the song's bytes say | the demo song, and the same song in its older formats |
@@ -1741,22 +1863,27 @@ with Unity 6000.3.8f1 on Windows x64.
 | the banner of a newer asset, and A NEWER SONG | a sound, several sounds, a song, several songs, and a packed song that begins with 6; a cut-off one that begins with a higher number is not a newer song |
 | the warning is said once | counted, for an asset loaded twice and asked again; two newer files of the same name in two folders give two |
 | a newer asset saved here says who saved it | a file with `format: 2` and `savedBy: 2` is changed and saved; it is read back with `format: 2` and `savedBy: 1` |
+| the tools of a sound: NEW, VARY, LEVEL, SHARE | 21 tests: what each key does to the asset, its note, and Undo ([section 11](#11-tools-for-designing-sounds)) |
+| a variation set, its BAKE and its player | 16 tests, on asset files the tests make and delete again |
+| the batch bake and its window | 8 tests: the files a run writes, their names, the same bytes twice, and the window over a model |
 
-**The pictures.** The same run writes 58 pictures to `out/inspector-shots` in the source repository: the sound
-inspector on every page, the song inspector on every page, the window in its states and a sheet of the kit, each
-at several widths. A picture is the element tree and stylesheet the Inspector hosts, put into a panel that renders
-into a texture. The eight pictures of the editor UI in this manual are copies of eight of them.
+**The pictures.** The same run writes 78 pictures to `out/inspector-shots` in the source repository: the sound
+inspector on every page and with each of its four tools open, the song inspector on every page, a variation set in
+three states, the two windows in their states and a sheet of the kit, each at several widths. A picture is the
+element tree and stylesheet the Inspector hosts, put into a panel that renders into a texture. The fourteen
+pictures of the editor UI in this manual are copies of fourteen of them.
 
 **What these tests do not show.**
 
 | | |
 |---|---|
-| **Not the Inspector itself** | the panels were never hosted by a real Inspector or by the real window. How Unity's own Inspector lays them out, scrolls them and themes what is around them has not been seen by anyone |
+| **Not the Inspector itself** | the panels were never hosted by a real Inspector or by a real window. How Unity's own Inspector lays them out, scrolls them and themes what is around them has not been seen by anyone |
 | **No menus** | the menus of ENGINE, TABLE, the pad and the MIDI ports were never opened |
 | **No typing** | nobody typed into a value's field; the code behind it was called directly |
+| **No file dialogs, no progress bar** | the dialogs of EXPORT .SYX and IMPORT .SYX were never opened: what they call was called with a path. The bake's progress bar was never shown; a cancelled run was made by the test's own callback |
 | **No keys** | the arrow keys on a tile, ENTER in the window's text field and the double-click that opens a value's field were never sent; what they call was called directly |
 | **No device** | SEND, PLAY ON DEVICE, SEND CHANGES, the window's pads, its text and FETCH SONG were not tried against a device or the emulator. The link tests of [section 6](#6-from-the-device-to-the-game) call `SfxLink` directly, not these keys |
-| **No ears** | PLAY, PLAY SOUND and PLAY BAR were not listened to |
+| **No ears** | PLAY, PLAY SOUND, PLAY BAR, PLAY NEXT and the PLAY of a variant were not listened to; no generated sound, no variant and no baked file was heard |
 | **One Unity** | 6000.3.8f1 only, on Windows x64 |
 
 ### The mix is measured, not heard
@@ -1806,6 +1933,9 @@ What this does not tell you:
 | **One patch per player** | up to 16 overlapping notes of it. A different patch reshapes what still sounds |
 | **Memory** | each `SfxPlayer` and `SfxMusicPlayer` holds its own engine with its effects: about 0.6 MB |
 | **Baking blocks** | it renders on the calling thread; a clip is at most 12 seconds |
+| **A variation set must be baked to play everywhere** | not baked, it plays only where the native library is, and makes its clips when first played. Nothing checks at build time that a set is baked or up to date; an out-of-date set warns in the editor only |
+| **The tools are for single sounds** | NEW, VARY, LEVEL, SHARE and the Bake window work on patches. None of them makes, varies or exports a song |
+| **Levels are measured, not judged** | the level line and MATCH read peak and plain RMS of a baked sound. That is not loudness as an ear hears it, and it is not the level of the game's mix |
 | **`volume` is not smoothed** | on either player. Fade a sound with `level`; ramp the music's `volume` yourself |
 | **No song editor** | a song is made on the device. In Unity you play it, look at it and shape it; its Inspector changes TEMPO, SWING and a sound's LAYER, VOLUME and PAN, nothing else |
 | **What the engine itself cannot do** | [MANUAL section 18](MANUAL.md#18-what-it-does-not-do): no samples, 16 steps a bar, 8 patterns, 16 voices |
@@ -1834,7 +1964,15 @@ What this does not tell you:
 | live sounds change each other | two patches on one `SfxPlayer`. Use a player per patch, or a pool |
 | a pitched sound is out of tune with the song | play it as a MIDI note (`midiNote`), not at the patch's FREQ |
 | transposing a noise does nothing | pure noise has no pitch. Change its band (`filterCutoff`), or the AudioSource's pitch for a baked clip |
-| a cued pattern lasts only a bar or two | the song has an arrangement that contains it, and walks on. Cue it again on every bar |
+| a cued pattern lasts only a bar or two | the song has an arrangement that contains it, and walks on. Switch `loopPattern` on, or cue it again on every bar |
+| `loopPattern` is on and the song still walks on | the library that is loaded is one from before the switch; it ignores it without a word. Close and reopen the editor after updating the package |
+| a variation set is silent in a build, or on another platform | it is not baked: without clips it needs the native library. Press BAKE in its Inspector. The Console says so once |
+| a variation set's Inspector says OUT OF DATE | the preset or the set changed since BAKE. It still plays the old clips. BAKE again |
+| the level line is orange and says CLIPS | the sound goes over full scale as rendered; a 16-bit file of it is clamped. Lower LEVEL (FX page) |
+| PASTE says NOT PASTED | the note under the keys says why: no `SFXF1:` in the text, cut off, a damaged character, a checksum that does not fit, or a text from a newer version |
+| MORE LIKE THIS, AGAIN, BACK TO BASE and MAKE SET are dark | several sounds are selected. They work on one |
+| AGAIN and BACK TO BASE are dark with one sound | no variants are shown yet. Press MORE LIKE THIS first |
+| COPY is dark | several sounds are selected and they are not the same sound: there is no one text for them |
 | a note by hand is off the beat | `PlaySound` is not quantised. Wait for `Step` or `Bar` to change |
 | "could not open every MIDI port" | another program holds the port, or its name changed. Choose it again in **Window > SFX Forge**: a click on the FROM DEVICE or TO DEVICE tile, while not connected |
 | a port tile says NOT FOUND | the port chosen earlier is not there now. Start the device or the virtual cable, then **REFRESH PORTS** |
@@ -1870,6 +2008,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `this[SfxParam p]` | a value by index; clamps to 127 |
 | `bool IsSustained` | held (`sustain` above 0) |
 | `void Mutate(System.Random rng)` | a variation, up to 15 % a value; LEVEL and TABLE stay |
+| `void Mutate(ref SfxRandom rng, int step, uint locked = 0)` · `static int StepOf(int percent)` | the same with the device's generator, a step of 0 … 127 either way and a bit for each value that stays (`SfxMutate.Bit`) · a per cent as that step: 15 gives 19 |
 | `static string Label(SfxParam p, SfxEngine engine)` | a value's name for an engine |
 | `static readonly string[] EngineNames`, `TableNames` | |
 | `byte[] Pack()` · `static bool TryUnpack(byte[] src, int offset, out SfxPatch patch)` | the 28 bytes |
@@ -1907,6 +2046,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `float volume = 0.6f` | 0 … 1; not smoothed |
 | `bool playOnEnable = true` · `int startPattern` (0 … 7) | |
 | `float intensity = 1f` | 0 … 1: which layers play |
+| `bool loopPattern` | on: the pattern that plays repeats until `CuePattern` chooses another. Off, as at first: the arrangement or the chain |
 | `void Play()` · `void Stop()` | |
 | `void CuePattern(int index)` | 0 … 7, from the next bar line |
 | `void PlaySound(int sound, float velocity = 1f, int midiNote = 0)` | a sound of the song, by hand |
@@ -1963,6 +2103,42 @@ Reading the packed song, as the Inspector does. None of these changes it. `patte
 | `float[] BakeInterleaved(SfxPatch patch, int sampleRate = 48000, float velocity = 1f, int midiNote = 0, float semitones = 0f, float holdSeconds = 1.5f)` | the same, L R L R …; null if it failed |
 
 The `Player…` and voice functions under them are what the two components call. Use the components.
+
+### SfxVariationSet (ScriptableObject) and SfxVariationPlayer (component)
+
+| Member | |
+|---|---|
+| `SfxPreset preset` · `int seed = 1` · `int count = 6` (1 … 16) · `int amount = 10` (0 … 100) · `int locked` | what the variants are made from. Variant 1 is the preset itself |
+| `float pitchCents = 50f` (0 … 1200) · `float volumeDb = 2f` (0 … 24) · `int noRepeat = 2` · `bool mono` | what a play adds: up to that many cents up or down, up to that many dB quieter, never one of the last N |
+| `int Count` · `int Amount` · `SfxPatch VariantPatch(int index)` | the count and the amount inside their ranges · a variant as a patch; 0 is the preset's own |
+| `bool IsBaked` · `int BakedCount` · `int PlayCount` · `bool IsStale` | BAKE wrote clips and none is missing · how many · how many a play chooses from · baked, and changed since |
+| `AudioClip Clip(int index)` · `bool Prepare()` · `void ReleaseMadeClips()` | a variant's clip, the baked one or one made now · every clip now · destroys the made ones |
+| `SfxShuffle NewOrder(uint seed = 0)` | an order for the plays. 0: another one every time |
+| `AudioClip Next(SfxShuffle order, out float pitch, out float volume)` · `int NextIndex(…)` | the next play: its clip, and what to play it with · the same without the clip |
+| `int Format` · `const int CurrentFormat = 1` · `bool IsFromNewerVersion` · `const int MaxCount = 16` | as for a preset |
+| `SfxVariationPlayer`: `SfxVariationSet set` · `float volume = 1f` · `bool prepareOnEnable = true` · `int orderSeed` | the component's fields. `orderSeed` 0: another order every run |
+| `int Play(float volumeScale = 1f)` · `void PlayNext()` · `int Last` | plays the next variant and returns which, −1 for none · the same for an event · the one played last |
+| `static int PlayOn(AudioSource source, SfxVariationSet set, SfxShuffle order, float volumeScale = 1f)` | the next variant of an order on any AudioSource |
+
+### The tools' core (static, no Unity in it)
+
+| Member | |
+|---|---|
+| `enum SfxCategory { Click, Chime, Leap, Rise, Zap, Thud, Blast, Door, Alarm, Hum }` | the kinds of sound a generator makes |
+| `SfxGenerator.Make(SfxCategory category, uint seed)` · `Make(category, ref SfxRandom rng)` | the sound of a kind and a seed, always the same one · the next of a generator |
+| `SfxGenerator.Names` · `Count = 10` · `IsSustained(category)` · `Fits(category, patch)` | the names in capitals · ALARM and HUM are held · a patch is one this kind can give |
+| `SfxRandom(uint seed)`: `Next()` · `Range(low, high)` · `Unit()` · `static Mix(seed, index)` | the device's generator (a struct) |
+| `SfxMutate.Variant(SfxPatch basePatch, uint seed, int index, int percent, uint locked = 0)` | variant `index` of a base; 0 is the base |
+| `SfxMutate.Bit(SfxParam p)` · `SfxMutate.All` | the bit of a value in a set of locks · every value |
+| `SfxShuffle(int count, int noRepeat, uint seed)`: `Next()` · `NextUnit()` · `Last` · `Count` · `NoRepeat` | an order that never takes one of the last `noRepeat` again (a class) |
+| `SfxBakeOptions`: `sampleRate = 48000` (8000 … 48000) · `mono` · `semitones` (−48 … 48) · `midiNote` (0 = as designed) · `velocity = 1` · `trimDb` (0 = off, −90 … −20) · `normaliseDb` (NaN = off, −60 … 0) · `Problem()` · `Clone()` | how a sound is rendered |
+| `SfxBake.Render(SfxPatch patch, float holdSeconds, SfxBakeOptions options = null)` | an `SfxBaked`: `samples`, `channels`, `sampleRate`, `frames`, `Seconds`, `level`, `gainDb`, `cutAtLimit`. Null without the native library, with options out of range, or when the engine gave no sound |
+| `SfxBake.Resample(float[] samples, int frames, int fromRate, int toRate)` · `TrimEnd(…)` · `MaxSeconds = 12f` · `EngineRate = 48000` | one channel at another rate · cuts a quiet end |
+| `SfxLevels.Measure(float[] left, float[] right, int frames = -1)` | an `SfxLevelReading`: `peak`, `rms`, `PeakDb`, `RmsDb`, `Clips`, `Silent` |
+| `SfxLevels.LevelDb(int level)` · `LevelFor(int level, float changeDb)` | what a LEVEL does in dB: 40 · log10(level / 100) · the LEVEL that is that much louder |
+| `SfxLevels.Match(int[] levels, SfxLevelReading[] readings, SfxLevelMeasure by, int[] newLevels, float wantedDb = NaN)` | a LEVEL for each sound so that all read the same; returns that reading in dB |
+| `SfxPatchText.ToText(SfxPatch patch)` · `Parse(string text, out SfxPatch patch)` · `TryParse(…)` · `Message(SfxTextResult)` | a sound as `SFXF1:` and 56 hex digits · back, with the reason when it is refused |
+| `SfxPatchText.ToSyx(SfxPatch patch, int pad = 0)` · `ParseSyx(byte[] file, out SfxPatch patch, out int pad)` | the 35 bytes of a `.syx` file · the first patch in one |
 
 ### SfxWav (static)
 
@@ -2048,6 +2224,13 @@ The `Player…` and voice functions under them are what the two components call.
 | **Window > SFX Forge** | `SfxForgeWindow`. `SfxForgeWindow.Build(SfxForgeModel model)` gives the whole window as one `VisualElement` (an `SfxForgeView`) over a model you fill: it touches no MIDI port |
 | `SfxPresetEditor.Build(SerializedObject)` · `SfxSongEditor.Build(SerializedObject)` | a sound's or a song's Inspector as one `VisualElement` (`SfxPresetPanel`, `SfxSongPanel`): what `CreateInspectorGUI` returns, and what a window or a test of yours can host |
 | `SfxPresetPanel`: `Page`, `Nudge(tile, steps)`, `Typed(tile, text)`, `ResetValue(tile)`, `SetHold(…)`, `Mutate()`, `Randomize()`, `UndoOwn()`, `static RandomPatch(System.Random)` | what the tiles and keys of a sound call |
+| `SfxPresetPanel`, the tools: `Generate(SfxCategory)`, `LastSeed` · `static MutateAmount`, `static Locked`, `SetAmount(percent)`, `ToggleLock(tile)`, `TogglePageLock()`, `UnlockAll()`, `MoreLikeThis()`, `Again()`, `Keep(1 … 8)`, `BackToBase()`, `GridVariant(n)`, `MakeSet()` · `Level`, `LevelText`, `MeasureNow()`, `MatchLevels(SfxLevelMeasure)` · `PatchText`, `CopyText()`, `PasteText(text)`, `ImportSyx(path)` | what the keys of NEW, VARY, LEVEL and SHARE call |
+| `SfxVariationSetEditor.Build(SerializedObject)` | a variation set's Inspector as one `VisualElement` (an `SfxVariationSetPanel`: `Nudge`, `Typed`, `TogglePage(page)`, `NewSeed()`, `ToggleMono()`, `PlayNext()`, `Bake()`) |
+| `SfxVariationBaker.Bake(SfxVariationSet set)` · `FolderOf(set)` · `BakedBytes(set)` | writes a set's clips and returns an `SfxBakeReport` · where they go · their size on disk |
+| **Window > SFX Forge Bake** | `SfxBakeWindow`. `SfxBakeWindow.Build(SfxBakeModel model)` gives the whole window as one `VisualElement` (an `SfxBakeView`) over a model you fill: it touches no asset |
+| `SfxBatchBake.Collect(Object[] selection)` · `FileCount(assets, out presets, out sets)` | the presets and variation sets among objects and inside folders · how many files a run writes |
+| `SfxBatchBake.Run(IList<Object> assets, SfxBakeOptions options, SfxBakeTo to, string folder = null, Func<string, float, bool> progress = null)` · `BakeSets(assets)` | bakes them to `.wav` files; `SfxBakeTo.NextToEachAsset` or `OneFolder` · the own BAKE of every set among them |
+| `SfxBakeReport`: `lines`, `remarks`, `Written`, `Failed`, `Warns`, `Cancelled`, `Planned`, `LastFile`, `Summary`, `Text`, `ToConsole()` | what a bake did, file by file |
 | `SfxPresetPanel.NewerBanner` · `SfxSongPanel.NewerBanner` (an `SfxBanner`: `Shown`, `Bold`, `Small`) · `SfxSongPanel.MessageText` | the notice of an asset from a newer version · what a song's Inspector says in place of a song |
 | `SfxForgeModel.identity`, `identityKnown` · `SfxForgeView.IdentityText` | the window's line that says what the device is |
 | `SfxSongPanel`: `Page`, `Pattern`, `Sound`, `Intensity`, `SetTempo(bpm)`, `SetSwing(swing)`, `SetLayer(sound, value)`, `SetVolume(sound, value)`, `SetPan(sound, value)` | what is looked at, and the five numbers that can be changed (the last three 0 … 127) |
@@ -2056,8 +2239,9 @@ The `Player…` and voice functions under them are what the two components call.
 | `SfxPicture.Render(SfxPatch patch, float[] into)` | the samples the device draws a sound from (one dry voice, 24 kHz, `SfxPicture.Max` samples at most); returns how many |
 | the kit: `SfxUI`, `SfxColors`, `Knob`, `ValueTile`, `WaveformView`, `PadGrid`, `SoftKey`, `SoftKeyRow`, `PageTabs` … | the pieces the panels are built from; `Editor/UI/README.md` in the package describes each |
 | `SfxForgeEditorLink.Preview(SfxPatch patch, float holdSeconds = 0.8f)` | plays a patch in the editor |
-| `SfxForgeEditorLink.PreviewSamples(float[] interleaved, int sampleRate)` · `StopPreview()` | plays stereo samples in the preview's place · silence |
-| `SfxForgeEditorLink.BakeWav(SfxPreset preset)` | a `.wav` next to the asset; returns the imported clip |
+| `SfxForgeEditorLink.PreviewSamples(float[] interleaved, int sampleRate, float pitch = 1f, float volume = 1f)` · `StopPreview()` | plays stereo samples in the preview's place · silence |
+| `SfxForgeEditorLink.BakeWav(SfxPreset preset)` · `BakeWav(preset, SfxBakeOptions options, string path = null)` | a `.wav` next to the asset; returns the imported clip · the same with options, to a path |
+| `SfxForgeEditorLink.ExportSyx(SfxPatch patch, int pad, string path)` · `ImportSyx(string path, out SfxPatch patch, out int pad)` | a patch as a `.syx` file for a pad · back from one |
 | `SfxForgeEditorLink.CreatePreset(SfxPatch patch, string folder, string name)` | a preset asset |
 | `SfxForgeEditorLink.CreateSong(SfxPatch[] sounds, byte[] packedSong, string folder, string name)` | a song asset |
 | `SfxForgeEditorLink.Connect(bool complain = true)` · `Disconnect()` · `InputPort` · `OutputPort` | the editor's connection |
@@ -2067,6 +2251,553 @@ The `Player…` and voice functions under them are what the two components call.
 | Menu | |
 |---|---|
 | **Window > SFX Forge** | the window |
-| **Assets > Create > SFX Forge > Preset** · **Song** | new assets |
-| **Component > SFX Forge >** SFX Player · SFX Music Player · SFX Forge Link · SFX Telemetry Sender · SFX Encoder Binding | the components |
+| **Window > SFX Forge Bake** · **Assets > SFX Forge > Bake to WAV...** | the Bake window |
+| **Assets > Create > SFX Forge > Preset** · **Song** · **Variation Set** | new assets |
+| **Component > SFX Forge >** SFX Player · SFX Music Player · SFX Variation Player · SFX Forge Link · SFX Telemetry Sender · SFX Encoder Binding | the components |
 | **SFX Forge > Rebuild Showcase Scene** · **SFX Forge > Showcase > Build for Windows** | only with the showcase sample imported. The first rewrites the sample's generated files |
+
+---
+
+## 11. Tools for designing sounds
+
+Six tools for making sounds in the editor, without the device. Four are tabs in a sound's Inspector, under the word
+TOOLS. One is an asset with a component. One is a window.
+
+| Tool | Where | What it does |
+|---|---|---|
+| [**NEW**](#new-a-sound-of-a-kind) | a preset's Inspector, TOOLS > NEW | a new sound of a kind, from nothing. Ten kinds |
+| [**VARY**](#vary-mutates-amount-locks-and-more-like-this) | TOOLS > VARY | how far MUTATE goes and what it leaves alone; MORE LIKE THIS shows eight variants to choose from |
+| [**Variation sets**](#variation-sets) | an asset, `SfxVariationSet`, and a component, `SfxVariationPlayer` | one sound as several, played in a shuffled order |
+| [**The Bake window**](#the-bake-window) | **Window > SFX Forge Bake** | many sounds to `.wav` files at once, with options |
+| [**LEVEL**](#level) | the line under the picture, and TOOLS > LEVEL | how loud a sound is; several sounds brought to the same loudness |
+| [**SHARE**](#share-a-sound-as-text-and-as-a-syx-file) | TOOLS > SHARE | a sound as 62 characters of text, or as a `.syx` file |
+
+The keys are in the editor. What they are built on is in the runtime assembly, in `Runtime/Core`, and uses nothing
+of Unity: `SfxGenerator`, `SfxMutate`, `SfxRandom`, `SfxShuffle`, `SfxBake`, `SfxLevels` and `SfxPatchText` can be
+called from a game as well ([section 10](#the-tools-core-static-no-unity-in-it)).
+
+Every tool that changes a sound does it as one step of Unity's Undo, named after what it did, and the UNDO key
+lights for it. A tool's note, under its keys, says what the tool did last or why it did nothing. The note goes when
+the sound is edited or undone afterwards: it is about the sound as the key left it.
+
+> **What was tried, and what was not.** The arithmetic of all six is checked without Unity (`tests/dotnet`), and
+> their panels by 45 EditMode tests that build them as elements, call what the keys call and send them mouse events
+> ([section 9](#the-inspectors-are-tested-in-a-project-of-their-own)). Each tool below says what its tests cover.
+>
+> Not tried, for all of them: the real Inspector and the real Bake window, which nobody has opened; the file dialogs
+> and the bake's progress bar; a variation set in Play mode, in a built game or on another platform; any Unity but
+> 6000.3.8f1 on Windows x64. **Nobody has listened to anything these tools make.** A generated ZAP is a patch
+> inside the ranges written for a zap, and its bake is audible and does not clip. Whether it sounds like a zap is
+> not known.
+
+The pictures of this section are made as the others are: the panel's elements rendered to a texture by the tests,
+not photographs of the editor.
+
+### NEW: a sound of a kind
+
+![The NEW tool, after a click on ZAP](img/unity-inspector-tools-new.png)
+
+*The tool drawer of a sound's Inspector, tab NEW, after a click on ZAP. The note names the seed.*
+
+**Where.** A preset's Inspector, TOOLS > NEW. Ten keys:
+
+| Key | The recipes are written for | Key | The recipes are written for |
+|---|---|---|---|
+| **CLICK** | the shortest sound | **THUD** | short and low |
+| **CHIME** | a bright step up, or a small bell | **BLAST** | low noise that takes its time |
+| **LEAP** | a short rise, one note | **DOOR** | a creak, or it shuts |
+| **RISE** | a long rise | **ALARM** | held, and its pitch swings |
+| **ZAP** | a fast fall | **HUM** | held, low, slowly alive |
+
+Those words are what the recipes aim at. Nobody has listened to check them.
+
+**What it does.** A click replaces the sound with a new one of that kind. Every click gives another one. With
+several presets selected, each gets its own. UNDO takes it back. The note then reads, for example:
+
+`ZAP` · `seed CF56CEED – SfxGenerator.Make(SfxCategory.Zap, 0xCF56CEED) gives it again`
+
+Each kind has two recipes. A recipe is an engine, a range for each value it names, and a few values that are 0
+half the time. What a recipe does not name is the plain patch's ([section 3](#every-value)); LEVEL is always 100.
+ALARM and HUM are held sounds, the other eight are one-shots. HOLD is not changed.
+
+RANDOM, on the soft keys, is still there: it makes a one-shot of no particular kind.
+
+**In code.**
+
+```csharp
+SfxPatch zap = SfxGenerator.Make(SfxCategory.Zap, 0xCF56CEED);        // this kind, this seed: always the same patch
+
+var rng = new SfxRandom(1234);                                       // or a row of them from one generator
+for (int i = 0; i < 8; i++)
+{
+    SfxPatch coin = SfxGenerator.Make(SfxCategory.Chime, ref rng);
+    Debug.Log(SfxPatchText.ToText(coin));
+}
+```
+
+| | |
+|---|---|
+| `SfxGenerator.Make(category, seed)` | the sound of a kind and a seed |
+| `SfxGenerator.Make(category, ref rng)` | the next sound of an `SfxRandom` |
+| `SfxGenerator.Names`, `Count` | `"CLICK"` … `"HUM"`, 10 |
+| `SfxGenerator.IsSustained(category)` | true for `Alarm` and `Hum` |
+| `SfxGenerator.Fits(category, patch)` | the patch is one a recipe of that kind can give |
+| `SfxPresetPanel.Generate(category)`, `LastSeed` | what a key calls, and the seed it used (the first sound's, with several selected) |
+
+**Limits.** Ten kinds, two recipes each, and no way to add one without changing the source. A seed gives the same
+patch only as long as the recipes stay as they are: a later version that changes a recipe changes what its seeds
+give. Keep a sound you like as a preset or as its text, not as a seed.
+
+**Tested.** Without Unity: for every kind, 300 seeds give a valid patch inside the recipe's ranges, both recipes
+come up, and 100 seeds bake to a sound that is audible and does not clip (peaks from 0.07 to 0.70 of full scale, the
+longest 4.9 seconds). In the test project: a key replaces the sound and Undo takes it back; several selected sounds
+each get their own; the note goes when the sound is edited. Not tested: what any of them sounds like.
+
+### VARY: MUTATE's amount, locks, and MORE LIKE THIS
+
+![The VARY tool with eight variants](img/unity-inspector-tools-vary.png)
+
+*Tab VARY after MORE LIKE THIS, with FREQ locked: its tile has an outline and a star. Each variant's caption names
+the value that moved most from the base.*
+
+**Where.** A preset's Inspector, TOOLS > VARY.
+
+| Part | What it does |
+|---|---|
+| **AMOUNT** | how far a value may move, 1 to 100 %. 15 % at first, which is the device's MUTATE. Type `20` or `20%`; a double-click on the ring puts 15 back |
+| **LOCK** *value* | four keys, one for each value of the page shown. A lit key is a locked value: MUTATE and the variants leave it as it is. Its tile gets a thin outline and ` *` behind its name. On the OSC page the first place reads ENGINE STAYS and is dim: nothing here ever changes the engine |
+| **LOCK PAGE** · **UNLOCK ALL** | locks the page's four values, or unlocks them if all four are locked · unlocks every value |
+| **MORE LIKE THIS** | takes the sound as it is now as the base and shows eight variants of it. One sound only |
+| **AGAIN** | eight other variants of the same base |
+| **PLAY** on a tile | plays that variant. It changes nothing |
+| **KEEP** on a tile | the sound becomes that variant. The tiles stay, so you can try another: all eight are variants of the base, not of each other |
+| **BACK TO BASE** | the sound becomes the base again |
+| **MAKE SET** | makes a [variation set](#variation-sets) next to the preset, named `<preset> Variations`: with the tiles shown, nine: the sound as it is now and eight variants of it from the tiles' seed. Those are the eight tiles as long as the sound is still the base; after KEEP they are variants of the kept sound, not the tiles you see. Without tiles, six from a new seed. It carries the amount and the locks. It is a new file, not an undo step, and it is not baked |
+
+Two columns of tiles under 560 pixels, four from there. The tiles follow AMOUNT and the locks while they are
+shown: turn AMOUNT and the eight change with it.
+
+**AMOUNT and the locks steer the MUTATE key too.** They are the editor session's, not the asset's: they hold for
+every preset until the editor is closed, and are then 15 % and nothing locked again.
+
+What never moves, whatever is locked: the engine, LEVEL, TABLE, and a SUSTAIN of 0. A one-shot stays a one-shot and
+a held sound stays held.
+
+**In code.** Tile *n* of the grid is `SfxMutate.Variant` of the base:
+
+```csharp
+SfxPatch laser = SfxPatch.Default;
+uint keep = SfxMutate.Bit(SfxParam.BaseFreq) | SfxMutate.Bit(SfxParam.AmpDecay);       // FREQ and DECAY stay
+for (int n = 1; n <= 8; n++)
+{
+    SfxPatch variant = SfxMutate.Variant(laser, 0xCF56CEED, n, 15, keep);              // base, seed, number, per cent, locks
+    Debug.Log(n + ": " + SfxPatchText.ToText(variant));
+}
+```
+
+| | |
+|---|---|
+| `SfxMutate.Variant(basePatch, seed, index, percent, locked = 0)` | variant `index`; 0 is the base itself |
+| `SfxMutate.Bit(param)`, `SfxMutate.All` | a value's bit in a set of locks; every value |
+| `patch.Mutate(ref rng, SfxPatch.StepOf(percent), locked)` | one mutation in place |
+| `SfxPresetPanel.MutateAmount`, `Locked` (static) | the session's amount and locks |
+| `SfxPresetPanel`: `MoreLikeThis()`, `Again()`, `Keep(1 … 8)`, `BackToBase()`, `GridVariant(n)`, `MakeSet()` | what the keys call |
+
+**Limits.** MORE LIKE THIS, AGAIN, BACK TO BASE and MAKE SET work on one sound; with several selected only MUTATE
+does, on all of them. The grid is not kept: it is gone when the Inspector is rebuilt. MAKE SET needs the preset to
+be an asset inside `Assets`. A lock is per value, for all presets alike; there is no lock kept with a preset.
+
+**Tested.** Without Unity: a mutation with an amount stays inside it and keeps the kind of sound; with every value
+locked the variant is the base; variant 0 is the base, and variant *n* depends on the seed and *n* only. In the
+test project: MUTATE uses the amount and the locks; LOCK PAGE locks four values and shows it; the grid branches
+from one base and follows the amount; several sounds give no grid; MAKE SET carries the grid, and Undo after it
+leaves the set whole; a tile says which value moved. Not tested: by ear, whether 15 % is a useful distance.
+
+### Variation sets
+
+![The Inspector of a variation set](img/unity-inspector-variation-set.png)
+
+*The Inspector of an `SfxVariationSet` with six baked clips. Tile 1 is the preset itself.*
+
+**What it is.** One sound as several. A preset and a seed give a fixed row of variants; the first is the preset
+itself. A play takes one of them at random, never one of the last few played, a little higher or lower and a little quieter. Footsteps,
+hits and coins that do not sound the same twice.
+
+**Where.** **Assets > Create > SFX Forge > Variation Set**, or MAKE SET in a sound's VARY tool. Play it with the
+component **SFX Variation Player** (Component > SFX Forge), or from code.
+
+| In the Inspector | |
+|---|---|
+| **PRESET** | the sound the set varies |
+| **COUNT** | how many variants, the preset included: 1 to 16. 6 at first |
+| **AMOUNT** | how far a variant's values move from the preset's, 0 to 100 %. 10 at first. At 0 every variant is the preset, and only pitch and volume vary |
+| **PITCH** | a play is tuned up or down by up to this much: `±50ct` at first, 0 to 1200 cents |
+| **VOLUME** | a play is quieter by up to this much: `-2.0dB` at first, down to −24 dB, or OFF. Never louder |
+| **NO REPEAT** | the last N variants played are not chosen again: `LAST 2` at first, or OFF |
+| **SEED** | which variants these are, as eight hex digits. The same preset, seed, amount and locks give the same variants again |
+| **VARIANTS KEEP** | a key for each page of a sound. A lit page stays as the preset has it. Single values locked by MAKE SET are named in the line under the keys |
+| **VARIANTS** | a tile for each variant, with its picture and PLAY |
+| **PLAY NEXT** | plays as the game would: the next of the order, with its pitch and volume. The footer says which, and with what |
+| **BAKE** | writes the variants as clips (below) |
+| **NEW SEED** · **SHOW CLIPS** · **MONO** | other variants · points at the baked files · the clips as one channel, for a sound placed in 3D |
+
+**Baked or not.** This decides where the set plays.
+
+| The set is | It plays | The Inspector says |
+|---|---|---|
+| **baked** | everywhere: its clips are ordinary `AudioClip`s, and no native library is needed | `6 CLIPS BAKED`, with the folder and the size |
+| **baked, and changed since** | the clips it has: the old sound. If COUNT was changed, as many variants as there are clips | `OUT OF DATE`, and in the editor one warning in the Console when it plays |
+| **not baked** | only where the native library is (Windows x64). The clips are made when first played, at 48 kHz, the same samples BAKE writes | `NOT BAKED` |
+| **not baked, no library** | nothing, and the Console says so once | `NATIVE LIBRARY NOT FOUND` |
+
+**BAKE** writes `<the set's folder>/<name> Variants/<name>_01.wav` and so on: 16 bit, 48 kHz, stereo or mono.
+
+- The set is all or nothing. Every variant is rendered first; if one does not render, or a file that is already
+  there cannot be written over (it is read-only, say), nothing is written and the set stays as it was. A failure
+  that shows only while writing – a full disk, a new file that cannot be made – also leaves the set as it was, but
+  the files written before it stay. That case is not tested.
+- A file that is there is overwritten in place, so its GUID and its import settings stay.
+- Its own files with a number above the new COUNT are deleted. No other file ever is.
+- A set that was renamed, moved or copied leaves the clips it had in their old folder, and the report says so.
+- It is not an undo step, and it clears the set's undo history: an undo could otherwise put the set back without
+  its clips. Edits made to the set before a BAKE can no longer be undone.
+
+**In code.** With the component:
+
+```csharp
+using CatSplat.SfxForge;
+using UnityEngine;
+
+public class Coins : MonoBehaviour
+{
+    public SfxVariationSet coin;                 // baked in its Inspector
+    SfxVariationPlayer player;
+
+    void Awake()
+    {
+        player = gameObject.AddComponent<SfxVariationPlayer>();          // adds the AudioSource it needs
+        player.set = coin;
+    }
+
+    public void Collected() => player.Play();                            // returns the variant played, -1 for none
+}
+```
+
+On an `AudioSource` of your own, for example one that is placed in 3D:
+
+```csharp
+SfxShuffle order = coin.NewOrder();                                      // once; keep it
+AudioClip clip = coin.Next(order, out float pitch, out float volume);    // every play
+if (clip != null) { source.pitch = pitch; source.PlayOneShot(clip, volume); }
+```
+
+`SfxVariationPlayer.PlayOn(source, set, order)` does those two lines.
+
+| | |
+|---|---|
+| `SfxVariationPlayer`: `set`, `volume`, `prepareOnEnable`, `orderSeed` | the component. `orderSeed` 0 is another order every run; anything else is the same order, pitches and volumes every run |
+| `int Play(float volumeScale = 1f)` · `PlayNext()` · `Last` | plays the next variant · the same, for a UnityEvent or an animation event · the variant played last |
+| `SfxVariationSet`: `IsBaked`, `IsStale`, `BakedCount`, `PlayCount` | the state of its clips |
+| `Clip(index)`, `Prepare()` | a variant's clip; every clip now, so that no play has to make one |
+| `NewOrder(seed = 0)`, `Next(order, out pitch, out volume)`, `NextIndex(…)` | an order, and the next play of it |
+| `VariantPatch(index)` | a variant as a patch |
+| `SfxVariationBaker.Bake(set)` (editor) | what the BAKE key calls; returns an `SfxBakeReport` |
+
+**Limits.**
+
+- **Bake a set before you ship it.** Not baked, it is silent wherever the native library is not. Nothing checks
+  this when the game is built, and an out-of-date set warns in the editor only.
+- Not baked, the first play of each variant renders it on the calling thread. `Prepare()` does them all at once;
+  the component calls it when it is enabled (`prepareOnEnable`).
+- The player sets its `AudioSource`'s pitch on every play, and does not put back what it was. One-shots still
+  ringing on that source take the pitch of the next play. For plays that overlap and must stay apart, use several
+  players.
+- A play is never louder than the clip: VOLUME only takes away.
+- 16 variants at most. The clips are 48 kHz and 16 bit; compression and load type are Unity's import settings of
+  the files.
+- The variants are fixed by the preset, the seed, the amount and the locks. They change when one of those does,
+  and the set is then out of date until it is baked again.
+
+**Tested.** Without Unity: the shuffle never takes one of the last N, every variant comes up, each allowed one as
+often as the others, and the same seed gives the same order; raising COUNT keeps the earlier variants; the number
+that says whether a bake is out of date changes with every input and with nothing else. In the test project, 16
+tests on asset files they make and delete again: BAKE writes its clips next to the asset; editing the preset makes
+the set out of date and BAKE cures it; lowering COUNT deletes only its own files; a set whose COUNT changed after
+BAKE still plays its clips; an undo after BAKE leaves the clips in the set; a renamed set leaves its old clips and
+says so; a clip that cannot be written stops the bake before any file changes; pitch and volume stay inside their
+ranges; without clips and without the library nothing plays and it says so once; two orders made together differ,
+and the player follows a changed NO REPEAT.
+
+Not tested: a set in Play mode, in a built game, or on a platform without the native library. That a baked set
+plays there follows from what it is, a row of ordinary clips; it was not tried. The player was called from EditMode
+tests only, and nobody listened to it.
+
+### The Bake window
+
+![The Bake window after a run](img/unity-inspector-bake-window.png)
+
+*Window > SFX Forge Bake at 700 pixels, rendered by its tests from a model they filled in: the files, levels and
+paths in it are the test's, and no such run was made. The figures do not belong together: a real run with NORMALISE
+at −3 dB puts every peak at −3.0 dB and has no line that clips. A line in orange failed or has a note.*
+
+**Where.** **Window > SFX Forge Bake**, or **Assets > SFX Forge > Bake to WAV...**. It works on what is selected in
+the Project window: presets, variation sets, and folders, which are searched with their subfolders.
+
+**What it does.** Writes each selected sound as a 16-bit `.wav` file, with options. A preset gives `<name>.wav`,
+the file BAKE WAV writes. A variation set gives `<name>_01.wav` and so on, one for each variant.
+
+| Tile | Values | |
+|---|---|---|
+| **RATE** | 22050, 24000, 32000, 44100, 48000 Hz | 48000 at first. A lower rate is the same sound, as long, with nothing above half the rate: every sound is rendered at 48 kHz and resampled |
+| **CHANNELS** | STEREO, MONO | mono is the mean of left and right |
+| **PITCH** | −24 … +24 semitones | transposes every sound |
+| **NOTE** | AS DESIGNED, or C1 … C7 | every sound played as that note |
+| **VELOCITY** | 1 … 100 % | |
+| **TRIM** | OFF, −60, −48, −36 dB | cuts the end after the last sample above that level, with a short fade |
+| **NORMALISE** | OFF, or 0 … −24 dB | brings every file's peak to that level. OFF: the sounds keep their levels against each other |
+
+| Part | |
+|---|---|
+| **THE FILES GO** | NEXT TO EACH ASSET, or INTO ONE FOLDER; the lit key is where. FOLDER is `Assets/SfxForge/Baked` at first; it must be inside `Assets`, and is made if it is not there |
+| **LAST BAKE** | the newest eight lines of the last run: `Laser.wav  0.42s  peak -3.1dB  rms -13.4dB`. The whole report goes to the Console |
+| **BAKE** | bakes the selection with the options |
+| **BAKE SETS** | the own BAKE of every variation set in the selection: its clips, in its own folder, without these options |
+| **SHOW** | points at the file written last |
+
+The options and the folder are remembered between sessions. From nine files on, a bake shows its progress and can
+be cancelled.
+
+A line can carry a note: `cut at 12 s (the longest a bake renders)`; `clips: +1.3dB over full scale, the file is
+clamped – lower LEVEL or NORMALISE`; `silent`; or why there is no file, such as `no preset`, `not inside Assets –
+choose ONE FOLDER`, `could not write`.
+
+**In code.** In an editor script:
+
+```csharp
+using System.Collections.Generic;
+using CatSplat.SfxForge;
+using CatSplat.SfxForge.Editor;
+using UnityEditor;
+using UnityEngine;
+
+public static class BakeForMobile
+{
+    [MenuItem("Assets/SFX Forge/Bake Selection for Mobile")]
+    static void Bake()
+    {
+        var options = new SfxBakeOptions { sampleRate = 22050, mono = true, trimDb = -60f, normaliseDb = -3f };
+        List<Object> assets = SfxBatchBake.Collect(Selection.objects);
+        SfxBakeReport report = SfxBatchBake.Run(assets, options, SfxBakeTo.OneFolder, "Assets/Audio/Baked");
+        report.ToConsole();
+    }
+}
+```
+
+In a game or anywhere else, one sound to samples with the same options:
+
+```csharp
+SfxBaked baked = SfxBake.Render(SfxPatch.Default, 1.5f, new SfxBakeOptions { sampleRate = 24000, mono = true });
+if (baked != null) Debug.Log(baked.Seconds + " s, peak " + baked.level.PeakDb + " dB");     // null without the native library
+```
+
+| | |
+|---|---|
+| `SfxBakeOptions` | `sampleRate` (8000 … 48000), `mono`, `semitones` (−48 … 48), `midiNote` (0 = as designed), `velocity` (0.01 … 1), `trimDb` (0 = off, −90 … −20), `normaliseDb` (NaN = off, −60 … 0). `Problem()` says which is out of range |
+| `SfxBake.Render(patch, holdSeconds, options = null)` | an `SfxBaked`: the samples, their rate and channels, the level, what normalise applied, and whether it was cut at 12 s |
+| `SfxBatchBake.Collect(selection)` · `FileCount(…)` | the presets and sets of a selection, each once, by path · how many files they give |
+| `SfxBatchBake.Run(assets, options, to, folder = null, progress = null)` | the run. `progress(file, 0 … 1)` is called before each file; returning true stops the run there |
+| `SfxBatchBake.BakeSets(assets)` | BAKE SETS |
+| `SfxForgeEditorLink.BakeWav(preset, options, path = null)` | one preset, with options |
+
+**Limits.**
+
+- **Existing files are overwritten without a question**, in place: their GUIDs and import settings stay. A `.wav`
+  of the same name that did not come from a bake is overwritten too. Nothing is deleted, no asset is changed, and
+  a run is not an undo step.
+- No two assets of a run write the same file. Where two would, the later one by path is numbered: `Step 2.wav`,
+  `Step 2_01.wav`.
+- A sound is at most 12 seconds; one that still rings there is cut, and its line says so.
+- A file whose sound goes over full scale is clamped, and its line says by how much. NORMALISE or a lower LEVEL
+  avoids it.
+- The window's RATE has five values; the code takes any rate from 8000 to 48000. 16 bit only.
+- A run renders on the editor's main thread. It needs the native library: Windows x64 only.
+- The same assets and options write the same bytes again.
+
+**Tested.** Without Unity: mono is the mean of the two channels; a lower rate is the same sound, as long and at
+the same note, with half the frames at 24000; a 1 kHz tone is as loud after resampling to 24000 and a 15 kHz tone
+is gone; a hold below 0 or above 12 seconds is brought inside; two bakes give the same samples. In the test
+project, 8 tests: folders are searched and each asset is found once; a run writes one file for a preset and one for
+each variant; INTO ONE FOLDER numbers equal names, and no two assets write the same file; the same run twice writes
+the same bytes and keeps the GUIDs; a folder outside `Assets` is refused and nothing is written; the BAKE WAV key
+writes what a run with the defaults writes; the window shows the selection and the report.
+
+Not tested: the window itself, which was shown a model only; the progress bar and its cancel button (a cancelled
+run was made by a test's own callback); the menu items; a resampled file by ear. The resampler was measured with
+those two tones only.
+
+### LEVEL
+
+![The LEVEL tool after MATCH RMS on three sounds](img/unity-inspector-tools-level.png)
+
+*Three sounds selected, after MATCH RMS. The level line gives the range of the three; the note says which LEVEL
+each got.*
+
+**The level line** is under the picture of every sound:
+
+| It reads | |
+|---|---|
+| `PEAK -5.0dB   RMS -17.9dB` | the largest sample, and the RMS of the sound's body, in dB below full scale. Under it: `as PLAY and BAKE WAV render it: 0.66s with its effects' tail, velocity 100%` |
+| `CLIPS   PEAK +1.3dB …`, in orange | the sound goes over full scale. A 16-bit file of it is clamped |
+| `SILENT` | nothing comes out |
+| `3 SOUNDS   PEAK -8.9 .. -3.8dB   RMS …` | several sounds selected: the quietest to the loudest |
+| `40 SOUNDS` · `select 32 or fewer to measure them` | more than 32 are not measured |
+| `NO LEVEL` | no native library here |
+
+It measures the sound as PLAY and BAKE WAV render it, with chorus, delay and reverb, at full velocity. The picture
+above it is the dry voice, so the two lengths differ. It is measured a moment after a change, a few sounds at a
+time, so a large selection does not hold the Inspector up.
+
+RMS here is plain RMS over the body of the sound: from the first to the last moment it is within 40 dB of its peak,
+both channels together. A silence in front and a long quiet tail do not lower it. A full-scale sine reads −3.0 dB.
+
+**MATCH RMS** and **MATCH PEAK**, on the tab TOOLS > LEVEL, bring several selected sounds to the same reading.
+They write each sound's LEVEL (FX page) and nothing else. One undo step takes it back. The note then reads, for
+example:
+
+`3 SOUNDS AT RMS -18.7dB` · `LEVEL: Jump 90 > 95, Laser 100 > 95, Chime 90 > 127`
+
+The reading they aim at is the loudest there is now, lowered until every sound can reach it with a LEVEL of 127 at
+most and no peak passes full scale. A silent sound, and one whose LEVEL is 0, is left as it is and named.
+
+This works by arithmetic, not by trying: the engine applies LEVEL after everything that distorts, as
+(LEVEL / 100)², so a baked sound changes by 40 · log10(LEVEL / 100) dB. From 100 to 80 is −3.9 dB; 127 is +4.2 dB.
+
+**In code.**
+
+```csharp
+SfxPatch jump = SfxPatch.Create(SfxEngine.UiBlip, 86, 44, 40);
+SfxPatch laser = SfxPatch.Default;
+
+SfxBaked a = SfxBake.Render(jump, 1.5f), b = SfxBake.Render(laser, 1.5f);           // null without the native library
+if (a != null && b != null)
+{
+    int[] levels = { jump.level, laser.level }, matched = new int[2];
+    float reached = SfxLevels.Match(levels, new[] { a.level, b.level }, SfxLevelMeasure.Rms, matched);
+    jump.level = (byte)matched[0];
+    laser.level = (byte)matched[1];
+    Debug.Log("both at RMS " + reached.ToString("0.0") + " dB");
+}
+```
+
+| | |
+|---|---|
+| `SfxLevels.Measure(left, right, frames = -1)` | an `SfxLevelReading`: `peak`, `rms`, `PeakDb`, `RmsDb`, `Clips`, `Silent`. `right` may be null |
+| `SfxBaked.level` | the reading of a baked sound |
+| `SfxLevels.LevelDb(level)` · `LevelFor(level, changeDb)` | what a LEVEL does, in dB · the LEVEL that is that much louder, 1 … 127 |
+| `SfxLevels.Match(levels, readings, by, newLevels, wantedDb = NaN)` | new LEVELs so that all read the same; returns the reading they get. With `wantedDb`, that reading is aimed at, as far as it can be reached |
+| `SfxPresetPanel.MatchLevels(SfxLevelMeasure.Rms)`, `Level`, `LevelText`, `MeasureNow()` | what the keys and the line call |
+
+**Limits.**
+
+- **It measures; it does not hear.** Peak and plain RMS are not loudness as an ear takes it: a bright sound and a
+  dull one at the same RMS do not seem equally loud. Use MATCH to get close, then listen.
+- It is the level of one baked sound, as designed, at full velocity. It says nothing about the game's mix, where
+  sounds add up ([section 9](#the-mix-is-measured-not-heard)).
+- LEVEL is a whole number. Near 100 a step is 0.17 dB; at 20 it is 0.85 dB; at 5 it is 3.2 dB. Quiet sounds agree
+  less closely, and the note then gives a range instead of one figure.
+- The law is exact for the peak. For RMS it drifts when a sound is very quiet: a bake ends where the sound falls
+  under a fixed small level, so a sound whose peak is under about −26 dB loses the end of its body and reads up to
+  a few dB higher than the law says.
+- MATCH needs 2 to 32 sounds that are not silent, and the native library.
+
+**Tested.** Without Unity: a full-scale sine reads peak 0 dB and RMS −3.01 dB, silence reads silent, 1.01 clips;
+LEVEL from 100 to 80 changes a baked sound by 3.876 dB in peak and in RMS, as the law says; after a match three
+sounds read the same RMS within 0.03 dB, and the same peak within 0.13 dB; nobody passes LEVEL 127 or full scale. In
+the test project: the line reads peak and RMS; MATCH writes only LEVEL and one undo takes it back; it needs two
+sounds. Not tested: the chunked measuring of a large selection (no test), and whether matched sounds seem equally
+loud.
+
+### SHARE: a sound as text, and as a .syx file
+
+![The SHARE tool](img/unity-inspector-tools-share.png)
+
+*Tab SHARE: the sound's text, and the four keys.*
+
+**The text.** A sound is 28 bytes. As text it is `SFXF1:` and those bytes as 56 hex digits, 62 characters in all.
+The default laser is:
+
+```
+SFXF1:0202466E2D32460078143A0000002240283200000000000000640043
+```
+
+Paste it into a chat, a commit message, a comment in the code. The 1 is the number of this text form; the patch's
+own format is its first byte, and its last byte is its checksum.
+
+**Where.** A preset's Inspector, TOOLS > SHARE.
+
+| Key | |
+|---|---|
+| **the field** | the sound's text, always whole: its letters shrink in a narrow Inspector. A text put into the field is pasted |
+| **COPY** | the text to the clipboard |
+| **PASTE** | the sound becomes the one whose text is on the clipboard. With several sounds selected, all of them do. UNDO takes it back |
+| **EXPORT .SYX** | writes the sound as a `.syx` file: the message that loads it into a pad of the device. The pad is the one at the top left of the Inspector. One sound only |
+| **IMPORT .SYX** | the sound becomes the first patch found in a `.syx` file |
+
+PASTE reads a patch out of what surrounds it: text in front of it, spaces and line breaks inside it, quotes
+and brackets of any kind, `*`, `_` and backticks, lower case, characters that cannot be seen, a full stop after it.
+Text behind it is passed over when a space or a line break stands between (`… 640043 for the laser`); a hex digit
+right behind the last one, with nothing between, makes the text too long.
+A text that is refused changes nothing and adds no undo step, and the note says why:
+
+| The note says | |
+|---|---|
+| `nothing to paste` | the clipboard is empty |
+| `not an SFX Forge patch: there is no SFXF1: in it` | |
+| `cut off or too long: a patch is 56 hex digits after SFXF1:` | |
+| `damaged: a character that is no hex digit` | |
+| `damaged: the checksum does not fit` | a digit was changed. Also said of a damaged `.syx` |
+| `a patch text from a newer SFX Forge: update the package to read it` | the number after `SFXF` is above 1 |
+| `a patch in a newer format than this version reads: update the package` | the patch inside is of a higher format |
+| `no SFX Forge patch in this file` · `too large to be a patch file` | for a `.syx`: nothing of ours in it · more than 64 KB |
+
+**The .syx file** is 35 bytes: the same load message the link sends with `SendPatch`. A SysEx tool that sends the
+file to the device loads that pad. IMPORT reads a file with one or several messages and takes the first that is a
+patch: the device's own dump (EXPORT there), a load, or the load of a song's sound.
+
+**In code.**
+
+```csharp
+string text = SfxPatchText.ToText(SfxPatch.Default);                 // "SFXF1:0202466E…640043"
+
+SfxTextResult result = SfxPatchText.Parse("try this: " + text + ".", out SfxPatch patch);
+if (result != SfxTextResult.Ok) Debug.Log(SfxPatchText.Message(result));
+
+byte[] syx = SfxPatchText.ToSyx(patch, 3);                           // 35 bytes: the load message for pad 4
+SfxTextResult read = SfxPatchText.ParseSyx(syx, out SfxPatch back, out int pad);
+```
+
+| | |
+|---|---|
+| `SfxPatchText.ToText(patch)` | the 62 characters |
+| `Parse(text, out patch)` · `TryParse(text, out patch)` | an `SfxTextResult` · true for `Ok` |
+| `Message(result)` | why it was refused, in words; null for `Ok` |
+| `ToSyx(patch, pad = 0)` · `ParseSyx(file, out patch, out pad)` | the file's bytes · the first patch in a file |
+| `Prefix`, `Length` (62), `MaxFile` (65536) | |
+| `SfxForgeEditorLink.ExportSyx(patch, pad, path)` · `ImportSyx(path, out patch, out pad)` (editor) | the same through a file |
+| `SfxPresetPanel`: `PatchText`, `CopyText()`, `PasteText(text)`, `ImportSyx(path)` | what the keys call |
+
+**Limits.** The text is the patch and nothing else: not the asset's name, not HOLD, not a song. PASTE and IMPORT
+leave HOLD as it is. There is no text form of a song or of a variation set. A text from a newer SFX Forge is named
+as newer and not read.
+
+**Tested.** Without Unity: 2000 random patches survive patch to text to patch, and the text is 62 characters; the
+default laser's text is the one written above; a text is read through spaces, line breaks, lower case, quotes and
+invisible characters, and out of a sentence; `ToSyx` is the load message the link sends; a `.syx` of one patch
+comes back with its pad; a dump, a load and a song-sound load are read; a file with a wrong checksum is damaged; a
+foreign SysEx and an empty file hold no patch. In the test project: PASTE replaces the sound and Undo takes it
+back; a refused text changes nothing and says why; PASTE goes to every selected sound; the field shows the text
+and takes one; EXPORT then IMPORT through a file gives the sound back.
+
+Not tested: the two file dialogs, which were never opened; a `.syx` file sent to a device or to the emulator by a
+SysEx tool. That it loads the pad follows from its bytes being the link's own load message, and `SendPatch` itself
+was not tried against a device either ([section 6](#6-from-the-device-to-the-game)).

@@ -6,10 +6,12 @@ plays the result with the same engine, so what you hear here is what the player 
 Everything is synthesized. There are no samples and no recordings in it.
 
 > **In the Unity package.** This is the manual of the instrument, as it is in the repository the package is
-> generated from. The built instrument (firmware 1.4.0) is in the package's `Firmware~` folder:
+> generated from. The built instrument (firmware 1.5.0) is in the package's `Firmware~` folder:
 > `sfx-forge.zip`, with `sfx-forge.wasm` inside it. The game's side is [the Unity manual](UNITY.md). The
 > instrument's and the engine's C source (`sfx-forge/`, `core/`) and the scripts under `tests/` and `docs/` are
 > in that repository, not in the package; here the engine is the compiled `Runtime/Plugins/x86_64/sfxforge.dll`.
+
+This manual describes firmware 1.5.0.
 
 | I want to … | Go to |
 |---|---|
@@ -17,7 +19,9 @@ Everything is synthesized. There are no samples and no recordings in it.
 | know what each control is | [2. The device](#2-the-device) · [3. The display](#3-the-display) |
 | make a sound effect | [5. Tutorial: a sound effect](#5-tutorial-a-sound-effect) |
 | understand the knobs | [6. How a sound is built](#6-how-a-sound-is-built) · [7. The five engines](#7-the-five-engines) |
+| keep a pattern playing and play into it | [Loop a pattern and play into it](#loop-a-pattern-and-play-into-it) |
 | write a beat and a tune | [9. Tutorial: a beat](#9-tutorial-a-beat) |
+| take something back | [UNDO](#undo) |
 | make music that follows the game | [11. Layers](#11-layers-music-that-follows-the-game) |
 | move a knob by itself | [12. Automation](#12-automation) |
 | mix | [13. The mixer](#13-the-mixer-and-the-master-effects) |
@@ -36,9 +40,10 @@ Everything is synthesized. There are no samples and no recordings in it.
 | **2** | Press **MENU** | the tour: it plays and names what it can do, about 40 seconds. Any key ends it |
 | **3** | Hit the **pads** | 16 sound effects. The display shows the one you hit |
 | **4** | Press **F2 MUTATE** a few times | each press is a new variation. **F3 UNDO** takes one back |
-| **5** | Press **PLAY** | the demo song |
-| **6** | Press **K5** twice, turn **encoder 3** | INTENSITY: the band comes in instrument by instrument |
-| **7** | Press **HOME** on any page | what every control does on that page |
+| **5** | Press **PLAY** | the demo song, bar after bar |
+| **6** | Press **K5** twice, turn **encoder 3** down and up again | INTENSITY: it starts at 100 %. Down, the band thins out to the kick; up, it comes in instrument by instrument |
+| **7** | Press **STOP**, then **K5** until the page is SEQUENCER, then **PLAY** | one pattern, round and round: the top line says LOOP. **REC**, and what you play on the pads is recorded into it ([section 9](#loop-a-pattern-and-play-into-it)) |
+| **8** | Press **HOME** on any page | what every control does on that page |
 
 ---
 
@@ -55,9 +60,9 @@ Everything is synthesized. There are no samples and no recordings in it.
 | **5** | **the 16 pads** | play the kit's sounds. On the song pages they are steps, patterns or mutes – and the display draws them as 16 tiles |
 | **6** | **SHIFT** | the second meaning of a key, and fast encoders |
 | **7** | **K1 – K6** | the pages. Press a K key again for its next page |
-| **8** | **A · B** | A: the output volume (on SEQ and AUTO, the tempo). B: the scale, or the bar's length |
-| **9** | **LEFT · MENU · RIGHT** | the page (or pattern) before and after · the tour |
-| **10** | **REC · STOP · PLAY** | the song |
+| **8** | **A · B** | A: the output volume (on SEQ, SONG and AUTO, the tempo). B: the scale on SEQ, the bar's length on SONG. On LINK both send a controller to the game |
+| **9** | **LEFT · MENU · RIGHT** | the page before and after – on SEQ, SONG and AUTO the pattern · the tour |
+| **10** | **REC · STOP · PLAY** | PLAY plays one pattern round and round (LOOP) or the song in its order (SONG): the top line of the song's pages says which. With REC lit, what you play is recorded |
 | **11** | **the keys** | play the selected sound as an instrument, in tune |
 | **12** | **RETURN · HOME** | back to the first page · the controls of this page |
 
@@ -95,8 +100,8 @@ The top four rows shape **one sound**. The K4 and K5 rows after their first page
 | | What it is |
 |---|---|
 | **1** | the selected sound: its pad number, its name, its engine |
-| **2** | the kit it belongs to: SFX or MUSIC |
-| **3** | the song: playing or stopped, its pattern, its tempo – and a dot that is green while a game is linked |
+| **2** | the kit it belongs to: SFX or MUSIC. On SEQ, SONG, AUTO, MIX and MASTER this place says **LOOP** or **SONG** instead: what PLAY plays |
+| **3** | the song: playing or stopped – or a red dot while REC is lit, playing or not – the pattern that plays, the tempo – `A>C` while pattern C waits for the bar line – and a dot that is green while a game is linked |
 | **4** | the page's name |
 | **5** | six marks for K1 – K6. The bright one is the key you are on; the dots under it are that key's pages |
 | **6** | the picture: the sound's whole shape – and over it, in white, what this page's knobs shape (the wave, the envelope, the filter, the LFO) |
@@ -114,8 +119,9 @@ The picture redraws as you turn. That is the quickest way to learn what a knob d
 ![The SEQ page](img/page-seq.png)
 
 The tiles are the pads. Whatever a pad does on this page, its tile shows – here, the 16 steps of the selected sound.
-The four values are in the column on the right, numbered like the encoders, with two lines under them that say what
-the pads do here.
+The four values are in the column on the right, numbered like the encoders. Under them a line says what the pads do
+here, and on SEQ and AUTO the eight patterns stand under that. The numbers in this picture are explained in
+[section 9](#reading-the-seq-page).
 
 ---
 
@@ -274,8 +280,74 @@ reverb, not a recording of a string section.
 
 ## 9. Tutorial: a beat
 
-A **pattern** is one bar: 16 steps for each of the MUSIC kit's 16 sounds. Press **K5** for the SEQ page, and **F2**
-until you reach an empty pattern.
+A **pattern** is one bar: 16 steps for each of the MUSIC kit's 16 sounds. There are eight of them, A – H. The SEQ
+page (**K5**) is where a pattern is made.
+
+### Loop a pattern and play into it
+
+**On the SEQ page, PLAY keeps one pattern playing, round and round.** The top line says so: **LOOP**. That is all
+there is to it – no chain to set, no arrangement to clear. (From firmware 1.5.0.)
+
+**1. Press K5** while nothing plays. The page is SEQUENCER, and the top line says LOOP. (If the song is playing,
+press STOP first – or press F1.) DATA chooses the sound whose steps you see. A device as it comes shows pad 1,
+TIMPANI, with no steps; turn DATA two clicks to the right for the kick, as in the picture.
+
+![The SEQ page, stopped: LOOP in the top line](img/loop-1.png)
+
+| | What it is |
+|---|---|
+| **1** | **LOOP**: PLAY will repeat the pattern. (The other word here is SONG: PLAY will play the song in its order) |
+| **2** | **F1** changes between the two. It says what it will do: TO SONG |
+| **3** | the eight patterns. The blue one is the one you see |
+
+**2. Press PLAY.** Pattern A repeats until you press STOP. Nothing moves on to B.
+
+**3. Another pattern: LEFT or RIGHT.** It does not cut in. It starts on the next bar line, and then it is the one
+that repeats. While it waits, the display says so in three places:
+
+![A pattern that waits for the bar line](img/loop-2.png)
+
+| | What it is |
+|---|---|
+| **1** | `A>G`: A plays, G comes next |
+| **2** | `EDIT G - PLAYS A`, in orange: what you see is not yet what you hear |
+| **3** | G blinks yellow until it starts. White is the pattern that plays |
+
+Here G is the first empty pattern of the demo song: a place to try things.
+
+**4. Press REC.** Now the pads are the drum kit and the keys are the notes. Play in time: every hit is written onto
+the step nearest to it, and you hear it again on the next round. A click keeps time.
+
+![Playing it in](img/loop-3.png)
+
+| | What it is |
+|---|---|
+| **1** | the red dot: REC is lit. It beats with the click |
+| **2** | the hits, as they land. The tiles show the sound you played last |
+| **3** | what the pads do now |
+| **4** | **F4** is **ERASE** while REC plays |
+
+**5. A wrong note?** Hold **F4 ERASE**: the selected sound's steps are erased as the bar passes them; a tap erases
+only the step under the playhead. Or press **F2 UNDO**: everything you played since the first hit is gone in one
+press. F2 again brings it back.
+
+![UNDO takes the whole take back](img/loop-4.png)
+
+| | What it is |
+|---|---|
+| **1** | what was taken back: `TAKE`, all you played in |
+| **2** | **F2 UNDO**. Pressed again it is redo |
+
+**6. Press REC again** and the pads are the 16 steps once more, to add a hit by hand or fix a note. **STOP** ends it.
+
+**7. The song in its order again?** Press **F1 TO SONG** – or go to the SONG page while it is stopped and REC is
+off ([section 10](#what-play-plays-loop-or-song)).
+
+### Step by step: a beat from nothing
+
+Press **K5** for the SEQ page, and **RIGHT** until you are on an empty pattern – in the row of eight letters under
+the values an empty one is dim. In the demo song that is G. While the song is stopped, LEFT and RIGHT change the
+pattern at once.
 
 **1. The kick.** Turn **DATA** to KICK. Press **F3 FILL** once: a kick on every 4th step.
 
@@ -293,7 +365,11 @@ until you reach an empty pattern.
 
 ![With a bass line](img/t-beat-4.png)
 
-**5. Press PLAY.**
+**5. Press PLAY.** The pattern repeats: the top line says LOOP. Go on changing it while it plays.
+
+![The pattern, playing](img/t-beat-5.png)
+
+Anything you do here **F2 UNDO** takes back ([below](#undo)).
 
 ### Reading the SEQ page
 
@@ -301,11 +377,24 @@ until you reach an empty pattern.
 
 | | What it is |
 |---|---|
-| **1** | the page and the pattern you edit |
-| **2** | the 16 steps of the selected sound, as the 16 pads: **a row is a beat**. A step that is on shows its **note**; its **height** is how hard it plays; `>3` in its corner means it holds 3 steps. The frame is the step the encoders edit; the white tile is the step playing now |
-| **3** | STEP · NOTE · VELOCITY · LENGTH of the framed step |
-| **4** | what the pads do here, and the swing and the scale. It warns when the sound's layer is silent at the current intensity |
-| **5** | pattern before / after · FILL · CLEAR the row · COPY the pattern to the next · SAVE |
+| **1** | what PLAY plays: **LOOP** (this pattern, round and round) or **SONG** (the song in its order) |
+| **2** | playing (a green triangle) or stopped (a square) – or, while REC is lit, a red dot in their place, playing or not · the pattern that plays · the tempo. `A>C` while C waits for the bar line |
+| **3** | the page and the pattern you see: `PATTERN A` – or `EDIT B - PLAYS A`, in orange, while another one plays. `layer off` beside it: the selected sound is silent at the current intensity |
+| **4** | the 16 steps of the selected sound, as the 16 pads: **a row is a beat**. A step that is on shows its **note**; its **height** is how hard it plays; `>3` in its corner means it holds 3 steps. The frame is the step the encoders edit; the white tile is the step playing now |
+| **5** | STEP · NOTE · VELOCITY · LENGTH of the framed step |
+| **6** | what the pads do: `PADS: THE 16 STEPS`. With REC lit: `REC READY: PRESS PLAY`, then `REC: PLAY IT IN - F4 ERASE`. `ITS LAYER IS OFF NOW` warns that you will not hear the selected sound |
+| **7** | the eight patterns, and the scale NOTE moves in (with REC lit: `REC off: steps`) |
+| **8** | TO SONG (or TO LOOP) · UNDO · FILL · CLEAR the sound's steps · COPY the pattern · SAVE |
+
+The eight letters, on SEQ and on AUTO:
+
+| A letter is | It means |
+|---|---|
+| **yellow, blinking** | chosen: it starts on the next bar line |
+| **white** | it plays |
+| **blue** | it is the one you see and edit |
+| **light on dark** | something is in it |
+| **dim** | empty |
 
 The page shows one sound at a time. To see every sound's steps at once, open the stage ([section 14](#14-the-stage)).
 
@@ -313,29 +402,63 @@ The page shows one sound at a time. To see every sound's steps at once, open the
 
 | To do this | Do this |
 |---|---|
-| switch a step on or off | hit its pad |
+| switch a step on or off | hit its pad (REC not lit) |
 | choose another sound | turn DATA, or SHIFT + its pad (you hear it) |
-| give a step a note | hold its pad and play a key – or turn encoder 2 NOTE (it stays in the scale) |
+| give a step a note | hold its pad and play a key – or turn encoder 2 NOTE (it stays in the scale, which B chooses) |
 | make it louder or softer | encoder 3 VELOCITY, 1 – 8 |
 | make a held note shorter | encoder 4 LENGTH: AUTO, or 1 – 15 steps |
-| play a part in, live | **REC, then PLAY**: the pattern loops and what you play is recorded – see below |
-| change the tempo | A. SHIFT + A is the swing |
+| the sound on every 4th step, every 2nd, every one, none | F3 FILL, again and again |
+| take the selected sound out of the pattern | F4 CLEAR. `NOTHING TO CLEAR` if it has no steps |
+| try a variation | F5 COPY: the pattern is copied into the next empty one, and you are on the copy (`COPIED A > G`). While it plays the copy starts on the bar line. `NO EMPTY PATTERN` if all eight hold something |
+| play a part in, live | **REC, then PLAY** – see below |
+| change the tempo | A. SHIFT + A is the swing (the top line says it: `SWING 20%`) |
 
-### Playing it in, like on a groovebox
+A step **without a note** plays the sound as designed – right for drums. **LENGTH AUTO** holds a note until the sound
+plays again or the bar ends; LENGTH is for held sounds, a one-shot always plays to its own end.
 
-Press **REC**, then **PLAY**. The pattern loops, and on the SEQ page:
+### Playing it in
+
+Press **REC**, then **PLAY** – or PLAY first and REC when you are ready. On the SEQ page, while REC is lit:
 
 | | |
 |---|---|
 | **the pads are the drum kit** | hit a pad in time and its sound is recorded on the step nearest to your hit, as hard as you hit it. Kick, snare and hat can be played in together |
 | **the keys are the notes** | SHIFT + a pad selects an instrument (without recording it); then every key you play is recorded on its step, at its pitch – a bass line or a melody in one pass |
 | **the tiles follow you** | they show the steps of the sound you played last, so you see each hit land |
-| **a metronome keeps time** | a click on every beat, higher on the bar line, for as long as REC is on. The red REC dot in the top line beats with it. **SHIFT + REC** turns the click off and on. It is the device's own: it is not recorded and a game never hears it |
+| **the pattern repeats** | switching REC on sets LOOP (`REC ON: PATTERN LOOPS` if it was SONG). What you play is laid on top of what is there, round after round |
+| **the display stays with the sound** | LEFT and RIGHT still choose another pattern, on the bar line. Until then the display stays on the pattern that plays, so every hit lands in what you see |
+| **a metronome keeps time** | a click on every beat, higher on the bar line, while REC is lit and it plays. The red dot in the top line beats with it. **SHIFT + REC** turns the click off and on (`CLICK OFF`, `CLICK ON`). It is the device's own: it is not recorded and a game never hears it. There is no count-in: the first round of the loop is one |
+| **F4 is ERASE** | held, it erases the selected sound's steps as the bar passes them, in the pattern that plays. A tap erases the step under the playhead |
+| **F2 takes the take back** | all of it, from the first hit to STOP, PLAY or REC – with whatever you erased, filled or turned in between |
 
-Press **REC** again and the pads are the sixteen steps once more, to add a hit by hand or fix a note.
+While it is stopped with REC lit the pads only sound; nothing is recorded (`REC READY: PRESS PLAY`).
 
-A step **without a note** plays the sound as designed – right for drums. **LENGTH AUTO** holds a note until the sound
-plays again or the bar ends; LENGTH is for held sounds, a one-shot always plays to its own end.
+Press **REC** again and the pads are the sixteen steps once more.
+
+Two things to know. Only the **MUSIC kit** is recorded: with the SFX kit selected (on a sound page) a hit says
+`MUSIC KIT ONLY: K5 SEQ` and nothing is written. And if you press **F1 TO SONG** while REC plays, the take goes along
+the song: each hit lands in the pattern that plays in that bar.
+
+### UNDO
+
+**F2** on SEQ, SONG and AUTO takes back the last thing you did to the song. Pressed again, it brings it back. The
+top line says what: `UNDO: TAKE`, `REDO: TAKE`. With nothing to take back the key is dim and says `NOTHING TO UNDO`.
+
+| It says | One step is |
+|---|---|
+| `EDITS` | steps, notes, velocities, lengths and automation points changed in a row. The row ends when you change the page or the pattern, or press PLAY, STOP or REC |
+| `TAKE` | everything played in, from the first hit to STOP, PLAY or REC |
+| `BARS` | bars added to the arrangement and taken away in a row |
+| `FILL` · `CLEAR` · `RAMP` · `CLR PAT` · `COPY` · `ARR` | that one key press (`ARR`: the arrangement cleared). After COPY, F2 also takes you back to the pattern you copied |
+| `NEW` · `DEMO` · `LOAD` | the whole song that was replaced – by NEW, by DEMO, or by a song a game sent |
+
+| | |
+|---|---|
+| **One step only** | the next thing you do replaces what F2 holds |
+| **The notes** | F2 brings back patterns, automation and the arrangement. After NEW, DEMO and LOAD it brings back the whole song, with tempo and mix |
+| **Not the knobs** | tempo, swing, the scale, CHAIN, the bar's length, layers and the mixer are not taken back by F2 |
+| **Not the sounds** | a sound has its own UNDO, F3 on the sound pages. After a game's LOAD, F2 brings back the song, not the sounds that came with it |
+| **Not kept** | switching off, or a factory reset, forgets it |
 
 ---
 
@@ -347,11 +470,12 @@ Press **K5 again** for the SONG page.
 
 | | What it is |
 |---|---|
-| **1** | the eight patterns on pads 1 – 8, each with a sketch of what is in it. White: playing. Blue: the one you edit |
-| **2** | INTENSITY on pads 9 – 16: the tiles light up to the current level |
-| **3** | PATTERN · CHAIN · INTENSITY · the selected sound's LAYER |
-| **4** | the arrangement: a pattern for each bar. The white one is playing |
-| **5** | PLAY · COPY · CLR PAT · DEMO · SEND to the game · SAVE |
+| **1** | what PLAY plays: **SONG** here, or LOOP. On this page too the line under it says `EDIT A - PLAYS B` while you look at one pattern and another plays |
+| **2** | the eight patterns on pads 1 – 8, each with a sketch of what is in it. White: playing. Blue: the one you edit. Blinking yellow: chosen, it starts on the next bar line |
+| **3** | INTENSITY on pads 9 – 16: the tiles light up to the current level |
+| **4** | PATTERN · CHAIN · INTENSITY · the selected sound's LAYER |
+| **5** | the arrangement: a pattern for each bar. The white one is playing (no bar is white while a pattern loops) |
+| **6** | TO LOOP (or TO SONG) · UNDO · CLR PAT · NEW · SEND to the game · SAVE |
 
 ### How a song is put together
 
@@ -363,17 +487,62 @@ flowchart TD
   R --> ST["16 STEPS<br/>each: on or off, a note, a velocity, a length, an automation point"]
 ```
 
-### Which pattern plays
+### What PLAY plays: LOOP or SONG
+
+| The top line says | PLAY plays |
+|---|---|
+| **LOOP** | the pattern, round and round. A pattern you choose takes over on the next bar line, and then that one repeats |
+| **SONG** | the arrangement, bar after bar, from the first bar that has the pattern you see. If no bar has it: that pattern once, then the arrangement from the top. Without an arrangement: the chain |
+
+The word stands in the top line of SEQ, SONG, AUTO, MIX and MASTER. On the sound pages and LINK the kit stands
+there instead; PLAY plays what was set last.
+
+| This happens | The mode is |
+|---|---|
+| you go to **SEQ** or **AUTO**, while it is stopped and REC is not lit | LOOP |
+| you go to **SONG**, while it is stopped and REC is not lit | SONG |
+| you go to any page while it plays, or with REC lit | as it was |
+| **F1** on SEQ, SONG or AUTO – at any time, also while it plays | the other one (`LOOP: PATTERN REPEATS`, `SONG: PLAYS IN ORDER`). The key says what it will do: TO SONG, TO LOOP |
+| you switch **REC** on | LOOP |
+| you press PLAY or STOP | as it was: the top line said what PLAY will do |
+| the device is switched on | SONG: PLAY plays the song |
+
+From LOOP to SONG while it plays, the song goes on behind the first bar of the arrangement that has the pattern
+you hear – from the top if no bar has it. Without an arrangement the chain goes on from the pattern you hear.
+
+### Choosing a pattern
+
+| | |
+|---|---|
+| **with** | LEFT / RIGHT on SEQ, SONG and AUTO · pads 1 – 8 and encoder 1 on SONG · a click on the stage · a cue from a game |
+| **stopped** | it is there at once |
+| **playing** | it starts on the next bar line. Until then its letter blinks yellow and the top line reads `A>C` |
+| **STOP before the bar line** | the pattern you chose is the one you see, and the one the next PLAY starts with |
+
+In **LOOP** the chosen pattern repeats. In **SONG** it depends on the arrangement:
+
+| The chosen pattern is … | What happens |
+|---|---|
+| **in** the arrangement | the song carries on from its next bar with that pattern |
+| **not in** it | it takes over on the bar line and stays until you choose another |
+| (no arrangement) | the chain goes on from it |
+
+### The order of the song
 
 | You want | Do this |
 |---|---|
-| one pattern, round and round | CHAIN (encoder 2) at 1 |
-| A, B, C, D in a row, a bar each | CHAIN at A – D |
-| your own order | the arrangement: **SHIFT + pad 1 – 8** adds that pattern as a bar |
+| your own order | the arrangement: **SHIFT + pad 1 – 8** adds that pattern as a bar (`BAR ADDED`; `32 BARS: FULL` at the end) |
 | to take the last bar away | SHIFT + any of pads 9 – 15 |
-| no arrangement (the chain plays again) | SHIFT + pad 16 |
-| to jump to a pattern while it plays | pads 1 – 8: it changes on the next bar line |
-| a bar of fewer than 16 steps | encoder B |
+| no arrangement (the chain plays again) | SHIFT + pad 16, **twice**: it asks `PRESS AGAIN: CLEAR ARR` |
+| A, B, C, D in a row, a bar each, without an arrangement | CHAIN (encoder 2) at A – D. While there is an arrangement the chain is not used, and the knob says `ARRANGEMENT IN USE` |
+| one pattern, round and round | LOOP – F1 |
+| a bar of fewer than 16 steps | encoder B (`BAR: 12 STEPS`). It is the bar's length for the whole song |
+| to empty the pattern you see | F3 CLR PAT |
+| an empty song | F4 NEW, **twice**: it asks `PRESS AGAIN: NEW SONG`. Tempo 120, no swing, no arrangement, every fader at 100, every layer at 0. Your sounds stay |
+| the demo song again | SHIFT + F4, **twice**: `PRESS AGAIN: DEMO` |
+
+A key that asks twice counts the second press while its question is in the top line, about two seconds. All of
+these F2 takes back.
 
 ---
 
@@ -400,7 +569,8 @@ On the page the eight intensity tiles light up as the level rises; LAYER is the 
 ## 12. Automation
 
 Automation moves a knob by itself while the pattern plays. **Any knob can have a lane** – and a sound can have as many
-lanes as it has knobs that should move. Press **K5 a third time** for the AUTO page.
+lanes as it has knobs that should move. Press **K5 a third time** for the AUTO page. As on SEQ, PLAY repeats the
+pattern here (LOOP) – so a lane can be drawn while it goes round.
 
 ![The AUTO page](img/page-auto.png)
 
@@ -409,8 +579,8 @@ lanes as it has knobs that should move. Press **K5 a third time** for the AUTO p
 | **1** | the pattern, and the knob this lane moves |
 | **2** | the lane, as the 16 pads: a bar for each step. Bright with a white edge: a point. Dim: the value still held from the last point. The dot in a corner: the sound plays on that step |
 | **3** | STEP · VALUE (in the knob's own unit) · TARGET (which knob). The orange dot says this knob has a lane |
-| **4** | how many lanes this sound has, and how many of the song's 24 are in use |
-| **5** | RAMP joins the points with straight lines · CLEAR empties the lane |
+| **4** | the eight patterns, as on SEQ, and how many of the song's 24 lanes are in use |
+| **5** | TO SONG (or TO LOOP) · UNDO · RAMP joins the points with straight lines · CLEAR empties the lane · COPY the pattern · SAVE |
 
 ### What a lane can move
 
@@ -434,6 +604,9 @@ on the FILTER page, a fader on MIX, ROOM SIZE on MASTER – then go to AUTO. Its
 | **5** | press **F3 RAMP** – the picture above |
 
 For a second lane on the same sound, turn TARGET to another knob and put points on it. Both play.
+
+LEFT and RIGHT choose the pattern, as on SEQ. **F2 UNDO** takes back points, a RAMP or a CLEAR
+([section 9](#undo)). CLEAR on a lane without points says `NOTHING TO CLEAR`.
 
 On a sound page, an orange dot beside a value says a lane moves that knob:
 
@@ -477,6 +650,9 @@ Sound effects skip the faders: a muted bass never mutes an explosion.
 
 **The pads mute. SHIFT + a pad solos** – only soloed sounds play.
 
+The top line says LOOP or SONG here too, and **F5 PLAY** plays that: the pattern you were on, round and round, or
+the song. F1 on SEQ, SONG or AUTO changes it.
+
 ### MASTER – press K4 a third time
 
 ![The MASTER page](img/page-master.png)
@@ -502,11 +678,11 @@ In the Playground and the plugin, **Stage** opens a bigger picture of the whole 
 
 | | What it is | With the mouse |
 |---|---|---|
-| **1** | messages appear here | |
+| **1** | LOOP / SONG: what PLAY plays | click: the other one |
 | **2** | PLAY / STOP · REC | click |
 | **3** | the tempo | click its left or right half, or the wheel |
-| **4** | the patterns A – H | click: go there · **right-click: add a bar of it to the arrangement** |
-| **5** | the arrangement | click a bar: its pattern · right-click: end the arrangement before it |
+| **4** | the patterns A – H. White: playing. Blue: the one shown. Blinking yellow: it starts on the next bar line | click: go there – on the bar line while it plays · **right-click: add a bar of it to the arrangement** |
+| **5** | the arrangement | click a bar: its pattern · right-click: end the arrangement before it (UNDO brings it back) |
 | **6** | the kit's 16 pads | click to play and select |
 | **7** | SFX / MUSIC | choose the kit |
 | **8** | the selected sound's picture | |
@@ -517,10 +693,13 @@ In the Playground and the plugin, **Stage** opens a bigger picture of the whole 
 | **13** | the pattern | click a step · **wheel: its note** · SHIFT + wheel: velocity · CTRL + wheel: length |
 | **14** | INTENSITY, with each sound's mark above | drag |
 | **15** | the selected sound's LAYER mark | drag |
-| **16** | what plays now | |
-| **17** | FILL · CLEAR · COPY · DEMO | click |
+| **16** | what plays now. Messages appear over it: what a key did, or what it asks | |
+| **17** | FILL · CLEAR · COPY · UNDO · DEMO | click. DEMO asks twice. UNDO is dim while there is nothing to take back |
 
 SHIFT-click does the same as right-click everywhere.
+
+The picture shows pattern A repeating: LOOP is lit, and no bar of the arrangement moves. ERASE, the click's switch
+and the swing are on the device only.
 
 ### Automation on the stage
 
@@ -564,6 +743,7 @@ and nothing sounds different.
 | bend a sound while it plays (an engine that follows speed) | `SfxPlayer`'s pitch, cutoff, timbre and level |
 | bring the band in and out | `SfxMusicPlayer.intensity`, 0 – 1 |
 | change the music on the next bar | `SfxMusicPlayer.CuePattern(0 … 7)` |
+| keep one pattern playing until the next cue | `SfxMusicPlayer.loopPattern` – the device's LOOP |
 | play one of the song's instruments by hand | `SfxMusicPlayer.PlaySound(sound, velocity, note)` |
 | move the mix | `SetTrackVolume` · `SetTrackPan` · `SetTrackMute` · `SetMaster` |
 
@@ -573,6 +753,14 @@ and nothing sounds different.
 |---|---|
 | **in** the arrangement | the song carries on from that bar |
 | **not in** it (keep one aside for the boss, the menu) | it takes over on the bar line and stays until the next cue |
+
+That is with the song playing in its order. With `loopPattern` on – or LOOP on the device – every cued pattern
+takes over on the bar line and repeats until the next cue, wherever it stands in the arrangement.
+
+`loopPattern` is new with firmware 1.5.0. The package holds the native library with the loop flag, and the
+library's own test (`tests/dotnet`) passes with it: a looped pattern stays bar after bar, and a cue changes it on
+the bar line. Inside Unity one Play mode test runs it, headless and muted: with `loopPattern` on, the demo song
+stays on its pattern for more than three bars; with it off, the arrangement goes on. Nobody has listened to it.
 
 ### Tuning live
 
@@ -604,13 +792,17 @@ The protocol, byte by byte, is in [LINK-PROTOCOL.md](LINK-PROTOCOL.md). The Unit
 | | |
 |---|---|
 | **F6 SAVE** | keeps both kits and the song – patterns, arrangement, layers, mix, automation. A DAW project keeps them too |
-| **F4 DEMO** (SONG page) | the demo song again. It replaces your song, not your sounds |
+| **F4 NEW** (SONG page), twice | an empty song. It replaces your song, not your sounds. F2 UNDO brings the song back |
+| **SHIFT + F4** (SONG page), twice | the demo song again. It replaces your song, not your sounds. F2 UNDO brings the song back |
 | **SHIFT + MENU, twice** | factory reset: both kits and the song as they came, and saved so. Press it once and it asks; twice within three seconds does it |
 
 The game and the device read songs from every earlier version of the format. A kit or song *stored on the device* by
 an earlier version is not read; the factory kits and the demo appear instead. The same holds the other way: a
 sound or song from a *newer* version is not taken by this firmware (it keeps what it has), and a kit or song stored
 by a newer firmware is not read. The next SAVE then writes over it.
+
+Firmware 1.5.0 stores sounds and songs exactly as 1.4.0 did. What it adds is not stored: after switching on, PLAY
+plays the song (SONG), the click is on, REC is off and F2 has nothing to take back.
 
 ---
 
@@ -626,7 +818,11 @@ by a newer firmware is not read. The next SAVE then writes over it.
 | **echoes on the snare only** | SNARE's FX page: DELAY up. MASTER page: DELAY TIME 3/16, FEEDBACK to taste |
 | **music that reacts to danger** | low LAYER marks for the calm instruments, high for the tense ones. The game sets `intensity` from how close the enemy is |
 | **a boss theme** | write it in pattern H and leave H out of the arrangement. `CuePattern(7)` when the boss appears, `CuePattern(0)` after |
-| **a variation of a pattern** | F5 COPY on the SEQ page: the next pattern is a copy, and you are on it |
+| **one pattern, round and round, while I work on it** | K5 for the SEQ page, PLAY. The top line says LOOP |
+| **to play a part in** | SEQ page, REC, PLAY, then the pads or the keys. A bad take: F2 |
+| **one wrong sound out of a take** | SHIFT + its pad selects it. Hold F4 ERASE for one round |
+| **a variation of a pattern** | F5 COPY on the SEQ page: the next empty pattern is a copy, and you are on it. F2 takes it back |
+| **the whole song again, after looping** | F1 TO SONG, PLAY |
 | **to start over** | SHIFT + MENU, twice |
 
 ---
@@ -640,8 +836,11 @@ by a newer firmware is not read. The next SAVE then writes over it.
 | **Size** | 8 patterns, 32 bars of arrangement, 16 voices – with long reverberant sounds the oldest note is cut to make room |
 | **Automation** | 24 lanes a song, moving in steps, not glides |
 | **Chords** | one note per step for each sound. A chord needs several sounds, or the keys |
+| **Recording** | onto the 16 steps: a hit is moved to the step nearest to it. No count-in. The MUSIC kit only |
+| **Undo** | one step back for the song, and forth again. Not for tempo, swing or the mixer; a sound has its own |
 | **Platforms** | the Unity package runs on Windows x64 so far. Its MIDI link is tested against the emulator over a virtual cable, not against the hardware |
-| **The stage** | has no control for the swing; it is SHIFT + A on the device |
+| **The stage** | has no control for the swing, the click or ERASE; they are on the device |
+| **What is tested** | firmware 1.5.0 passes all 14 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY. It has not been run on the hardware or in the plugin. The link was last tested against the emulator with firmware 1.4.0. Nobody has listened to the new features yet |
 
 ---
 
@@ -656,7 +855,8 @@ For those who know their way around: every page and every shortcut on one pictur
 ### The same, as tables
 
 **Everywhere:** pads play · keys play the selected sound in tune · DATA selects · SHIFT + K1 the other kit ·
-PLAY STOP REC the song · MENU the tour · HOME this page's controls · A the output volume · SHIFT + MENU twice: reset.
+PLAY STOP: a pattern round and round (LOOP) or the song (SONG) · REC: what is played is recorded · SHIFT + REC the
+click · MENU the tour · HOME this page's controls · A the output volume (not on SEQ, SONG, AUTO and LINK: see below) · SHIFT + MENU twice: reset.
 
 | Page | Key | Pads | Encoders 1 – 4 | F1 – F6 |
 |---|---|---|---|---|
@@ -669,14 +869,38 @@ PLAY STOP REC the song · MENU the tour · HOME this page's controls · A the ou
 | **FX** | K4 | play | CHORUS · DELAY · REVERB · LEVEL | the same |
 | **MIX** | K4 ×2 | mute · SHIFT: solo | VOLUME · PAN · DRIVE · OUTPUT | MUTE · SOLO · RESET · ALL ON · PLAY · SAVE |
 | **MASTER** | K4 ×3 | play | DELAY TIME · FEEDBACK · ROOM SIZE · DAMPING | as MIX |
-| **SEQ** | K5 | steps · SHIFT: select a sound | STEP · NOTE · VELOCITY · LENGTH | < PAT · PAT > · FILL · CLEAR · COPY · SAVE |
-| **SONG** | K5 ×2 | 1 – 8 pattern · 9 – 16 intensity · SHIFT: arrangement | PATTERN · CHAIN · INTENSITY · LAYER | PLAY · COPY · CLR PAT · DEMO · SEND · SAVE |
-| **AUTO** | K5 ×3 | a point on / off · SHIFT: select a sound | STEP · VALUE · TARGET (it opens on the knob turned last) | < PAT · PAT > · RAMP · CLEAR · COPY · SAVE |
+| **SEQ** | K5 | steps (REC lit: the kit) · SHIFT: select a sound | STEP · NOTE · VELOCITY · LENGTH | TO SONG / TO LOOP · UNDO · FILL · CLEAR (REC playing: ERASE, held) · COPY · SAVE |
+| **SONG** | K5 ×2 | 1 – 8 pattern · 9 – 16 intensity · SHIFT: arrangement | PATTERN · CHAIN · INTENSITY · LAYER | TO SONG / TO LOOP · UNDO · CLR PAT · NEW (SHIFT: DEMO), both twice · SEND · SAVE |
+| **AUTO** | K5 ×3 | a point on / off · SHIFT: select a sound | STEP · VALUE · TARGET (it opens on the knob turned last) | TO SONG / TO LOOP · UNDO · RAMP · CLEAR · COPY · SAVE |
 | **LINK** | K6 | play | send CC 20 – 23 | as the sound pages |
 
 | Other encoder | Where | What it does |
 |---|---|---|
-| **A** | SEQ, AUTO | the tempo. SHIFT + A: the swing |
+| **A** | SEQ, SONG, AUTO | the tempo. SHIFT + A: the swing |
 | **A · B** | LINK | send CC 24 and 25 |
 | **B** | SEQ | the scale NOTE moves in |
 | **B** | SONG | the number of steps in a bar |
+
+| Other key | Where | What it does |
+|---|---|---|
+| **LEFT · RIGHT** | SEQ, SONG, AUTO | the pattern before / after: at once while stopped, on the bar line while it plays |
+| **REC** | everywhere | lit: PLAY repeats the pattern, and the keys and the pads are recorded into it – the pads on every page where they play the MUSIC kit: SEQ, the sound pages, MASTER and LINK |
+| **SHIFT + REC** | everywhere | the click on / off |
+| **SHIFT + pad 1 – 8** | SONG | add that pattern to the arrangement as a bar |
+| **SHIFT + pad 9 – 15** | SONG | take the last bar away |
+| **SHIFT + pad 16**, twice | SONG | no arrangement |
+
+| The top line says | It means |
+|---|---|
+| `LOOP: PATTERN REPEATS` · `SONG: PLAYS IN ORDER` | F1: what PLAY plays now |
+| `REC ON: PATTERN LOOPS` | REC changed SONG to LOOP |
+| `ERASE: HOLD F4` | F4 while REC plays: held, it erases the selected sound |
+| `MUSIC KIT ONLY: K5 SEQ` | a hit of the SFX kit was not recorded |
+| `UNDO: …` · `REDO: …` · `NOTHING TO UNDO` | F2 |
+| `PRESS AGAIN: …` | a key that asks twice: press it again while this stands |
+| `NOTHING TO CLEAR` | CLEAR or CLR PAT with nothing there. What F2 holds is kept |
+| `COPIED A > G` · `NO EMPTY PATTERN` | F5 COPY |
+| `ARRANGEMENT IN USE` | CHAIN is not used while there is an arrangement |
+
+The pictures in this manual are made from the firmware itself: `node docs/shots.mjs` takes the screenshots,
+`python docs/figures.py` puts the marks on them.

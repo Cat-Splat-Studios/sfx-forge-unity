@@ -24,6 +24,8 @@ namespace CatSplat.SfxForge
         [Header("Live")]
         [Tooltip("How hot the game is. Every sound of the song has a threshold (LAYER on the device) and only plays at or above it.")]
         [Range(0f, 1f)] public float intensity = 1f;
+        [Tooltip("The pattern that plays repeats until CuePattern chooses another. Off: the song's arrangement or chain.")]
+        public bool loopPattern;
 
         struct Command { public int kind, a, b, c, d; public float v; }   // 0 start, 1 stop, 2 cue, 3 note on, 4 note off, 5 track, 6 master
         readonly ConcurrentQueue<Command> commands = new ConcurrentQueue<Command>();
@@ -36,6 +38,7 @@ namespace CatSplat.SfxForge
         SfxMods mods = SfxMods.None;
         volatile int step = -1, pattern, bar = -1;
         volatile bool running;
+        bool loopApplied;                                           // what the player was told last (the audio thread's)
         static bool warned;
 
         /// <summary>The sequencer runs.</summary>
@@ -60,6 +63,7 @@ namespace CatSplat.SfxForge
             {
                 memory = Marshal.AllocHGlobal(SfxNative.PlayerSize);
                 SfxNative.PlayerInit(memory, sampleRate);
+                loopApplied = false;                                // (init switches it off)
                 Load();
             }
             if (playOnEnable) Play();
@@ -137,6 +141,7 @@ namespace CatSplat.SfxForge
             lock (gate)
             {
                 if (memory == IntPtr.Zero) return;
+                if (loopPattern != loopApplied) { loopApplied = loopPattern; SfxNative.PlayerSetLoop(memory, loopApplied); }
                 while (commands.TryDequeue(out var c))
                 {
                     switch (c.kind)

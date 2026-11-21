@@ -217,6 +217,58 @@ namespace CatSplat.SfxForge.Editor
             return best < double.MaxValue;
         }
 
+        // ---- the tools: levels, a set's values, a page's values as bits ----------------------------------------------------
+        /// <summary>A level in dB: "-3.2dB", "+1.3dB", "0.0dB" - "SILENT" at the floor (SfxLevels.Floor).</summary>
+        public static string DbText(float db)
+        {
+            if (float.IsNaN(db) || db <= SfxLevels.Floor) return "SILENT";
+            return DbNumber(db) + "dB";
+        }
+
+        /// <summary>The number of DbText alone: "-3.2", "+1.3", "0.0".</summary>
+        public static string DbNumber(float db)
+        {
+            double tenths = Math.Round(db * 10.0, MidpointRounding.AwayFromZero);
+            if (tenths == 0) return "0.0";
+            return (tenths > 0 ? "+" : "") + (tenths / 10.0).ToString("0.0", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>How far a play is tuned either way: "+-50ct", "OFF" at 0.</summary>
+        public static string CentsText(float cents) => cents < 0.5f ? "OFF" : "±" + Int((int)(cents + 0.5f)) + "ct";
+
+        /// <summary>A seed as its eight hex digits: "3F2A91C4".</summary>
+        public static string SeedText(uint seed) => seed.ToString("X8", CultureInfo.InvariantCulture);
+
+        /// <summary>A typed seed: hex digits, with or without "0x". False: not one.</summary>
+        public static bool TryParseSeed(string typed, out uint seed)
+        {
+            seed = 0;
+            if (string.IsNullOrWhiteSpace(typed)) return false;
+            string t = typed.Trim();
+            if (t.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) t = t.Substring(2);
+            return t.Length > 0 && t.Length <= 8 && uint.TryParse(t, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out seed);
+        }
+
+        /// <summary>The values of a page (PageOsc .. PageFx) as SfxParam bits: what a lock of the whole page holds.</summary>
+        public static uint PageMask(int page)
+        {
+            uint mask = 0;
+            if (page < 0 || page >= PageCount) return 0;
+            foreach (int k in PageParams[page]) if (k >= 0) mask |= 1u << k;
+            return mask;
+        }
+
+        /// <summary>A typed level: "-3", "-3.5dB", "+1 db", "0". False: no number in it, or another unit.</summary>
+        public static bool TryParseDb(string typed, out float db)
+        {
+            db = 0f;
+            if (!Magnitude(typed, out double m, out string unit)) return false;
+            if (unit.Length > 0 && unit != "db") return false;
+            if (typed.Trim().ToLowerInvariant() == "off") return false;
+            db = (float)m;
+            return true;
+        }
+
         /// <summary>A typed text as a value of this parameter.</summary>
         public static bool TryParse(SfxParam k, string typed, out int value)
             => TryParse(typed, 0, k == SfxParam.Table ? TableNames.Length - 1 : 127, v => ParamText(k, v), out value);

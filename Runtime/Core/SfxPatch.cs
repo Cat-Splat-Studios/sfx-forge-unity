@@ -218,6 +218,34 @@ namespace CatSplat.SfxForge
             }
         }
 
+        /// <summary>
+        /// As Mutate above, with the device's own generator, an amount and locks. step: the most a value moves either way,
+        /// 0..127 (19 is the device's 15 %: StepOf(15)). locked: a bit for each SfxParam that stays (SfxMutate.Bit).
+        /// One number is drawn for each of the 25 values in wire order, used or not - so locking a value changes no other.
+        /// LEVEL, TABLE and a SUSTAIN of 0 stay; a SUSTAIN above 0 stays above 0.
+        /// </summary>
+        public void Mutate(ref SfxRandom rng, int step, uint locked = 0)
+        {
+            if (step < 0) step = 0; else if (step > 127) step = 127;
+            for (int i = 0; i < ParamCount; i++)
+            {
+                var p = (SfxParam)i;
+                int move = rng.Range(-step, step);
+                if (p == SfxParam.Level || p == SfxParam.Table || (p == SfxParam.Sustain && sustain == 0) || (locked & (1u << i)) != 0) continue;
+                int v = this[p] + move;
+                int low = p == SfxParam.Sustain ? 1 : 0;
+                this[p] = (byte)(v < low ? low : v > 127 ? 127 : v);
+            }
+        }
+
+        /// <summary>An amount in percent (0..100) as the step Mutate takes: 0 is 0, 15 is 19 (the device's), 100 is 127; never 0 above 0.</summary>
+        public static int StepOf(int percent)
+        {
+            if (percent <= 0) return 0;
+            if (percent > 100) percent = 100;
+            return Math.Max(1, (percent * 127 + 50) / 100);
+        }
+
         public bool Equals(SfxPatch o)
         {
             if (engine != o.engine) return false;

@@ -28,6 +28,7 @@ namespace CatSplat.SfxForge
         [DllImport(Lib)] static extern void sfxn_player_start(IntPtr player, int pattern);
         [DllImport(Lib)] static extern void sfxn_player_stop(IntPtr player);
         [DllImport(Lib)] static extern void sfxn_player_cue(IntPtr player, int pattern);
+        [DllImport(Lib)] static extern void sfxn_player_set_loop(IntPtr player, int on);
         [DllImport(Lib)] static extern void sfxn_player_set_live(IntPtr player, ref SfxMods mods, float intensity);
         [DllImport(Lib)] static extern void sfxn_player_set_track(IntPtr player, int slot, int vol, int pan, int mute);
         [DllImport(Lib)] static extern void sfxn_player_set_master(IntPtr player, int index, int value);
@@ -38,6 +39,7 @@ namespace CatSplat.SfxForge
         [DllImport(Lib)] static extern int sfxn_bake(IntPtr player, byte[] patch, float sr, float vel, int midiNote, float noteSt, float holdSeconds, [Out] float[] left, [Out] float[] right, int max);
 
         static int available = -1;
+        static volatile bool noLoop;                    // a library from before the loop flag: it plays on, in the song's order
 
         /// <summary>False where the library is missing (another platform): nothing plays locally, the link still works.</summary>
         public static bool Available
@@ -78,6 +80,17 @@ namespace CatSplat.SfxForge
         public static void PlayerStop(IntPtr player) => sfxn_player_stop(player);
         /// <summary>Change to this pattern on the next bar line (at once while stopped).</summary>
         public static void PlayerCue(IntPtr player, int pattern) => sfxn_player_cue(player, pattern);
+        /// <summary>
+        /// on: the pattern that plays repeats until PlayerCue chooses another. Off: the song's arrangement or chain, on from
+        /// its first bar with that pattern. PlayerInit switches it off; PlayerStart and PlayerStop leave it. False: the
+        /// library is an older one without it - nothing changed, the song plays in its order.
+        /// </summary>
+        public static bool PlayerSetLoop(IntPtr player, bool on)
+        {
+            if (noLoop) return false;
+            try { sfxn_player_set_loop(player, on ? 1 : 0); return true; }
+            catch (EntryPointNotFoundException) { noLoop = true; return false; }
+        }
         public static void PlayerSetLive(IntPtr player, ref SfxMods mods, float intensity) => sfxn_player_set_live(player, ref mods, intensity);
         /// <summary>A sound's place in the mix: volume 0..127 (100 = as designed), pan 0..127 (64 = the middle), mute 0 / 1. -1 leaves a value.</summary>
         public static void PlayerSetTrack(IntPtr player, int slot, int volume, int pan, int mute) => sfxn_player_set_track(player, slot, volume, pan, mute);

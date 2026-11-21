@@ -23,7 +23,7 @@ Plain MIDI, so it works over USB, the plugin's MIDI ports and Web MIDI. SysEx us
 | game → device | `F0 7D 56 42 04 <slot> F7` | request a dump of a pad |
 | both ways | `F0 7D 56 42 05 <piece> <pieces> <≤ 200 bytes> F7` | the song with its mix, in 39 pieces (7699 bytes, `sfx_song_pack`). Only this format travels; the older, shorter songs are read from files. A receiver puts each piece where it belongs and takes the song when all 39 are there: in any order, twins ignored. It forgets a transfer that stops for two seconds; a *different* song sent sooner than that after one that broke off can be mixed with it |
 | game → device | `F0 7D 56 42 06 F7` | request the 16 sounds and the song (as SEND does) |
-| game → device | `F0 7D 56 42 07 F7` | request the identity (firmware 1.4.0). Exactly these 6 bytes; with any other length it is ignored |
+| game → device | `F0 7D 56 42 07 F7` | request the identity (firmware 1.4.0 on). Exactly these 6 bytes; with any other length it is ignored |
 | device → game | `F0 7D 56 42 08 <18 bytes> F7` | the identity: which hardware, which firmware, what it holds (below). A device that receives one ignores it |
 
 `<slot>` is 0–15, a pad of the kit the device shows. SEND and the request `06` always give the MUSIC kit: the song's
@@ -48,7 +48,7 @@ version wrote it. Nothing about the sound or the messages above changes.
 | Byte | | Today |
 |---|---|---|
 | 0 | hardware: 0 unknown, 1 VIBE FM (the SDK's host – emulator, plugin, VIBE Box; the firmware cannot tell them apart) | 1 |
-| 1 2 3 | firmware version: major, minor, patch | 1 4 0 |
+| 1 2 3 | firmware version: major, minor, patch | 1 5 0 |
 | 4 | profile: 1 = what SFX FORGE 1.x offers on VIBE FM | 1 |
 | 5 | patch format (`SFX_PATCH_VERSION`) | 2 |
 | 6 | song format (`SFX_SONG_VERSION`) | 5 |
@@ -59,7 +59,7 @@ version wrote it. Nothing about the sound or the messages above changes.
 | 16 | values in a patch (`SFX_P_COUNT`) | 25 |
 | 17 | flags: bit 0 has pads, bit 1 has encoders for the game (LINK page), bit 2 takes a song's sounds (`02` with slot 16–31), bit 3 takes telemetry (CC 10–17, ch 2) | 15 |
 
-The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 04 00 01 02 05 10 02 08 10 18 20 10 05 06 19 0F F7`.
+The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 05 00 01 02 05 10 02 08 10 18 20 10 05 06 19 0F F7`.
 
 - **Fields are only ever added at the end.** A reader takes the first 18 bytes and ignores what follows. A message
   with fewer than 18, or with a byte above 127, is not an identity.

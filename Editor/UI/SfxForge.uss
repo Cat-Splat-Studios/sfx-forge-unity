@@ -12,6 +12,7 @@
     --sfx-off: #6A5248;
     --sfx-ember: #FF5A36;
     --sfx-linked: #6EE7A8;
+    --sfx-warn: #FF8A3C;
     --sfx-impact: #FF5A36;
     --sfx-blip: #FFD23F;
     --sfx-fm: #36C5FF;
@@ -254,3 +255,38 @@
 .sfx-log { background-color: var(--sfx-panel); border-radius: 8px; padding: 5px 8px; }
 .sfx-log__line { font-size: 10px; color: var(--sfx-dim); padding: 0; height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sfx-log__line--new { color: var(--sfx-text); }
+.sfx-log__line--warn { color: var(--sfx-warn); height: auto; white-space: normal; text-overflow: clip; }
+
+/* ---- the tools: a value the variants leave alone, the drawer under a sound's keys, variants, a variation set ---- */
+.sfx-tile--locked { border-width: 1px; border-color: var(--sfx-dim); border-radius: 6px; }
+.sfx-tools { margin-top: 2px; }
+.sfx-tools > .sfx-keys { margin-top: 2px; }
+.sfx-tools > .sfx-song-values { margin-bottom: 0; }
+.sfx-tools > .sfx-song-values > .sfx-tile { max-width: 190px; }
+.sfx-tools > .sfx-patches { margin-top: 4px; }
+.sfx-level { margin-top: 6px; }
+.sfx-variant__keys--one > .sfx-key { flex-grow: 1; }
+.sfx-root .sfx-object { flex-direction: row; flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 40px; height: 24px; margin: 0; padding: 0; }
+.sfx-root .sfx-object .unity-object-field__input {
+    flex-direction: row; align-items: center; flex-grow: 1; flex-shrink: 1; height: 24px; background-color: var(--sfx-panel);
+    border-width: 1px; border-color: var(--sfx-line); border-radius: 5px; padding: 0 3px 0 6px; margin: 0; overflow: hidden;
+}
+.sfx-root .sfx-object:focus .unity-object-field__input { border-color: var(--sfx-dim); }
+.sfx-root .sfx-object .unity-object-field-display {
+    flex-direction: row; align-items: center; flex-grow: 1; flex-shrink: 1; flex-basis: 0; overflow: hidden;
+    background-color: rgba(0, 0, 0, 0); border-width: 0; margin: 0; padding: 0;
+}
+.sfx-root .sfx-object .unity-object-field-display__icon { width: 14px; height: 14px; min-width: 14px; max-width: 14px; flex-grow: 0; flex-shrink: 0; margin: 0 5px 0 0; }
+.sfx-root .sfx-object .unity-object-field-display__label {
+    flex-grow: 1; flex-shrink: 1; flex-basis: 0; color: var(--sfx-text); font-size: 11px; padding: 0; margin: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -unity-text-align: middle-left;
+}
+.sfx-root .sfx-object .unity-object-field__selector { width: 16px; height: 16px; flex-grow: 0; flex-shrink: 0; margin: 0 0 0 3px; background-color: var(--sfx-key); border-radius: 8px; }
+.sfx-toggle-row { flex-direction: row; align-items: center; margin-top: 2px; }
+.sfx-toggle-row > .sfx-key { flex-grow: 0; flex-basis: auto; min-width: 72px; height: 20px; border-radius: 10px; font-size: 10px; margin: 0 6px 0 0; padding: 0 10px; }
+.sfx-toggle-row > .sfx-song-cap { margin: 0; flex-grow: 1; flex-shrink: 1; flex-basis: 0; }
+.sfx-field--unused { opacity: 0.45; }
+.sfx-key--blank { visibility: hidden; }
+.sfx-tile--words .sfx-tile__value { font-size: 13px; }
+.sfx-narrow .sfx-tile--words .sfx-tile__value { font-size: 12px; }
+.sfx-narrow .sfx-tools .sfx-field .unity-base-text-field__input { font-size: 9px; padding: 0 3px; }
