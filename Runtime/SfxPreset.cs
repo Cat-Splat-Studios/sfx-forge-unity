@@ -58,8 +58,10 @@ namespace CatSplat.SfxForge
         static readonly System.Collections.Generic.HashSet<string> said = new System.Collections.Generic.HashSet<string>();
 
         /// <summary>What an Inspector's banner and the Console say of an asset from a newer version.</summary>
-        public static string NewerText(int format)
-            => "made by a newer SFX Forge (asset format " + format + ", this version knows " + Current + "): what this version reads of it plays, the rest is left out. "
+        public static string NewerText(int format) => NewerText(format, Current);
+        /// <summary>As NewerText, for an asset type that counts its own format (a song: SfxSong.CurrentFormat).</summary>
+        public static string NewerText(int format, int current)
+            => "made by a newer SFX Forge (asset format " + format + ", this version knows " + current + "): what this version reads of it plays, the rest is left out. "
              + "Saving it here loses what this version does not know. Update the package to use all of it.";
 
         /// <summary>
@@ -67,9 +69,11 @@ namespace CatSplat.SfxForge
         /// asset file (scripts reload often there, and every reload loads the assets again): two files of the same name
         /// in two folders are two assets. In a player, and for an object that is no file, once for each type and name.
         /// </summary>
-        public static void WarnIfNewer(Object asset, int format)
+        public static void WarnIfNewer(Object asset, int format) => WarnIfNewer(asset, format, Current);
+        /// <summary>As WarnIfNewer, for an asset type that counts its own format (a song: SfxSong.CurrentFormat).</summary>
+        public static void WarnIfNewer(Object asset, int format, int current)
         {
-            if (format <= Current || asset == null) return;
+            if (format <= current || asset == null) return;
             string key = "SfxForge.Newer." + asset.GetType().Name + "." + asset.name;
 #if UNITY_EDITOR
             if (UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset, out string guid, out long local)) key = "SfxForge.Newer." + guid + "." + local;
@@ -79,7 +83,7 @@ namespace CatSplat.SfxForge
             if (UnityEditor.SessionState.GetBool(key, false)) return;
             UnityEditor.SessionState.SetBool(key, true);
 #endif
-            Debug.LogWarning("SFX Forge: '" + asset.name + "' was " + NewerText(format), asset);
+            Debug.LogWarning("SFX Forge: '" + asset.name + "' was " + NewerText(format, current), asset);
         }
     }
 }

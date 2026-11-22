@@ -7,22 +7,27 @@ namespace CatSplat.SfxForge.Editor
 {
     /// <summary>
     /// A row of steps, as the stage draws a sound's row of the pattern: a cell a step, a set step filled as high as it is
-    /// hard. Fill Level (0 = not set, up to 1 = full height), set Length (steps beyond it are dark) and call Changed.
+    /// hard. Fill Level (0 = not set, up to 1 = full height), set Count (the cells: 16, 32 or 64 - the pattern's grid) and
+    /// Length (steps beyond it are dark) and call Changed.
     /// </summary>
     public class StepRow : VisualElement
     {
         public const int Steps = 16;
+        /// <summary>The most cells a row has: a pattern of 64 steps.</summary>
+        public const int MaxSteps = 64;
+        /// <summary>The cells drawn: 16, 32 or 64. Level, Hold, Length and Head count in these.</summary>
+        public int Count = Steps;
         /// <summary>A step's height, 0..1; 0: the step is not set.</summary>
-        public readonly float[] Level = new float[Steps];
+        public readonly float[] Level = new float[MaxSteps];
         /// <summary>The steps the pattern has (the others: dark).</summary>
         public int Length = Steps;
-        /// <summary>The step that plays now, -1: none.</summary>
+        /// <summary>The step that plays now, -1: none. (At 32 and 64 every cell of its sixteenth is lit.)</summary>
         public int Head = -1;
         public Color Accent = SfxColors.Ember;
         /// <summary>The sound's layer is silent: its steps are drawn dim.</summary>
         public bool Dimmed;
         /// <summary>How many steps a set step holds (the line after it); 0 or 1: no line.</summary>
-        public readonly byte[] Hold = new byte[Steps];
+        public readonly byte[] Hold = new byte[MaxSteps];
         /// <summary>The row of the sound that is chosen: its empty steps are a little lighter.</summary>
         public bool Selected;
 
@@ -34,8 +39,19 @@ namespace CatSplat.SfxForge.Editor
 
         public void Changed() => MarkDirtyRepaint();
 
+        /// <summary>
+        /// Where the cells of a row of 32 or 64 stand in a width: whole pixels, a pixel more between two sixteenths.
+        /// cell: the pitch; wide: what is drawn of it. False: too narrow to draw.
+        /// </summary>
+        public static bool Fine(float width, int count, out int cell, out int wide)
+        {
+            cell = Mathf.Max(2, Mathf.FloorToInt((width - 15f) / count)); wide = cell >= 5 ? cell - 1 : cell;
+            return width >= count * 2 + 15;
+        }
+
         void Draw(MeshGenerationContext c)
         {
+            if (Count > Steps) { DrawFine(c); return; }
             Rect r = contentRect;
             if (r.width < Steps * 2 || r.height < 4f) return;
             var p = c.painter2D;
@@ -62,16 +78,49 @@ namespace CatSplat.SfxForge.Editor
                 SfxUI.Rect(p, r.x + i * pitch + w, r.y + h - 4f, n * pitch - 2f - w, 3f, Dimmed ? SfxColors.Hex(0x7A6055) : SfxColors.White);
             }
         }
+
+        // 32 or 64 cells: plain rectangles on whole pixels (a rounded cell 4 pixels wide is a smear)
+        void DrawFine(MeshGenerationContext c)
+        {
+            Rect r = contentRect;
+            int count = Mathf.Min(Count, MaxSteps), div = count / Steps;
+            if (!Fine(r.width, count, out int cell, out int wide) || r.height < 4f) return;
+            var p = c.painter2D;
+            float x0 = Mathf.Round(r.x), h = r.height;
+            for (int i = 0; i < count; i++)
+            {
+                float x = x0 + i * cell + i / div;
+                bool off = i >= Length, head = Head >= 0 && i / div == Head / div;
+                if (Level[i] <= 0f)
+                {
+                    Color empty = head ? SfxColors.Hex(0x5F4134) : off ? SfxColors.Hex(0x1C130F) : (i / (4 * div) & 1) != 0 ? SfxColors.Hex(0x2B1D17) : SfxColors.Hex(0x38261E);
+                    SfxUI.Rect(p, x, r.y, wide, h, Selected && !head && !off ? SfxColors.Mix(empty, SfxColors.White, 0.08f) : empty);
+                    continue;
+                }
+                Color set = head && !Dimmed ? SfxColors.White : Dimmed ? SfxColors.Mix(SfxColors.Bg, Accent, 0.35f) : Accent;
+                float bar = Mathf.Max(3f, Mathf.Round(h * Mathf.Clamp01(Level[i])));
+                SfxUI.Rect(p, x, r.y, wide, h, SfxColors.Mix(SfxColors.Bg, set, 0.30f));
+                SfxUI.Rect(p, x, r.y + h - bar, wide, bar, set);
+            }
+            for (int i = 0; i < count; i++)                  // a step with a length: a line from its cell's right edge to the right edge of the last cell it holds
+            {
+                if (Level[i] <= 0f || Hold[i] <= 1) continue;
+                int last = Mathf.Min(i + Hold[i], count) - 1;
+                float from = x0 + i * cell + i / div + wide, to = x0 + last * cell + last / div + wide;
+                if (to > from) SfxUI.Rect(p, from, r.y + h - 4f, to - from, 3f, Dimmed ? SfxColors.Hex(0x7A6055) : SfxColors.White);
+            }
+        }
     }
 
     public enum PatternState { Unused, Used, Selected, Playing }
 
     /// <summary>
-    /// A pattern as the SONG page draws it: its letter, and along its foot how many sounds play on each step.
+    /// A pattern as the SONG page draws it: its letter, along its foot how many sounds play in each sixteenth, and in its
+    /// corner 32 or 64 when its grid is finer than sixteenths.
     /// </summary>
     public class PatternTile : VisualElement
     {
-        readonly TextElement letter;
+        readonly TextElement letter, grid;
         readonly VisualElement bars;
         readonly int[] counts = new int[StepRow.Steps];
         PatternState state;
@@ -84,20 +133,33 @@ namespace CatSplat.SfxForge.Editor
             bars = SfxUI.Box("sfx-pattern__bars");
             bars.pickingMode = PickingMode.Ignore;
             bars.generateVisualContent += Draw;
-            Add(letter); Add(bars);
+            grid = SfxUI.Text("", "sfx-pattern__grid");
+            grid.pickingMode = PickingMode.Ignore;
+            Add(letter); Add(bars); Add(grid);
             this.AddManipulator(new Clickable(() => clicked?.Invoke()));
             Set(null, PatternState.Unused);
         }
 
-        /// <summary>soundsOnStep: for each of the 16 steps, how many sounds are set there (null: none).</summary>
-        public void Set(int[] soundsOnStep, PatternState newState)
+        /// <summary>
+        /// soundsOnStep: for each of the 16 sixteenths, how many sounds are set anywhere in it (null: none).
+        /// steps: the pattern's grid - 32 or 64 stands in the tile's corner, 16 shows nothing.
+        /// </summary>
+        public void Set(int[] soundsOnStep, PatternState newState, int steps = 16)
         {
             for (int i = 0; i < counts.Length; i++) counts[i] = soundsOnStep != null && i < soundsOnStep.Length ? soundsOnStep[i] : 0;
             state = newState;
             style.backgroundColor = Back;
             letter.style.color = Fore;
+            grid.text = steps > StepRow.Steps ? steps.ToString() : "";
+            grid.style.display = steps > StepRow.Steps ? DisplayStyle.Flex : DisplayStyle.None;
+            grid.style.color = SfxColors.Mix(Back, Fore, 0.8f);
             bars.MarkDirtyRepaint();
         }
+
+        /// <summary>What stands in the corner: "32", "64", or nothing for a pattern of 16 steps.</summary>
+        public string GridText => grid.text;
+        /// <summary>The sounds counted in a column (a sixteenth, 0..15).</summary>
+        public int Column(int i) => i >= 0 && i < counts.Length ? counts[i] : 0;
 
         Color Back => state == PatternState.Playing ? SfxColors.White : state == PatternState.Selected ? SfxColors.Pattern : state == PatternState.Used ? SfxColors.Hex(0x3A2A22) : SfxColors.Hex(0x1A120E);
         Color Fore => state == PatternState.Playing || state == PatternState.Selected ? SfxColors.Bg : state == PatternState.Used ? SfxColors.Text : SfxColors.Off;

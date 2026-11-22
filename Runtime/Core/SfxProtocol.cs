@@ -33,16 +33,27 @@ namespace CatSplat.SfxForge
         public const byte Dump = 0x01, Load = 0x02, Text = 0x03, Request = 0x04, SongChunk = 0x05, RequestSong = 0x06;
         public const byte RequestIdentity = 0x07, Identity = 0x08;      // firmware 1.4.0 on: an older one ignores the request
         public const int IdentityBytes = 18;        // what an identity says today; a later one may say more, at its end
-        public const int SongVersion = 5;           // the first byte of a packed song (core/sfx_song.h, SFX_SONG_VERSION)
+        public const int SongVersion = 6;           // the first byte of a packed song (core/sfx_song.h, SFX_SONG_VERSION)
         // what SFX FORGE 1.x holds on VIBE FM (core/sfx_song.h): SfxProfile.VibeFm1 is made of these
+        /// <summary>Steps: the sixteenths in a bar at most (a song's own bar may be shorter).</summary>
         public const int Kits = 2, Steps = 16, Lanes = 24, Bars = 32, Voices = 16;
+        /// <summary>The most steps a pattern holds: a bar of 16 sixteenths, each cut in up to 4 (firmware 1.6.0 on).</summary>
+        public const int GridSteps = 64;
         public const int SongBytesV1 = 2455;        // a song from before the mixer: still played
         public const int SongBytesV2 = 2498;        // … and one from before velocity and length
         public const int SongBytesV3 = 4546;        // … and one from before automation and the arrangement
         public const int SongBytesV4 = 6643;        // … and one with a single automation lane for each sound
-        public const int SongBytes = 7699;          // a packed song (core/sfx_song.h)
-        public const int SongChunkBytes = 200;
-        public const int SongChunks = (SongBytes + SongChunkBytes - 1) / SongChunkBytes;
+        public const int SongBytesV5 = 7699;        // … and one with 16 steps in every pattern, every row written
+        // A packed song of format 6 (firmware 1.6.0) keeps only the rows that are used, so it has no fixed size: a head
+        // of 147 bytes, then a block for each of the 8 patterns - 211 bytes when the song is empty, 38 355 at the most.
+        public const int SongHead = 147, SongBytesMin = 211, SongBytesMax = 38355;
+        /// <summary>The song message of firmware 1.6.0 on: pieces of up to 240 bytes, up to 160 of them.</summary>
+        public const int SongPieceBytes = 240, SongPiecesMax = 160;
+        /// <summary>The song message up to firmware 1.5.0: 39 pieces of 200 bytes (the last 99) - a format-5 song.</summary>
+        public const int OldSongPieceBytes = 200, OldSongPieces = 39;
+        [Obsolete("a song has no fixed size from format 6 on: SongBytesV5 (7699), SongBytesMin, SongBytesMax")] public const int SongBytes = 7699;
+        [Obsolete("the old shape of the song message: SongPieceBytes")] public const int SongChunkBytes = 200;
+        [Obsolete("the old shape of the song message: 39 pieces")] public const int SongChunks = 39;
         public const int Patterns = 8;
         static readonly byte[] Header = { 0xF0, 0x7D, 0x56, 0x42 };
 
@@ -111,18 +122,52 @@ namespace CatSplat.SfxForge
 
         public static byte[] BuildRequestSong() => new byte[] { 0xF0, 0x7D, 0x56, 0x42, RequestSong, 0xF7 };
 
-        /// <summary>A packed song as its SysEx messages: F0 7D 56 42 05 chunk chunks [up to 200 bytes] F7.</summary>
+        /// <summary>
+        /// A format-5 song (7699 bytes) as its SysEx messages in the shape every firmware up to 1.5.0 takes:
+        /// F0 7D 56 42 05 piece 39 [200 bytes, the last piece 99] F7. For a device that said it speaks song format 6,
+        /// and for any other song, see <see cref="BuildSongPieces"/>.
+        /// </summary>
         public static byte[][] BuildSong(byte[] song)
         {
-            if (song == null || song.Length != SongBytes) throw new ArgumentException("not a packed song", nameof(song));
-            var all = new byte[SongChunks][];
-            for (int k = 0; k < SongChunks; k++)
+            if (song == null || song.Length != SongBytesV5) throw new ArgumentException("not a packed song of format 5 (7699 bytes)", nameof(song));
+            var all = new byte[OldSongPieces][];
+            for (int k = 0; k < OldSongPieces; k++)
             {
-                int n = Math.Min(SongChunkBytes, SongBytes - k * SongChunkBytes);
+                int n = Math.Min(OldSongPieceBytes, SongBytesV5 - k * OldSongPieceBytes);
                 var m = new byte[8 + n];
                 Header.CopyTo(m, 0);
-                m[4] = SongChunk; m[5] = (byte)k; m[6] = (byte)SongChunks;
-                Array.Copy(song, k * SongChunkBytes, m, 7, n);
+                m[4] = SongChunk; m[5] = (byte)k; m[6] = (byte)OldSongPieces;
+                Array.Copy(song, k * OldSongPieceBytes, m, 7, n);
+                m[m.Length - 1] = 0xF7;
+                all[k] = m;
+            }
+            return all;
+        }
+
+        /// <summary>
+        /// A packed song of any format this version reads as its SysEx messages in the shape of firmware 1.6.0:
+        /// F0 7D 56 42 05 [piece lo] [piece hi] [format] [pieces lo] [pieces hi] [up to 240 bytes] F7 - the piece number and
+        /// the count of pieces in 14 bits each, the song's first byte in every piece. A firmware before 1.6.0 ignores
+        /// these messages without a word (SfxLink.SendSong does not send them to one).
+        /// </summary>
+        public static byte[][] BuildSongPieces(byte[] song)
+        {
+            if (!SfxPackedSong.IsValid(song)) throw new ArgumentException("not a packed song", nameof(song));
+            return BuildPieces(song);
+        }
+
+        // (any bytes in that shape: for a device made in software, and for tests)
+        internal static byte[][] BuildPieces(byte[] song)
+        {
+            int count = (song.Length + SongPieceBytes - 1) / SongPieceBytes;
+            var all = new byte[count][];
+            for (int k = 0; k < count; k++)
+            {
+                int n = Math.Min(SongPieceBytes, song.Length - k * SongPieceBytes);
+                var m = new byte[11 + n];
+                Header.CopyTo(m, 0);
+                m[4] = SongChunk; m[5] = (byte)(k & 0x7F); m[6] = (byte)(k >> 7); m[7] = song[0]; m[8] = (byte)(count & 0x7F); m[9] = (byte)(count >> 7);
+                Array.Copy(song, k * SongPieceBytes, m, 10, n);
                 m[m.Length - 1] = 0xF7;
                 all[k] = m;
             }
@@ -136,10 +181,13 @@ namespace CatSplat.SfxForge
         /// byte, is left alone. A piece that is in already with OTHER bytes belongs to another song: that begins a new
         /// transfer. <paramref name="seen"/> remembers which pieces are in, also after the song was whole, so that its
         /// late twins do not begin one: start with 0, and set it back to 0 before asking for a song again or to forget
-        /// a transfer that broke off (<see cref="SfxLink"/> does both, the second after two seconds without a piece).
+        /// a transfer that broke off. This reads the old shape of the song message only (39 pieces of 200 bytes, a
+        /// format-5 song of 7699 bytes): <see cref="SfxSongTransfer"/> takes both shapes.
         /// </summary>
+        [Obsolete("the old shape of the song message only: SfxSongTransfer takes both")]
         public static bool TryTakeSongChunk(byte[] m, byte[] song, ref ulong seen)
         {
+            const int SongChunks = OldSongPieces, SongChunkBytes = OldSongPieceBytes, SongBytes = SongBytesV5;
             if (!IsOurs(m) || m[4] != SongChunk || m.Length < 9 || m[6] != SongChunks) return false;
             int k = m[5], n = m.Length - 8;
             if (k >= SongChunks || n != Math.Min(SongChunkBytes, SongBytes - k * SongChunkBytes)) return false;
@@ -157,23 +205,25 @@ namespace CatSplat.SfxForge
         }
 
         /// <summary>
-        /// A packed song of a format above this one's (SongVersion): at least as many bytes as a song has today,
-        /// beginning with a higher number. A song from a newer SFX FORGE, not a broken one: a later format may be
-        /// longer, it will not be shorter, so fewer bytes are a cut-off song whatever they begin with.
+        /// A packed song of a format above this one's (SongVersion): it begins with a higher number and is at least as
+        /// long as the shortest song there is (211 bytes). A song from a newer SFX FORGE, not a broken one: a later
+        /// format will not be shorter than an empty song is today, so fewer bytes are a cut-off song whatever they begin with.
         /// </summary>
         public static bool IsNewerSong(byte[] song)
-            => song != null && song.Length >= SongBytes && song[0] > SongVersion && song[0] <= 127;
+            => song != null && song.Length >= SongBytesMin && song[0] > SongVersion && song[0] <= 127;
 
         /// <summary>
         /// A message that carries a patch (a dump or a load) or the first piece of a song in a format above this
         /// one's: what it is and its number ("a patch in format 3"), null for any other message. A device with a
-        /// newer firmware sends these; nothing of them is read here.
+        /// newer firmware sends these; nothing of them is read here. (The song's format stands at the same place in
+        /// both shapes of the song message: the old one's first song byte, the new one's format byte. Piece 128 of the
+        /// new shape has a 0 where piece 0 has one, and a 1 after it: it is not taken for a first piece.)
         /// </summary>
         public static string NewerIn(byte[] m)
         {
             if (!IsOurs(m)) return null;
             if ((m[4] == Dump || m[4] == Load) && SfxPatch.IsNewer(m, 6) && m.Length >= 7 + SfxPatch.Bytes) return "a patch in format " + m[6];
-            if (m[4] == SongChunk && m.Length >= 9 && m[5] == 0 && m[7] > SongVersion && m[7] <= 127) return "a song in format " + m[7];
+            if (m[4] == SongChunk && m.Length >= 9 && m[5] == 0 && m[6] != 1 && m[7] > SongVersion && m[7] <= 127) return "a song in format " + m[7];
             return null;
         }
 

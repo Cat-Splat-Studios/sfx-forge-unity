@@ -21,11 +21,11 @@ Texts are `TextElement`s made with `SfxUI.Text(text, class)`, so the editor's th
 | `SfxPicture` | WaveformView.cs | the samples the device draws a sound from (`preview_render()`): one dry voice, 24 kHz, 1.5 s at most, a held sound let go after 0.8 s | `Render(patch, into)` -> how many samples; `Rate`, `Max`, `Hold`. Not what PLAY and BAKE WAV render: those have the effects |
 | `WaveformView` | WaveformView.cs | the picture of a sound page (`scene()`) | `SetSamples(mono, count)`, `SetColour`, the white line: fill `Overlay`, `SetOverlay(count)`; `SetMark(x)`: a thin upright line (where a held sound is let go); `SetCaptions`; `SetMessage` instead of a picture; `Compact = true`: a small one without room for captions (a patch's tile) |
 | `PadGrid` | PadGrid.cs | the 16 pads as tiles | `SetPad(i, name, colour, PadState)`, `pressed` / `released` (one for every `pressed`, also when the mouse is taken away without its button going up), `Tile(i)` |
-| `StepRow` | SongBits.cs | a sound's row of 16 steps (the stage) | fill `Level[]`, `Hold[]` (the line of a step that holds), `Length`, `Head`, `Accent`, `Dimmed`, `Selected`, then `Changed()`. It may have children (the song puts the chosen sound's notes over it) |
-| `PatternTile` | SongBits.cs | a pattern A – H with its steps as small bars (`draw_song()`) | `Set(soundsOnStep, PatternState)`, `clicked` |
+| `StepRow` | SongBits.cs | a sound's row of steps in its pattern's grid: 16, 32 or 64 cells (the stage) | fill `Level[]`, `Hold[]` (the line of a step that holds), set `Count` (16, 32 or 64; the arrays hold `MaxSteps` = 64), `Length`, `Head`, `Accent`, `Dimmed`, `Selected`, then `Changed()`. `Level`, `Hold`, `Length` and `Head` count in cells. At 32 and 64 the cells are plain rectangles on whole pixels, with a pixel more between two sixteenths. It may have children (the song puts the chosen sound's notes over it, at 16 cells only) |
+| `PatternTile` | SongBits.cs | a pattern A – H: 16 small bars, one a sixteenth, and `32` or `64` in its corner when its grid is finer (`draw_song()`) | `Set(soundsOnStep, PatternState, steps = 16)`: for each sixteenth how many sounds are set anywhere in it, and the pattern's grid; `GridText`, `Column(i)`, `clicked` |
 | `SfxFader` | SongBits.cs | the fader and the pan of a MIX tile | `SetLevel(value, mark, colour)` or `SetPan(pan, colour)`; shows only |
 | `IntensityStrip` | SongViews.cs | INTENSITY with every sound's LAYER mark over it (the stage) | `Value` (0..127), `SetMark(sound, level, colour)`, `Text`, `Fill`; dragging tells `changed`; `Interactive = false`: a bar that only shows (the LAYER bar) |
-| `LaneRow` | SongViews.cs | an automation lane over one pattern (the stage's lanes) | fill `Point[]` (-1: none), `Plays[]`, set `Hi`, `Length`, `Accent`, then `Changed()` |
+| `LaneRow` | SongViews.cs | an automation lane over one pattern (the stage's lanes) | fill `Point[]` (-1: none), `Plays[]`, set `Count` (the cells: 16, 32 or 64, the pattern's grid), `Hi`, `Length`, `Accent`, then `Changed()` |
 | `MixTile` | SongViews.cs | a sound on the MIX page: name, fader, pan, M | `Set(name, colour, volume, pan, muted, selected)`, `clicked` |
 | `MasterView` | SongViews.cs | the MASTER page's two pictures: the delay's echoes, the reverb's fading | `Set(delayTime, feedback, size, damping)` |
 | `LinkBars` | LinkViews.cs | the LINK page's panel: a yellow title, a line a value with its number and a thin bar (`draw_link()`) | `new LinkBars(title, names…)`, `SetValue(i, 0..127)` (-1: "-", none came) |
@@ -104,10 +104,27 @@ header's number is not lit. After the model changed: `view.Refresh()`.
 ## The song
 
 `SfxSongPanel` (made by `SfxSongEditor.Build`) is a viewer of the packed song, read through `SfxSong`'s accessors
-(`StepOn`, `StepNote`, `StepVelocity`, `StepLength`, `LaneSound`, `LaneTarget`, `LanePoint`, `Master`, `Muted` …).
-It changes five numbers of the song's head through the `SerializedObject` – TEMPO, SWING, a sound's LAYER, VOLUME and
-PAN – and nothing else: steps, patterns, the chain, the arrangement, mutes, the master and the lanes only show.
-The pattern, the sound and the intensity it is looked at with are not part of the song.
+(`Grid`, `GridSteps`, `GridStepOn`, `GridStepNote`, `GridStepVelocity`, `GridStepLength`, `GridLanePoint`, `LaneSound`,
+`LaneTarget`, `Master`, `Muted` …). It changes five numbers of the song's head through the `SerializedObject` – TEMPO,
+SWING, a sound's LAYER, VOLUME and PAN – and nothing else: steps, patterns and their grids, the chain, the
+arrangement, mutes, the master and the lanes only show. The pattern, the sound and the intensity it is looked at
+with are not part of the song.
+
+From firmware 1.6.0 on (song format 6) each pattern has its own grid of 16, 32 or 64 steps a bar, and the panel
+follows the pattern looked at:
+
+- The title beside the page's name says it: `PATTERN B  1/32` (`PatternTitle`, `GridName(steps)`).
+- The rows of STEPS and the lanes of AUTO draw 16, 32 or 64 cells (`RowCount(sound)`, `StepRow.Count`,
+  `LaneRow.Count`). The chosen sound's notes are written in the cells at 16 only; at 32 and 64 the line under the
+  tiles names the steps that are set, each with its number.
+- A pattern's tile keeps 16 columns, a sixteenth each, and carries `32` or `64` in its corner.
+- `SfxSong`'s older accessors (`StepOn`, `StepNote`, `StepVelocity`, `StepLength`, `LanePoint`) count sixteenths and
+  read the first step of each: a panel that draws every step uses the `Grid…` ones.
+
+The line under the keys is `LinkState(linked, port, device, song, out bold, out small, out colour)`, which also says
+whether SEND is off: `LINKED`, `NOT CONNECTED`, `ANOTHER FORMAT` (the device cannot take this song: a format-6 song
+and a firmware before 1.6.0, for one) or `A DAMAGED SONG` (a value out of range, `SfxPackedSong.IsPlayable`). The
+last two say "SEND is off:" and the text of `SfxLink.Refusal(device, song)`.
 
 ## The window
 

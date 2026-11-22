@@ -11,7 +11,7 @@ namespace CatSplat.SfxForge
     public static class SfxNative
     {
         const string Lib = "sfxforge";
-        const int Abi = 4;
+        const int Abi = 5;
 
         [DllImport(Lib)] static extern int sfxn_abi();
         [DllImport(Lib)] static extern int sfxn_voice_size();
@@ -36,6 +36,11 @@ namespace CatSplat.SfxForge
         [DllImport(Lib)] static extern void sfxn_player_note_off(IntPtr player, int key);
         [DllImport(Lib)] static extern uint sfxn_player_render(IntPtr player, [In, Out] float[] left, [In, Out] float[] right, int n);
         [DllImport(Lib)] static extern void sfxn_player_state(IntPtr player, [Out] int[] out4);
+        [DllImport(Lib)] static extern void sfxn_player_grid(IntPtr player, [Out] int[] out2);
+        [DllImport(Lib)] static extern int sfxn_song_bytes();
+        [DllImport(Lib)] static extern int sfxn_song_convert(byte[] song, int n, [Out] byte[] result, int max);
+        [DllImport(Lib)] static extern int sfxn_song_regrid(byte[] song, int n, int pattern, int grid, [Out] byte[] result, int max);
+        [DllImport(Lib)] static extern int sfxn_song_regrid_loss(byte[] song, int n, int pattern, int grid);
         [DllImport(Lib)] static extern int sfxn_bake(IntPtr player, byte[] patch, float sr, float vel, int midiNote, float noteSt, float holdSeconds, [Out] float[] left, [Out] float[] right, int max);
 
         static int available = -1;
@@ -104,8 +109,43 @@ namespace CatSplat.SfxForge
         public static void PlayerNoteOff(IntPtr player, int key) => sfxn_player_note_off(player, key);
         /// <summary>Adds n stereo samples. Returns the sounds that play, a bit each; bit 31 while only effects ring; 0 = silence.</summary>
         public static uint PlayerRender(IntPtr player, float[] left, float[] right, int n) => sfxn_player_render(player, left, right, n);
-        /// <summary>out4: running, step (-1 = none yet), pattern, bar.</summary>
+        /// <summary>out4: running, the sixteenth of the bar (-1 = none yet), pattern, bar.</summary>
         public static void PlayerState(IntPtr player, int[] out4) => sfxn_player_state(player, out4);
+        /// <summary>out2: the step in the grid of the pattern that plays (-1 = none yet), and that grid's steps a sixteenth (1, 2, 4).</summary>
+        public static void PlayerGrid(IntPtr player, int[] out2) => sfxn_player_grid(player, out2);
+
+        // ---- tools for a packed song (not for an audio thread) ----------------------------------------------------------
+        static byte[] Cut(byte[] buffer, int n)
+        {
+            if (n < 0) return null;
+            var song = new byte[n];
+            Array.Copy(buffer, song, n);
+            return song;
+        }
+
+        /// <summary>A packed song of any format this version reads, as format 6. Null: not a song (or the library is missing).</summary>
+        public static byte[] SongConvert(byte[] song)
+        {
+            if (song == null || !Available) return null;
+            var b = new byte[sfxn_song_bytes()];
+            return Cut(b, sfxn_song_convert(song, song.Length, b, b.Length));
+        }
+
+        /// <summary>
+        /// The song with one pattern (0..7) in another grid: 0, 1, 2 = 16, 32, 64 steps a bar. Finer changes no sample;
+        /// coarser drops what stands between the steps that stay (SongRegridLoss says how much). Format 6 comes back.
+        /// Null: not a song, no such pattern or grid.
+        /// </summary>
+        public static byte[] SongRegrid(byte[] song, int pattern, int grid)
+        {
+            if (song == null || !Available) return null;
+            var b = new byte[sfxn_song_bytes()];
+            return Cut(b, sfxn_song_regrid(song, song.Length, pattern, grid, b, b.Length));
+        }
+
+        /// <summary>The steps and points SongRegrid would drop (0 when it only makes the grid finer). -1: not a song, no such pattern or grid.</summary>
+        public static int SongRegridLoss(byte[] song, int pattern, int grid)
+            => song == null || !Available ? -1 : sfxn_song_regrid_loss(song, song.Length, pattern, grid);
 
         /// <summary>
         /// The whole sound with its effects, as stereo samples: left and right, the same length. A sustained patch is held

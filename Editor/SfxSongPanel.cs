@@ -96,6 +96,12 @@ namespace CatSplat.SfxForge.Editor
 
         /// <summary>The note written on a step of the chosen sound's row: "E1", or nothing.</summary>
         public string NoteOnStep(int i) => noteTexts[i].text;
+        /// <summary>The cells a sound's row shows: the grid of the pattern looked at - 16, 32 or 64.</summary>
+        public int RowCount(int sound) => rows[sound].Count;
+        /// <summary>What stands beside the page's title: "PATTERN B  1/32".</summary>
+        public string PatternTitle => titleB.text;
+        /// <summary>The row of the i-th lane shown on the AUTO page (null: there is none).</summary>
+        public LaneRow LaneRowAt(int i) => i >= 0 && i < lanes.Length && lanes[i] != null ? lanes[i].row : null;
         public ValueTile SongTile(int i) => songTiles[i];
         public ValueTile SoundTile(int i) => soundTiles[i];
         public ValueTile MasterTile(int i) => masterTiles[i];
@@ -177,7 +183,7 @@ namespace CatSplat.SfxForge.Editor
             songTiles[TileTempo].nudged += d => SetTempo(Song.Bpm + d);
             songTiles[TileTempo].typed += text => { if (Number(text, out int v)) SetTempo(v); };
             songTiles[TileTempo].resetRequested += () => SetTempo(120);
-            songTiles[TileSteps].tooltip = "Steps in a pattern. Set on the device: it only shows here.";
+            songTiles[TileSteps].tooltip = "Sixteenths in a bar. Set on the device: it only shows here.";
             songTiles[TileSteps].Interactive = false;
             songTiles[TileSwing].tooltip = "How far every second step waits, 0 to 100 %.";
             songTiles[TileSwing].nudged += d => SetSwing(Song.Swing + d);
@@ -272,7 +278,7 @@ namespace CatSplat.SfxForge.Editor
                 if (target is SfxSong one && one.IsFromNewerVersion) { count++; highest = Mathf.Max(highest, one.Format); }
             if (count == 0) return;
             string bold = many == 1 ? "FROM A NEWER SFX FORGE" : (count == 1 ? "ONE OF THESE " + many + " SONGS IS" : count + " OF THESE " + many + " SONGS ARE") + " FROM A NEWER SFX FORGE";
-            newer.Set(bold, (many == 1 ? "This song was " : "Such a song was ") + SfxAssetFormat.NewerText(highest));
+            newer.Set(bold, (many == 1 ? "This song was " : "Such a song was ") + SfxAssetFormat.NewerText(highest, SfxSong.CurrentFormat));
         }
 
         // no song to show: none yet in this asset, or several are selected
@@ -384,6 +390,8 @@ namespace CatSplat.SfxForge.Editor
         /// <summary>A sound of the song has no name of its own: its pad's number and its engine.</summary>
         public static string SoundName(SfxSong song, int s) => (s + 1).ToString(CultureInfo.InvariantCulture) + " " + SfxUnits.EngineShort[(int)song.sounds[s].engine % SfxUnits.EngineShort.Length];
         static string Letter(int p) => ((char)('A' + p)).ToString();
+        /// <summary>A grid as the device names it: 16, 32, 64 steps a bar are "1/16", "1/32", "1/64".</summary>
+        public static string GridName(int steps) => steps == 64 ? "1/64" : steps == 32 ? "1/32" : "1/16";
         static Color Colour(SfxSong song, int s) => SfxColors.Engine(song.sounds[s].engine);
 
         /// <summary>Reads the song again and shows it.</summary>
@@ -395,12 +403,13 @@ namespace CatSplat.SfxForge.Editor
             var song = Song;
             Color c = Colour(song, sound);
             int len = song.StepsPerPattern, arr = song.ArrangementBars, chain = song.Chain;
+            int grid = Mathf.Clamp(song.Grid(pattern), Steps, StepRow.MaxSteps), glen = song.GridSteps(pattern);     // the pattern looked at: its cells, and those the bar plays of them
             bool layerOn = intensity >= song.LayerRaw(sound);
 
             header.Set((sound + 1).ToString(), so.targetObject.name.ToUpperInvariant(), SfxUnits.EngineNames[(int)song.sounds[sound].engine % SfxUnits.EngineNames.Length], c);
             titleA.text = PageTitles[page];
             titleA.style.color = c;
-            titleB.text = "PATTERN " + Letter(pattern);
+            titleB.text = "PATTERN " + Letter(pattern) + "  " + GridName(grid);
             titleB.style.display = page == PageSteps || page == PageAuto ? DisplayStyle.Flex : DisplayStyle.None;
             titleC.text = "scale " + SfxUnits.ScaleNames[song.Scale % SfxUnits.ScaleNames.Length];
             titleC.style.display = page == PageSteps ? DisplayStyle.Flex : DisplayStyle.None;
@@ -413,12 +422,14 @@ namespace CatSplat.SfxForge.Editor
             uint used = 0;                                  // the sounds that play anywhere in the song
             for (int p = 0; p < Patterns; p++)
             {
-                for (int i = 0; i < Steps; i++)
+                int div = Mathf.Max(1, song.StepsPerSixteenth(p));
+                for (int i = 0; i < Steps; i++)             // a column a sixteenth: the sounds set anywhere in it (a finer pattern has steps between)
                 {
                     counts[i] = 0;
-                    for (int s = 0; s < Sounds; s++) if (song.StepOn(p, s, i)) { counts[i]++; used |= 1u << s; }
+                    for (int s = 0; s < Sounds; s++)
+                        for (int j = 0; j < div; j++) if (song.GridStepOn(p, s, i * div + j)) { counts[i]++; used |= 1u << s; break; }
                 }
-                patternTiles[p].Set(counts, p == pattern ? PatternState.Selected : p < chain || arr > 0 ? PatternState.Used : PatternState.Unused);
+                patternTiles[p].Set(counts, p == pattern ? PatternState.Selected : p < chain || arr > 0 ? PatternState.Used : PatternState.Unused, song.Grid(p));
             }
 
             arrCap.text = arr > 0 ? "ARRANGEMENT   " + arr + (arr == 1 ? " bar" : " bars") + ", then again from the top"
@@ -447,13 +458,13 @@ namespace CatSplat.SfxForge.Editor
                 names[s].style.color = sel ? SfxColors.Bg : muted ? SfxColors.Hex(0x58433A) : on && (used >> s & 1) != 0 ? sc : SfxColors.Mix(SfxColors.Bg, sc, 0.55f);
                 names[s].EnableInClassList("sfx-song-name--on", sel);
                 var row = rows[s];
-                for (int i = 0; i < Steps; i++)
+                for (int i = 0; i < StepRow.MaxSteps; i++)
                 {
-                    bool set = song.StepOn(pattern, s, i);
-                    row.Level[i] = set ? (6 + song.StepVelocity(pattern, s, i) * 2) / 20f : 0f;      // as high as it is hard
-                    row.Hold[i] = (byte)(set ? song.StepLength(pattern, s, i) : 0);
+                    bool set = i < grid && song.GridStepOn(pattern, s, i);
+                    row.Level[i] = set ? (6 + song.GridStepVelocity(pattern, s, i) * 2) / 20f : 0f;      // as high as it is hard
+                    row.Hold[i] = (byte)(set ? song.GridStepLength(pattern, s, i) : 0);
                 }
-                row.Length = len; row.Accent = sc; row.Dimmed = !on; row.Selected = sel;
+                row.Count = grid; row.Length = glen; row.Accent = sc; row.Dimmed = !on; row.Selected = sel;
                 row.Changed();
                 heat.SetMark(s, (used >> s & 1) != 0 ? song.LayerRaw(s) : -1, sc);
                 mixTiles[s].Set(SoundName(song, s), sc, song.VolumeRaw(s), song.PanRaw(s), muted, sel);
@@ -461,7 +472,7 @@ namespace CatSplat.SfxForge.Editor
             if (noteLayer.parent != rows[sound]) rows[sound].Add(noteLayer);
             for (int i = 0; i < Steps; i++)
             {
-                int note = song.StepOn(pattern, sound, i) ? song.StepNote(pattern, sound, i) : 0;
+                int note = grid == Steps && song.StepOn(pattern, sound, i) ? song.StepNote(pattern, sound, i) : 0;      // (written in the cells at 16 steps only: a finer cell has no room)
                 noteTexts[i].text = note > 0 ? SfxUnits.NoteText(note) : "";
                 noteTexts[i].style.color = layerOn && !song.Muted(sound) ? SfxColors.Bg : SfxColors.Text;
             }
@@ -481,7 +492,7 @@ namespace CatSplat.SfxForge.Editor
             masterTiles[3].Show("DAMPING", SfxUnits.Percent(damp), damp / 127f, false, room);
             masterTiles[4].Show("DRIVE", SfxUnits.Percent(drive), drive / 127f, false, SfxColors.Ember);
 
-            int shown = ShowLanes(song, len);
+            int shown = ShowLanes(song, grid, glen);
             autoNone.style.display = shown == 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
             // the chosen sound
@@ -496,7 +507,7 @@ namespace CatSplat.SfxForge.Editor
         }
 
         // the AUTO page: a block a lane that moves a knob. Returns how many there are.
-        int ShowLanes(SfxSong song, int len)
+        int ShowLanes(SfxSong song, int grid, int len)
         {
             int n = 0;
             for (int l = 0; l < SfxSong.Lanes; l++)
@@ -510,15 +521,15 @@ namespace CatSplat.SfxForge.Editor
                 lane.name.style.color = sc;
                 lane.what.text = SfxUnits.AutoName(to, song.sounds[s].engine);
                 int points = 0, low = int.MaxValue, high = -1;
-                for (int i = 0; i < Steps; i++)
+                for (int i = 0; i < LaneRow.MaxSteps; i++)
                 {
-                    int v = song.LanePoint(pattern, l, i);
+                    int v = i < grid ? song.GridLanePoint(pattern, l, i) : -1;
                     lane.row.Point[i] = v;
-                    lane.row.Plays[i] = song.StepOn(pattern, s, i);
+                    lane.row.Plays[i] = i < grid && song.GridStepOn(pattern, s, i);
                     if (v < 0) continue;
                     points++; if (v < low) low = v; if (v > high) high = v;
                 }
-                lane.row.Hi = SfxUnits.AutoHi(to); lane.row.Length = len; lane.row.Accent = sc;
+                lane.row.Count = grid; lane.row.Hi = SfxUnits.AutoHi(to); lane.row.Length = len; lane.row.Accent = sc;
                 lane.row.Changed();
                 if (points > 0)
                     lane.says.text = Letter(pattern) + ": " + points + (points == 1 ? " point, " : " points, ") + (low == high ? SfxUnits.AutoText(to, low) : SfxUnits.AutoText(to, low) + " to " + SfxUnits.AutoText(to, high));
@@ -526,7 +537,7 @@ namespace CatSplat.SfxForge.Editor
                 {
                     string where = "";
                     for (int p = 0; p < Patterns; p++)
-                        for (int i = 0; i < Steps; i++) if (song.LanePoint(p, l, i) >= 0) { where += " " + Letter(p); break; }
+                        for (int i = 0, n2 = song.Grid(p); i < n2; i++) if (song.GridLanePoint(p, l, i) >= 0) { where += " " + Letter(p); break; }
                     lane.says.text = "no points in " + Letter(pattern) + (where.Length > 0 ? " – it moves in" + where : "");
                 }
             }
@@ -534,18 +545,37 @@ namespace CatSplat.SfxForge.Editor
             return n;
         }
 
-        // the chosen sound's steps in the pattern looked at, as the SEQ page names them: a note, x (as designed), · (rests)
+        // the chosen sound's steps in the pattern looked at, as the SEQ page names them: a note, x (as designed), · (rests).
+        // A pattern of 32 or 64 steps: only the steps that are set, each with its number - "pattern B (1/32):  1 E2 · 5 x · 9 G2"
         string NotesText(SfxSong song)
         {
-            var t = new StringBuilder("pattern ").Append(Letter(pattern)).Append(":  ");
-            int set = 0;
-            for (int i = 0; i < song.StepsPerPattern; i++)
+            int grid = song.Grid(pattern), set = 0;
+            var t = new StringBuilder("pattern ").Append(Letter(pattern));
+            if (grid > Steps)
             {
-                if (i > 0) t.Append(' ');
-                if (!song.StepOn(pattern, sound, i)) { t.Append('·'); continue; }
-                set++;
-                int note = song.StepNote(pattern, sound, i);
-                t.Append(note > 0 ? SfxUnits.NoteText(note) : "x");
+                const int Most = 16;
+                t.Append(" (").Append(GridName(grid)).Append("):  ");
+                for (int i = 0, n = song.GridSteps(pattern); i < n; i++)
+                {
+                    if (!song.GridStepOn(pattern, sound, i)) continue;
+                    if (++set > Most) continue;
+                    if (set > 1) t.Append(" · ");
+                    int note = song.GridStepNote(pattern, sound, i);
+                    t.Append(i + 1).Append(' ').Append(note > 0 ? SfxUnits.NoteText(note) : "x");
+                }
+                if (set > Most) t.Append(" · +").Append(set - Most).Append(" more");
+            }
+            else
+            {
+                t.Append(":  ");
+                for (int i = 0; i < song.StepsPerPattern; i++)
+                {
+                    if (i > 0) t.Append(' ');
+                    if (!song.StepOn(pattern, sound, i)) { t.Append('·'); continue; }
+                    set++;
+                    int note = song.StepNote(pattern, sound, i);
+                    t.Append(note > 0 ? SfxUnits.NoteText(note) : "x");
+                }
             }
             if (set == 0) return "pattern " + Letter(pattern) + ":  it rests";
             int lanesOfIt = song.AutomationLanes(sound);
@@ -553,17 +583,28 @@ namespace CatSplat.SfxForge.Editor
             return t.ToString();
         }
 
+        /// <summary>
+        /// What the line under the keys says of the link, and whether SEND is off: for a link that has an output or not,
+        /// what the device said of itself (null: nothing) and the packed song. SEND is off without an output, and for a
+        /// song this device cannot take (SfxLink.Refusal says why: a format-6 song and a firmware before 1.6, a value
+        /// out of range - then the bold word is A DAMAGED SONG, else ANOTHER FORMAT).
+        /// </summary>
+        public static bool LinkState(bool linked, string port, SfxDeviceInfo? device, byte[] song, out string bold, out string small, out Color colour)
+        {
+            string refusal = linked ? SfxLink.Refusal(device, song) : null;
+            if (refusal != null) { bold = SfxPackedSong.IsValid(song) && !SfxPackedSong.IsPlayable(song) ? "A DAMAGED SONG" : "ANOTHER FORMAT"; colour = SfxColors.Warn; small = "SEND is off: " + refusal + "."; }
+            else if (linked) { bold = "LINKED"; colour = SfxColors.Linked; small = "SEND replaces the 16 sounds and the song on " + port; }
+            else { bold = "NOT CONNECTED"; colour = SfxColors.Dim; small = "Choose the MIDI ports in Window > SFX Forge."; }
+            return !linked || refusal != null;
+        }
+
         void UpdateLink()
         {
             if (!builtValid || !Alive) return;
-            bool linked = SfxLink.Shared.HasOutput, whole = Song != null && Song.data.Length == SfxProtocol.SongBytes;
+            bool linked = SfxLink.Shared.HasOutput;
             header.SetLink(linked, linked ? "Linked: " + SfxLink.Shared.OutputName : "Not connected");
-            string refusal = linked && whole ? SfxLink.Refusal(SfxLink.Shared.Device, true) : null;     // (the device said it speaks another format)
-            if (!whole) linkNote.Set("AN OLDER SONG", SfxColors.Warn, "It plays here and in the game. The device takes a song only in its newest form: fetch it again from there.");
-            else if (refusal != null) linkNote.Set("ANOTHER FORMAT", SfxColors.Warn, "SEND is off: " + refusal + ".");
-            else if (linked) linkNote.Set("LINKED", SfxColors.Linked, "SEND replaces the 16 sounds and the song on " + SfxLink.Shared.OutputName);
-            else linkNote.Set("NOT CONNECTED", SfxColors.Dim, "Choose the MIDI ports in Window > SFX Forge.");
-            sendKey.Off = !linked || !whole || refusal != null;
+            sendKey.Off = LinkState(linked, SfxLink.Shared.OutputName, SfxLink.Shared.Device, Song != null ? Song.data : null, out string bold, out string small, out Color colour);
+            linkNote.Set(bold, colour, small);
             playKey.Off = !NativeThere; barKey.Off = !NativeThere;
         }
 
@@ -634,7 +675,7 @@ namespace CatSplat.SfxForge.Editor
 
         void Send()
         {
-            if (Alive && One && SfxLink.Shared.HasOutput && Song.data.Length == SfxProtocol.SongBytes) SfxLink.Shared.SendSong(Song.sounds, Song.data);
+            if (Alive && One && SfxLink.Shared.HasOutput) SfxLink.Shared.SendSong(Song.sounds, Song.data);      // (a song this device cannot take is refused there, in words: UpdateLink shows them)
         }
 
         /// <summary>

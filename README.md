@@ -29,11 +29,11 @@ of a player, download the file.
 
 [![The device: a tour](Documentation~/img/readme/sfx-forge-tour.gif)](Documentation~/video/sfx-forge-tour.mp4)
 
-**[The device: a tour](Documentation~/video/sfx-forge-tour.mp4)** (2:12). The instrument itself: sound effects, MUTATE, the five engines, the sequencer, layers that follow INTENSITY, automation, the mixer, the link page.
+**[The device: a tour](Documentation~/video/sfx-forge-tour.mp4)** (2:23). The instrument itself: sound effects, MUTATE, the five engines, the sequencer and its finer grid, layers that follow INTENSITY, automation, the mixer, the link page.
 
 [![The device: building the song](Documentation~/img/readme/sfx-forge-build-a-song.gif)](Documentation~/video/sfx-forge-build-a-song.mp4)
 
-**[The device: building the song](Documentation~/video/sfx-forge-build-a-song.mp4)** (3:03). A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, then arranged, layered, automated, mixed and sent to the game.
+**[The device: building the song](Documentation~/video/sfx-forge-build-a-song.mp4)** (3:21). A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, a second pattern with a hi-hat roll on a grid of 1/32, then arranged, layered, automated, mixed and sent to the game.
 
 The videos were made by scripts from the firmware and the game themselves. Their sound is SFX FORGE's own, on the
 device and in Unity; nobody has listened to it (see [What is tested](#what-is-tested-and-what-is-not)).
@@ -61,9 +61,11 @@ sound's peak and RMS as PLAY and BAKE WAV render it.
 ![The Inspector of a song, page STEPS](Documentation~/img/unity-inspector-song.png)
 
 **A song** (`SfxSong`). Tempo, steps, swing and chain; the patterns A – H; the arrangement; and four pages: STEPS
-(the step grid, with INTENSITY and a mark for the LAYER of every sound that plays in the song under it), MIX, MASTER and AUTO. It is a viewer: here
+(the steps of the pattern looked at, with INTENSITY and a mark for the LAYER of every sound that plays in the song under it), MIX, MASTER and AUTO. It is a viewer: here
 you can change TEMPO, SWING and a sound's LAYER, VOLUME and PAN. Everything else only shows, and is made on the
-device.
+device. From firmware 1.6.0 on a pattern has its own grid of 1/16, 1/32 or 1/64: the title says it (`PATTERN A  1/16`),
+the rows draw 16, 32 or 64 steps, and a finer pattern's tile carries `32` or `64` in its corner
+([the manual, "A finer grid"](Documentation~/UNITY.md#a-finer-grid)).
 
 ![The SFX Forge window, shown with a filled-in model](Documentation~/img/unity-inspector-window.png)
 
@@ -94,7 +96,7 @@ string text = SfxPatchText.ToText(zap);                              // 62 chara
 ```
 
 **These pictures are not photographs of the Unity editor.** They are the same element tree and stylesheet
-the Inspector hosts, rendered in a panel to a texture by the editor UI's tests (147 EditMode tests, in the source
+the Inspector hosts, rendered in a panel to a texture by the editor UI's tests (169 EditMode tests, in the source
 repository). Nobody has opened the real Inspector or either of the two windows yet, and nobody has listened to a
 sound the tools made. The window's picture shows a model the
 test filled in: its ports, patches and messages are the test's, and no device was connected. Also not tried: the
@@ -117,7 +119,8 @@ device is the emulator or the plugin, and the two ports are a virtual MIDI cable
 
 **3. EXPORT a sound, SEND the song.** On a sound page, **F5 EXPORT** sends the selected sound: one patch. On the SONG
 page, **F5 SEND** sends everything: the 16 patches, then the song with its arrangement, layers, mix and automation
-in 39 pieces (55 messages in all). Unity can also ask: **FETCH SONG** in the window, or from code:
+in pieces of up to 240 bytes (the factory song: 11 pieces, 27 messages in all). Unity can also ask: **FETCH SONG** in
+the window, or from code:
 
 ```csharp
 SfxLink.Shared.PatchReceived += (slot, patch) => Debug.Log($"pad {slot + 1}: {patch.engine}");
@@ -264,7 +267,7 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   skipped, which are the capture and link takes that only run when asked for by name. That run was headless, on a
   copy of the project. A standalone Windows build passed its own probe, and the same was done with the showcase's
   folder copied to another place in an otherwise empty project; those two were last done before the tools for
-  designing sounds, `loopPattern` and firmware 1.5.0 were added, and were not repeated with them.
+  designing sounds, `loopPattern` and the firmwares 1.5 and 1.6 were added, and were not repeated with them.
 - `SfxMusicPlayer.loopPattern` in Play mode: one of those 26 tests
   (`LoopPatternKeepsTheSongOnOnePatternAndLetsItGoAgain` in the sample's `Tests/ShowcaseAudioTests.cs`) starts a
   second `SfxMusicPlayer` with the demo song. With `loopPattern` on it stays on its pattern for more than three
@@ -272,30 +275,42 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
 - The link, end to end against the VIBE FM SDK's emulator over a virtual MIDI cable (loopMIDI): patches and the song
   from the device to Unity, a song and its sounds from Unity to the device, the game's intensity driving the device,
   SEND and EXPORT pressed on the device arriving in a running game, and the device saying what it is. That was done
-  with firmware 1.4.0. The firmware in this package is 1.5.0, and the link was not run again with it (below).
-- The firmware in this package (1.5.0): all 14 of its own checks pass. They run the built `.wasm` in the SDK's
-  command-line tools, without the emulator's page and without Unity, and read its sound, its MIDI and the song it
-  sends: still 55 messages and 7699 bytes of format 5, as 1.4.0 sent.
-- The code in the manual was compiled against the package.
-- The editor UI: 147 EditMode tests in a project of their own build the Inspectors and the two windows as elements,
+  with firmware 1.4.0. The firmware in this package is 1.6.0, which changed the song message and the identity, and
+  the link was not run again with it (below).
+- The firmware in this package (1.6.0): all 20 of its own checks pass. They run the built `.wasm` in the SDK's
+  command-line tools and in a small host of the source repository's own (for SysEx and stored files), without the
+  emulator's page and without Unity, and read its sound, its MIDI, what it stores
+  and the song it sends: 27 messages, the 16 sounds and then 2487 bytes of format 6 in 11 pieces. They also hand it
+  songs in both shapes of the song message, out of order, doubled and one straight after another.
+- The finer grid and song format 6 on the Unity side, without Unity and without a device (the checks of the
+  engine-independent code, below): a format-5 song renders bit for bit as it did before; the songs of formats 1 to
+  5, converted to format 6, play the same samples; a pattern made finer and coarser again; where the player is in a
+  64-step pattern; both shapes of the song message through the package's receiver; `SfxPackedSong.IsPlayable`
+  against the native player on 28 000 damaged songs; and what `SfxLink.Refusal` says to a device that said 1.6, one
+  that said 1.5 and one that said nothing. In the editor UI's project, 8 of the tests below are about a song with
+  patterns of 32 and 64 steps.
+- The code in the manual was compiled against the package, except what firmware 1.6.0 added to it: the two
+  snippets of "A finer grid" and the changed lines of "A song without MIDI" were not compiled.
+- The editor UI: 169 EditMode tests in a project of their own build the Inspectors and the two windows as elements,
   call what their knobs and keys call, send them mouse and wheel events, check the asset and Undo afterwards, and
   compare the value texts with 46 values read off the device's own pictures and with a table of the firmware's
   arithmetic in 32-bit floats. They also render the pictures of the editor UI on this page and
   in the manual; those are not photographs of the editor.
-- The engine-independent code, with plain .NET and without Unity: 143 checks, all passing with the native library
+- The engine-independent code, with plain .NET and without Unity: 204 checks, all passing with the native library
   that is in this package. Among them the loop switch of the music player's engine (`loopPattern`): on, the
   pattern stays; a cue changes it on the bar line and that one stays; off, the arrangement goes on.
 - The tools for designing sounds. Without Unity: every kind of generated sound over 300 seeds is a valid patch
   inside its ranges, and 100 of each bake audible and unclipped; variants, locks and the shuffle; levels, the LEVEL
   law and matching; the text and `.syx` forms, both ways; bake options and the resampler. In the editor UI's
-  project, 45 of the 147 tests: what each key of NEW, VARY, LEVEL and SHARE does to the asset, with Undo; a
+  project, 45 of the 169 tests: what each key of NEW, VARY, LEVEL and SHARE does to the asset, with Undo; a
   variation set's BAKE on real asset files (written next to the asset, out of date after an edit, nothing written
   when a file that is there cannot be written over); a batch bake's files, names and bytes; the Bake window over a model.
 - The identity and the format numbers, on the Unity side and without a device: the bytes of the two messages,
   what is an identity and what is not, an identity arriving in the middle of a song, and when a patch or a song is
   not sent, a patch and a song of a higher format arriving and being said to be newer (the checks of the
   engine-independent code, run with plain .NET); asset files without a format line and with a higher one,
-  imported by Unity, and the banner the Inspectors show for them (11 of the 147 tests above).
+  imported by Unity, and the banner the Inspectors show for them (11 of the 169 tests above). A song asset counts
+  its own format since firmware 1.6.0: 2 when it holds a format-6 song, 1 with an older one.
 - The firmware's side of the identity, on the built `.wasm` without the emulator: a check of the source
   repository hands it the request and reads the answer, and a pad's patch asked for right after the request
   still arrives.
@@ -303,7 +318,8 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
 Tested on this package as generated, on the same machine, with the editor run headless. Most of it was done
 before the tools for designing sounds, `loopPattern` and firmware 1.5.0 were added. One run was repeated with
 them in the package: the sample's editor checks and Play mode tests, at the end of "The sample" below. The rest
-was not:
+was not. **None of it was repeated with firmware 1.6.0 and song format 6 in the package**: everything in this list
+was run on a generated package from before them, whose sample held the demo song in format 5:
 
 - **The package alone.** An empty project made by Unity (`-createProject`: Input Manager, built-in render pipeline,
   no Test Framework) with the package added by a `file:` line in `Packages/manifest.json`: it compiles, and the
@@ -330,21 +346,28 @@ was not:
   by a `file:` line under the id `com.catsplatstudios.sfxforge`: 88 of 88 EditMode tests passed, the stylesheet was found (it is
   looked up by its GUID, not by a path), and the 51 pictures the tests rendered are byte for byte the ones rendered
   from the source. That is still a test panel: the Inspector and the window themselves were not opened. This was
-  done before the identity, the format numbers and the tools for designing sounds were added (the project has
-  147 tests and renders 78 pictures since) and was not repeated with them: the 147 were run against the package's
-  folder in the source repository only, where all 147 pass.
+  done before the identity, the format numbers, the tools for designing sounds and the finer grid were added (the
+  project has 169 tests and renders 90 pictures since) and was not repeated with them: the 169 were run against the
+  package's folder in the source repository only, where all 169 pass.
 
 Not tested:
 
 - **Nobody has listened to any of it.** The levels and every "it sounds" in these pages come from measurements: peak
   and RMS of recorded takes, the build's probe, tests that read the output buffer. They say that sound comes out and
   does not clip. They do not say that it sounds good or is balanced.
-- A device with another format or another profile. None exists, so refusing to send to one was only tried with
-  identities made up by the tests.
-- **Firmware 1.5.0 against Unity.** The link tests were last run with 1.4.0. 1.5.0 was run by its own checks only:
-  not over MIDI against the emulator, not in the plugin, not on hardware.
+- A device that speaks another format. Refusing to send to one was only tried with identities made up by the
+  tests, also for the one case that exists now: a firmware up to 1.5.0, which speaks song format 5.
+- **Firmware 1.6.0 against Unity.** The link tests were last run with 1.4.0. 1.6.0 and 1.5.0 were run by their own
+  checks only: not over MIDI against the emulator, not in the plugin, not on hardware. So the new song message has
+  not travelled through a MIDI port: the firmware's checks and the package's checks each read the other's bytes.
+- **An older firmware or an older package with this one.** That a firmware up to 1.5.0 drops the new song message
+  without a word, and what a package from before firmware 1.6.0 does with a format-6 song asset (the banner of a newer
+  asset, then NO SONG YET and silence), is read from their code. Neither was run.
+- **A finer pattern in Unity, by ear or in a game.** The demo song and the sample use sixteenths only.
+  `SfxMusicPlayer.GridStep` was not read in a Play mode test, and nobody has listened to a pattern of 32 or 64
+  steps played by the package.
 - **The standalone build with what is new.** The Windows build and its probe were last run before the tools for
-  designing sounds, `loopPattern` and firmware 1.5.0 were added.
+  designing sounds, `loopPattern` and the firmwares 1.5 and 1.6 were added.
 - **`SfxMusicPlayer.loopPattern` by ear, or in a built game.** It was run by one Play mode test, headless and
   muted. Nobody has listened to a looped pattern, and nobody has listened to the videos that were made again.
 - **The tools in use.** The NEW, VARY, LEVEL and SHARE tabs, a variation set's Inspector and the Bake window were
@@ -374,8 +397,10 @@ Not tested:
   warning (`SfxNative.Available` is false); that was not tried.
 - **MIDI on Windows only** (winmm), and only needed for the link. Playing sounds and songs needs no device.
 - **Unity 6000.3**: developed and tested with 6000.3.8f1, nothing older.
+- **Firmware 1.6.0 for songs.** A song of this version is in format 6. A firmware up to 1.5.0 does not take it; the
+  package says so before it sends. A package from before firmware 1.6.0 does not read it.
 - Live players are not spatialized (for 3D, bake a clip); one patch per `SfxPlayer`; a song is made on the device and
-  only played and shaped in Unity. A variation set must be baked to play where the native library is not, and
+  only played and shaped in Unity: a pattern's grid too is chosen on the device. A variation set must be baked to play where the native library is not, and
   nothing checks that at build time. [The manual's list of limits](Documentation~/UNITY.md#limits).
 
 ## License

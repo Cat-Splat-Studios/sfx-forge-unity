@@ -41,14 +41,14 @@ The three ways to play a sound and the adaptive music, one at a time: a page of 
 
 [![The device: a tour](../img/readme/sfx-forge-tour.jpg)](sfx-forge-tour.mp4)
 
-[`sfx-forge-tour.mp4`](sfx-forge-tour.mp4) · 2:12 · 1920×1080, 30 frames a second, with sound.
+[`sfx-forge-tour.mp4`](sfx-forge-tour.mp4) · 2:23 · 1920×1080, 30 frames a second, with sound.
 
-The instrument itself: sound effects, MUTATE, the five engines, the sequencer, layers that follow INTENSITY, automation, the mixer, the link page.
+The instrument itself: sound effects, MUTATE, the five engines, the sequencer and its finer grid, layers that follow INTENSITY, automation, the mixer, the link page.
 
 ## The device: building the song
 
 [![The device: building the song](../img/readme/sfx-forge-build-a-song.jpg)](sfx-forge-build-a-song.mp4)
 
-[`sfx-forge-build-a-song.mp4`](sfx-forge-build-a-song.mp4) · 3:03 · 1920×1080, 30 frames a second, with sound.
+[`sfx-forge-build-a-song.mp4`](sfx-forge-build-a-song.mp4) · 3:21 · 1920×1080, 30 frames a second, with sound.
 
-A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, then arranged, layered, automated, mixed and sent to the game.
+A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, a second pattern with a hi-hat roll on a grid of 1/32, then arranged, layered, automated, mixed and sent to the game.

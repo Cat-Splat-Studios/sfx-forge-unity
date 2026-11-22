@@ -84,20 +84,25 @@ namespace CatSplat.SfxForge.Editor
     /// <summary>
     /// An automation lane over one pattern, as the stage draws it: a cell a step, as high as the knob stands there. A
     /// point is bright with a white top; where it only holds, the cell is dim. A dot: the sound plays on that step.
-    /// Fill Point (-1 = no point, else the value) and Plays, set Hi (the knob's highest value) and Length, then Changed.
+    /// Fill Point (-1 = no point, else the value) and Plays, set Count (the cells: 16, 32 or 64 - the pattern's grid),
+    /// Hi (the knob's highest value) and Length, then Changed.
     /// </summary>
     public class LaneRow : VisualElement
     {
         public const int Steps = 16;
-        public readonly int[] Point = new int[Steps];
-        public readonly bool[] Plays = new bool[Steps];
+        /// <summary>The most cells a row has: a pattern of 64 steps.</summary>
+        public const int MaxSteps = 64;
+        /// <summary>The cells drawn: 16, 32 or 64. Point, Plays and Length count in these.</summary>
+        public int Count = Steps;
+        public readonly int[] Point = new int[MaxSteps];
+        public readonly bool[] Plays = new bool[MaxSteps];
         public int Hi = 126, Length = Steps;
         public Color Accent = SfxColors.Ember;
 
         public LaneRow()
         {
             AddToClassList("sfx-lane-row");
-            for (int i = 0; i < Steps; i++) Point[i] = -1;
+            for (int i = 0; i < MaxSteps; i++) Point[i] = -1;
             generateVisualContent += Draw;
         }
 
@@ -105,6 +110,7 @@ namespace CatSplat.SfxForge.Editor
 
         void Draw(MeshGenerationContext c)
         {
+            if (Count > Steps) { DrawFine(c); return; }
             Rect r = contentRect;
             if (r.width < Steps * 2 || r.height < 6f) return;
             var p = c.painter2D;
@@ -123,6 +129,31 @@ namespace CatSplat.SfxForge.Editor
                     if (Point[i] >= 0) SfxUI.Rect(p, x, r.y + h - bar, w, 2f, SfxColors.White);
                 }
                 if (Plays[i]) SfxUI.Rect(p, x + w * 0.5f - 2f, r.y + 1f, 4f, 3f, last >= 0 && !off && last > hi * 3 / 4 ? SfxColors.Bg : SfxColors.Mix(SfxColors.Bg, Accent, 0.7f));
+            }
+        }
+
+        // 32 or 64 cells: plain rectangles on whole pixels, where a row of steps of that grid has them (StepRow.Fine)
+        void DrawFine(MeshGenerationContext c)
+        {
+            Rect r = contentRect;
+            int count = Mathf.Min(Count, MaxSteps), div = count / Steps;
+            if (!StepRow.Fine(r.width, count, out int cell, out int wide) || r.height < 6f) return;
+            var p = c.painter2D;
+            float x0 = Mathf.Round(r.x), h = r.height;
+            int hi = Mathf.Max(1, Hi), last = -1;
+            for (int i = 0; i < count; i++)
+            {
+                float x = x0 + i * cell + i / div;
+                bool off = i >= Length;
+                SfxUI.Rect(p, x, r.y, wide, h, off ? SfxColors.Hex(0x1C130F) : (i / (4 * div) & 1) != 0 ? SfxColors.Hex(0x2B1D17) : SfxColors.Hex(0x38261E));
+                if (Point[i] >= 0) last = Point[i];
+                if (last >= 0 && !off)
+                {
+                    float bar = Mathf.Round(2f + Mathf.Min(last, hi) * (h - 2f) / hi);
+                    SfxUI.Rect(p, x, r.y + h - bar, wide, bar, Point[i] >= 0 ? Accent : SfxColors.Mix(SfxColors.Bg, Accent, 0.40f));
+                    if (Point[i] >= 0) SfxUI.Rect(p, x, r.y + h - bar, wide, 2f, SfxColors.White);
+                }
+                if (Plays[i]) SfxUI.Rect(p, x + (wide >= 4 ? wide / 2 - 1 : 0), r.y + 1f, wide >= 4 ? 2f : wide, 3f, last >= 0 && !off && last > hi * 3 / 4 ? SfxColors.Bg : SfxColors.Mix(SfxColors.Bg, Accent, 0.7f));
             }
         }
     }

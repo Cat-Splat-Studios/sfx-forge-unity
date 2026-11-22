@@ -56,19 +56,20 @@ namespace SfxShowcase.Editor
             return song;
         }
 
-        /// <summary>Reads <see cref="SongBytesPath"/>. False when the file is not there or has another size.</summary>
+        /// <summary>Reads <see cref="SongBytesPath"/>: 16 patches, then the rest of the file - the packed song. False when the file is not there or is not that.</summary>
         static bool ReadSongFile(out SfxPatch[] sounds, out byte[] packed)
         {
             sounds = new SfxPatch[SfxProtocol.Slots];
-            packed = new byte[SfxProtocol.SongBytes];
+            packed = new byte[0];
             var file = AssetDatabase.LoadAssetAtPath<TextAsset>(SongBytesPath);
             byte[] raw = file != null ? file.bytes : null;
             int soundBytes = SfxProtocol.Slots * SfxPatch.Bytes;
-            if (raw == null || raw.Length != soundBytes + packed.Length) return false;
+            if (raw == null || raw.Length <= soundBytes) return false;
             for (int i = 0; i < sounds.Length; i++)
                 if (!SfxPatch.TryUnpack(raw, i * SfxPatch.Bytes, out sounds[i])) return false;
+            packed = new byte[raw.Length - soundBytes];              // (a packed song has no fixed size from format 6 on)
             Array.Copy(raw, soundBytes, packed, 0, packed.Length);
-            return true;
+            return SfxPackedSong.IsValid(packed);
         }
 
         /// <summary>Whether a song asset holds exactly these sounds and this packed song.</summary>

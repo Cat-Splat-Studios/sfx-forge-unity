@@ -15,10 +15,9 @@ namespace CatSplat.SfxForge
         MidiIn input;
         MidiOut output;
         readonly int[] lastCc = new int[8];
-        readonly byte[] songIn = new byte[SfxProtocol.SongBytes];
+        readonly SfxSongTransfer songIn = new SfxSongTransfer();     // a song that is arriving, piece by piece (either shape of the message)
         readonly SfxPatch[] sounds = new SfxPatch[SfxProtocol.Slots];
         int soundsSeen;
-        ulong songSeen;
         readonly System.Diagnostics.Stopwatch sinceSongPiece = System.Diagnostics.Stopwatch.StartNew();
         const double ForgetSongSeconds = 2.0;       // a song whose pieces stopped coming is forgotten after this
         string lastNewer;
@@ -95,7 +94,7 @@ namespace CatSplat.SfxForge
         {
             if (input != null) { input.Dispose(); input = null; }
             if (output != null) { output.Dispose(); output = null; }
-            songSeen = 0; soundsSeen = 0;
+            songIn.Reset(); soundsSeen = 0;
             Device = null; LastRefusal = null; sinceIdentityAsked.Reset();
             lastNewer = null; sinceNewer.Reset();
             Forget();
@@ -109,13 +108,12 @@ namespace CatSplat.SfxForge
         /// </summary>
         bool TakeSongPiece(byte[] m)
         {
-            if (m.Length < 9 || m[4] != SfxProtocol.SongChunk) return false;
-            ulong before = sinceSongPiece.Elapsed.TotalSeconds > ForgetSongSeconds ? 0 : songSeen, seen = before;
-            bool whole = SfxProtocol.TryTakeSongChunk(m, songIn, ref seen);
-            if (seen == before && !whole) return false;             // not a piece, or one that was in already
-            songSeen = seen;
+            if (m.Length < 9 || m[4] != SfxProtocol.SongChunk || !SfxSongTransfer.IsPiece(m)) return false;
+            if (sinceSongPiece.Elapsed.TotalSeconds > ForgetSongSeconds) songIn.Reset();
+            int took = songIn.TakePiece(m);
+            if (took == SfxSongTransfer.Twin) return false;         // one that was in already
             sinceSongPiece.Restart();
-            return whole;
+            return took == SfxSongTransfer.Whole;
         }
 
         void Forget() { for (int i = 0; i < lastCc.Length; i++) lastCc[i] = -1; }
@@ -150,8 +148,9 @@ namespace CatSplat.SfxForge
                 }
                 else if (TakeSongPiece(m))
                 {
-                    // (a newer song whose pieces are the size of ours comes together too: it was said to be newer at its first piece)
-                    if (!SfxProtocol.IsNewerSong(songIn)) SongReceived?.Invoke((byte[])songIn.Clone(), soundsSeen == 0xFFFF ? (SfxPatch[])sounds.Clone() : null);
+                    // (a newer song in the old shape of the message comes together too: it was said to be newer at its first piece)
+                    byte[] song = songIn.Song;
+                    if (!SfxProtocol.IsNewerSong(song)) SongReceived?.Invoke((byte[])song.Clone(), soundsSeen == 0xFFFF ? (SfxPatch[])sounds.Clone() : null);
                     soundsSeen = 0;
                 }
                 // a patch or a song in a format above ours is newer, not broken: it is not taken, and that is said
@@ -199,9 +198,12 @@ namespace CatSplat.SfxForge
         internal void Asked() { Device = null; sinceIdentityAsked.Restart(); }
 
         /// <summary>
-        /// Why a device that said this of itself is not sent a patch (song: false) or a song with its sounds (song:
-        /// true) from here: it speaks another format, so it would refuse the bytes or read them wrongly. Null: nothing
-        /// stands against it – also for a device that said nothing (null), which is taken for a firmware before 1.4.
+        /// Why a device that said this of itself is not sent a patch (song: false) or - as far as that can be said
+        /// without the song - a song with its sounds (song: true): it speaks another patch format, a song format above
+        /// this version's, or one from before songs travelled in pieces as they do now. Null: nothing stands against
+        /// it – also for a device that said nothing (null), which is taken for a firmware before 1.4. A device that
+        /// speaks song format 5 (firmware 1.4, 1.5) is not refused here: whether THIS song can go to it is the other
+        /// overload's question.
         /// </summary>
         public static string Refusal(SfxDeviceInfo? device, bool song)
         {
@@ -210,10 +212,34 @@ namespace CatSplat.SfxForge
             if (p.patchFormat != SfxPatch.Version)
                 return $"the device ({device.Value}) speaks patch format {p.patchFormat}, this SFX Forge speaks {SfxPatch.Version}: "
                     + (p.patchFormat > SfxPatch.Version ? "update the package" : "update the device's firmware");
-            if (song && p.songFormat != SfxProtocol.SongVersion)
-                return $"the device ({device.Value}) speaks song format {p.songFormat}, this SFX Forge speaks {SfxProtocol.SongVersion}: "
-                    + (p.songFormat > SfxProtocol.SongVersion ? "update the package" : "update the device's firmware");
+            if (song && p.songFormat > SfxProtocol.SongVersion)
+                return $"the device ({device.Value}) speaks song format {p.songFormat}, this SFX Forge speaks {SfxProtocol.SongVersion}: update the package";
+            if (song && p.songFormat < 5)
+                return $"the device ({device.Value}) speaks song format {p.songFormat}, this SFX Forge speaks {SfxProtocol.SongVersion}: update the device's firmware";
             return null;
+        }
+
+        /// <summary>
+        /// Why this packed song, with its sounds, is not sent to a device that said this of itself (null: it has not
+        /// answered, or never will) - null when nothing stands against it. A device that speaks song format 6 takes a
+        /// song of any format this version reads. One that speaks format 5, and one that said nothing, takes a format-5
+        /// song only: a firmware before 1.6 drops every piece of the newer message without a word, so it is said here.
+        /// A song with a value out of range (SfxPackedSong.IsPlayable) goes to no device: it would answer BAD SONG.
+        /// </summary>
+        public static string Refusal(SfxDeviceInfo? device, byte[] song)
+        {
+            int format = SfxPackedSong.Format(song);
+            if (format == 0)
+                return SfxProtocol.IsNewerSong(song) ? $"the song is in format {song[0]}, this SFX Forge knows up to {SfxProtocol.SongVersion}: update the package" : "this is not a packed song";
+            if (!SfxPackedSong.IsPlayable(song))
+                return "the song holds a value that is out of range (the device would answer BAD SONG): fetch it again from the device";
+            if (device == null)
+                return format == 5 ? null : $"the device did not say that it takes song format {format} (firmware 1.6 on says so): connect it, or update its firmware";
+            string said = Refusal(device, true);
+            if (said != null) return said;
+            int speaks = device.Value.profile.songFormat;
+            if (speaks >= SfxProtocol.SongVersion || format == speaks) return null;
+            return $"the device ({device.Value}) speaks song format {speaks}, the song is in format {format}: " + (format > speaks ? "update the device's firmware" : "fetch the song again from the device");
         }
 
         /// <summary>
@@ -230,23 +256,28 @@ namespace CatSplat.SfxForge
         public bool RequestPatch(int slot) => output != null && output.SendSysEx(SfxProtocol.BuildRequest(slot));
 
         /// <summary>Asks for the 16 sounds and the song of the device; the answer comes as SongReceived.</summary>
-        public bool RequestSong() { soundsSeen = 0; songSeen = 0; return output != null && output.SendSysEx(SfxProtocol.BuildRequestSong()); }
+        public bool RequestSong() { soundsSeen = 0; songIn.Reset(); return output != null && output.SendSysEx(SfxProtocol.BuildRequestSong()); }
 
         /// <summary>
         /// 16 sounds and a packed song to the device: they replace its song and the 16 sounds of its MUSIC kit, which
         /// the song plays (the kit that is selected there is left alone). Needs firmware 1.3.1: an older one takes the
-        /// song and ignores the sounds. False and nothing sent when the device said it speaks another patch or song
-        /// format: LastRefusal says so.
+        /// song and ignores the sounds. To a device that said it speaks song format 6 the song goes in the message of
+        /// firmware 1.6.0, whatever its format; to any other in the one before, which carries a format-5 song. False
+        /// and nothing sent when the device cannot take this song, or when it is not a packed song: LastRefusal says why.
         /// </summary>
         public bool SendSong(SfxPatch[] patches, byte[] song)
         {
-            if ((LastRefusal = Refusal(Device, true)) != null) return false;
+            if ((LastRefusal = Refusal(Device, song)) != null) return false;
             if (output == null || patches == null || patches.Length != SfxProtocol.Slots) return false;
             bool ok = true;
             for (int i = 0; i < patches.Length; i++) ok &= output.SendSysEx(SfxProtocol.BuildLoadSongSound(i, patches[i]));
-            foreach (var m in SfxProtocol.BuildSong(song)) ok &= output.SendSysEx(m);
+            foreach (var m in SongMessages(Device, song)) ok &= output.SendSysEx(m);
             return ok;
         }
+
+        // the song's messages as this device takes them (a song Refusal let through)
+        internal static byte[][] SongMessages(SfxDeviceInfo? device, byte[] song)
+            => device.HasValue && device.Value.profile.songFormat >= SfxProtocol.SongVersion ? SfxProtocol.BuildSongPieces(song) : SfxProtocol.BuildSong(song);
 
         /// <summary>The music on the device: how hot the game is, 0..1 (layers come in).</summary>
         public bool SendIntensity(float value01) => SendTelemetry(SfxTelemetry.Intensity, value01);

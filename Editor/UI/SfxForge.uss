@@ -143,6 +143,7 @@
 .sfx-pattern { width: 55px; height: 54px; border-radius: 7px; margin-right: 4px; margin-bottom: 4px; }
 .sfx-pattern__letter { position: absolute; left: 7px; top: 2px; font-size: 16px; -unity-font-style: bold; padding: 0; }
 .sfx-pattern__bars { position: absolute; left: 4px; right: 3px; bottom: 4px; height: 20px; }
+.sfx-pattern__grid { position: absolute; right: 4px; top: 3px; font-size: 9px; padding: 0; margin: 0; }
 .sfx-fader { height: 13px; min-width: 30px; }
 
 /* ---- narrow: an Inspector of about 300 px ---- */

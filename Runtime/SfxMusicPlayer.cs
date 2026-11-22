@@ -30,21 +30,25 @@ namespace CatSplat.SfxForge
         struct Command { public int kind, a, b, c, d; public float v; }   // 0 start, 1 stop, 2 cue, 3 note on, 4 note off, 5 track, 6 master
         readonly ConcurrentQueue<Command> commands = new ConcurrentQueue<Command>();
         readonly object gate = new object();
-        readonly int[] state = new int[4];
+        readonly int[] state = new int[4], grid = new int[2];
         IntPtr memory;
         int sampleRate;
         float[] left = new float[2048], right = new float[2048];
         AudioSource source;
         SfxMods mods = SfxMods.None;
-        volatile int step = -1, pattern, bar = -1;
+        volatile int step = -1, pattern, bar = -1, gridStep = -1, perSixteenth = 1;
         volatile bool running;
         bool loopApplied;                                           // what the player was told last (the audio thread's)
         static bool warned;
 
         /// <summary>The sequencer runs.</summary>
         public bool IsPlaying => running;
-        /// <summary>The step it is on, 0..15 (-1: not yet).</summary>
+        /// <summary>The sixteenth of the bar it is on, 0..15 (-1: not yet) - whatever the pattern's grid.</summary>
         public int Step => step;
+        /// <summary>The step it is on in the grid of the pattern that plays: 0..15, 0..31 or 0..63 (-1: not yet).</summary>
+        public int GridStep => gridStep;
+        /// <summary>The steps a sixteenth of the pattern that plays: 1, 2 or 4 (its grid has 16, 32 or 64 steps a bar).</summary>
+        public int StepsPerSixteenth => perSixteenth;
         /// <summary>The pattern it is on, 0 = A.</summary>
         public int Pattern => pattern;
         /// <summary>Bars since Play.</summary>
@@ -161,7 +165,8 @@ namespace CatSplat.SfxForge
                 SfxNative.PlayerSetLive(memory, ref mods, intensity);
                 uint sounding = SfxNative.PlayerRender(memory, left, right, frames);
                 SfxNative.PlayerState(memory, state);
-                running = state[0] != 0; step = state[1]; pattern = state[2]; bar = state[3];
+                SfxNative.PlayerGrid(memory, grid);
+                running = state[0] != 0; step = state[1]; pattern = state[2]; bar = state[3]; gridStep = grid[0]; perSixteenth = grid[1];
                 if (sounding == 0) return;
                 SfxMix.Add(data, channels, left, right, frames, volume);
             }

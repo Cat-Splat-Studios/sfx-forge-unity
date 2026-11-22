@@ -166,7 +166,7 @@ flowchart LR
 |---|---|---|
 | `SfxPatch` | struct | one sound: an engine and 25 values, each 0 – 127. The same 28 bytes the device keeps |
 | `SfxPreset` | asset | a patch you can click, hear and tune in the Inspector. `Bake` turns it into an `AudioClip` |
-| `SfxSong` | asset | a piece of music: 16 sounds and the packed song (patterns, arrangement, layers, mix, automation) |
+| `SfxSong` | asset | a piece of music: 16 sounds and the packed song (patterns, each with its own grid, arrangement, layers, mix, automation) |
 | `SfxVariationSet` | asset | one sound as several: a preset and a seed give a fixed row of variants, and BAKE writes them as clips ([section 11](#variation-sets)) |
 | `SfxPlayer` | component | synthesizes a patch as it plays. Its four live values bend the sound while it sounds |
 | `SfxMusicPlayer` | component | plays an `SfxSong`. The game sets its intensity, cues patterns, moves its mix |
@@ -181,6 +181,7 @@ flowchart LR
 | `SfxTelemetrySender` | component | one game value → the device, and to local players |
 | `SfxEncoderBinding` | component | one of the device's encoders → an AudioMixer parameter or an event |
 | `SfxProtocol` | static class | the MIDI messages, byte by byte. You rarely call it yourself |
+| `SfxPackedSong` · `SfxSongTransfer` | a static class, a class | reads a packed song of any format step by step; collects a song that arrives in pieces ([section 6](#the-song-formats-the-package-reads)) |
 | **Editor** | | `Window > SFX Forge` and the Inspectors of `SfxPreset` and `SfxSong`, all three drawn like the device's display ([below](#the-inspectors-look-like-the-device)); `SfxForgeEditorLink` (preview, bake a WAV, make assets). For designing sounds ([section 11](#11-tools-for-designing-sounds)): the tools in a sound's Inspector, the Inspector of `SfxVariationSet`, `Window > SFX Forge Bake`, `SfxBatchBake`, `SfxVariationBaker` |
 
 Everything is in the namespace `CatSplat.SfxForge`; the editor code in `CatSplat.SfxForge.Editor`.
@@ -235,21 +236,28 @@ with several presets selected each of them is changed. A value in which they dif
 
 ![The Inspector of a song, page STEPS](img/unity-inspector-song.png)
 
-*The Inspector of an `SfxSong`, the demo song, page STEPS, pattern A, sound 7 chosen. Rendered by the tests, as
-above.*
+*The Inspector of an `SfxSong`, the demo song, page STEPS, pattern A, sound 7 chosen. The title says the pattern and
+its grid: `PATTERN A  1/16`. Rendered by the tests, as above.*
 
 **A song is shown, not edited.** The song's Inspector is a viewer of what was made on the device, with five numbers
 you can change ([section 5](#the-song-in-the-inspector) goes through it):
 
 | Editable here | Only shown: made on the device |
 |---|---|
-| **TEMPO** (40 – 240 BPM) and **SWING** (0 – 100 %) | STEPS (the pattern's length) and CHAIN |
-| the chosen sound's **LAYER** (0 – 100 %), **VOLUME** (0 – 127, 100 = as designed) and **PAN** (L64 … C … R63) | the steps with their notes, velocities and lengths; the patterns A – H; the arrangement |
+| **TEMPO** (40 – 240 BPM) and **SWING** (0 – 100 %) | STEPS (the bar's length, in sixteenths) and CHAIN |
+| the chosen sound's **LAYER** (0 – 100 %), **VOLUME** (0 – 127, 100 = as designed) and **PAN** (L64 … C … R63) | the steps with their notes, velocities and lengths; the patterns A – H, each with its grid of 1/16, 1/32 or 1/64; the arrangement |
 | | which sounds are muted; the master effects (DELAY TIME, FEEDBACK, ROOM SIZE, DAMPING, DRIVE); the automation lanes |
 
 The INTENSITY bar on the STEPS page can be dragged, but it is not part of the song: it is the intensity you look at
 the song with, and PLAY BAR plays with. In the game, the game sets it. The same goes for the pattern and the sound
 you chose.
+
+![The Inspector of a song, a pattern of 32 steps](img/unity-inspector-song-fine.png)
+
+*From firmware 1.6.0 on a pattern has its own grid: 16, 32 or 64 steps a bar. This is the tests' own song, the demo
+song with pattern B made 1/32 and C and F 1/64, with B looked at. The title says `PATTERN B  1/32`, each row has 32
+cells, and the tiles of B, C and F carry `32` or `64` in their corner. Rendered by the tests, as above.
+[Section 5](#a-finer-grid) explains the grid.*
 
 ![The SFX Forge window, shown with a filled-in model](img/unity-inspector-window.png)
 
@@ -586,7 +594,8 @@ Three words from the device, used below:
 
 | Word | What it is |
 |---|---|
-| **pattern** | one bar of 16 steps for all 16 sounds. A song has eight, A to H (`CuePattern(0)` to `CuePattern(7)`) |
+| **pattern** | one bar for all 16 sounds. A song has eight, A to H (`CuePattern(0)` to `CuePattern(7)`) |
+| **grid** | how fine a pattern's steps are: 1/16, 1/32 or 1/64, which is 16, 32 or 64 steps for a full bar. Each pattern has its own (firmware 1.6.0 on); before that every pattern had 16 ([below](#a-finer-grid)) |
 | **chain** | how many patterns, counted from A, play in turn when the song has no arrangement. A chain of 1 loops pattern A |
 | **arrangement** | a list of up to 32 bars, each naming a pattern. If a song has one, it plays the list instead of the chain |
 
@@ -598,7 +607,7 @@ Three words from the device, used below:
 | stay on one pattern | `loopPattern` |
 | play one of the song's instruments by hand | `PlaySound(sound, velocity, midiNote)` · `ReleaseSound(sound, midiNote)` |
 | move the mix | `SetTrackVolume` · `SetTrackPan` · `SetTrackMute` · `SetMaster` · `volume` |
-| know where the song is | `IsPlaying` · `Step` (0 … 15) · `Pattern` (0 = A) · `Bar` (bars since `Play`) |
+| know where the song is | `IsPlaying` · `Step` (the sixteenth, 0 … 15) · `GridStep` (the step in the pattern's own grid) · `Pattern` (0 = A) · `Bar` (bars since `Play`) |
 | take a changed song asset | `Reload()`. It also puts the song's own mix back |
 
 ```csharp
@@ -620,15 +629,16 @@ Select an `SfxSong`. From the top ([the STEPS page is pictured in section 2](#th
 | Part | What it shows | Editable |
 |---|---|---|
 | **The top line** | the chosen sound's number, the asset's name, that sound's engine, the link dot | |
-| **TEMPO · STEPS · SWING · CHAIN** | the song's four numbers. CHAIN reads "(unused)" while the song has an arrangement | **TEMPO**, **SWING** |
-| **Patterns A – H** | a tile each; along its foot, how many sounds play on each step. A click looks at that pattern | |
+| **The title** | the page, and on STEPS and AUTO the pattern looked at with its grid: `PATTERN B  1/32`. On STEPS also the scale | |
+| **TEMPO · STEPS · SWING · CHAIN** | the song's four numbers. STEPS is the bar in sixteenths, 1 – 16, whatever the grids are. CHAIN reads "(unused)" while the song has an arrangement | **TEMPO**, **SWING** |
+| **Patterns A – H** | a tile each; along its foot 16 columns, one for each sixteenth: how many sounds play in it. A pattern with a finer grid has a small `32` or `64` in its corner. A click looks at that pattern | |
 | **ARRANGEMENT** | the bars as a row of letters, or what the song does without one. A click on a bar looks at its pattern | |
-| **STEPS** | a row for each sound over the pattern looked at: a step is as high as it is hard, a line says how long it holds, and the chosen sound's notes are written on its steps. A row is dim while its sound's layer is silent at the INTENSITY below, or the sound is muted. A click on a name chooses the sound and plays it. Under the rows: INTENSITY, with a mark for the LAYER of every sound that plays in the song, and the chosen sound's LAYER as a bar | INTENSITY can be dragged, but it is not in the song |
+| **STEPS** | a row for each sound over the pattern looked at, in the pattern's own grid: 16, 32 or 64 cells, and at 32 and 64 a little more room between two sixteenths. A step is as high as it is hard, and a line says how long it holds. The chosen sound's notes are written in its cells at 16 steps only; a finer cell has no room. A row is dim while its sound's layer is silent at the INTENSITY below, or the sound is muted. A click on a name chooses the sound and plays it. Under the rows: INTENSITY, with a mark for the LAYER of every sound that plays in the song, and the chosen sound's LAYER as a bar | INTENSITY can be dragged, but it is not in the song |
 | **MIX** | a tile for each sound: fader, pan, muted or not. A click chooses the sound and plays it | |
 | **MASTER** | two drawings, the delay's echoes and the reverb's fading, and DELAY TIME, FEEDBACK, ROOM SIZE, DAMPING, DRIVE | |
-| **AUTO** | a block for every automation lane: the sound, the knob it moves, its points over the pattern looked at and their range, or in which patterns it moves | |
+| **AUTO** | a block for every automation lane: the sound, the knob it moves, its points over the pattern looked at, in that pattern's grid, and their range, or in which patterns it moves | |
 | **LAYER · VOLUME · PAN** | the chosen sound's layer mark and its place in the song's mix | all three |
-| **The line under them** | the chosen sound's steps in words: a note, `x` for a step as designed, `·` for a rest | |
+| **The line under them** | the chosen sound's steps in words. At 16 steps: a note, `x` for a step as designed, `·` for a rest. At 32 and 64 only the steps that are set, each with its number: `pattern B (1/32):  1 E1 · 6 E3 · 7 E1`, the first 16 of them and then `+n more` | |
 
 ![The song's AUTO page](img/unity-inspector-song-auto.png)
 
@@ -640,7 +650,7 @@ the second lane has no points in F.*
 | **PLAY SOUND** | plays the chosen sound through the editor's speakers |
 | **PLAY BAR** | plays the pattern looked at, once, as the game would at the INTENSITY set on the STEPS page, with the song's mix and effects (`SfxSongPanel.RenderBar`) |
 | **STOP** | silence |
-| **SEND** | replaces the 16 sounds and the song on the device. Dark while no device is connected, and for a song in an older format ([section 6](#the-song-formats-the-package-reads)) |
+| **SEND** | replaces the 16 sounds and the song on the device. Dark while no device is connected, and for a song the connected device cannot take (below) |
 
 The five numbers are written into the packed song (`SfxSong.data`) through Unity's `SerializedObject`, so Undo
 takes them back. An `SfxMusicPlayer` that is already playing keeps the song it took until its next `Reload()` or
@@ -648,6 +658,66 @@ start. VOLUME and PAN only show in a song from before the mixer (`HasMix` false)
 Inspector is read through `SfxSong`'s accessors ([section 10](#sfxsong-scriptableobject)) and cannot be changed
 here: for that, send the song to the device, change it there, and fetch it back. With several songs selected, or
 an empty one, the Inspector only says so.
+
+**The line under the keys** says what SEND would do. It has four states:
+
+| It says | When | SEND |
+|---|---|---|
+| **LINKED** | a MIDI output is open and nothing stands against this song: "SEND replaces the 16 sounds and the song on" the port | lit |
+| **NOT CONNECTED** | no MIDI output is open | dark |
+| **ANOTHER FORMAT** | the device cannot take this song: it said it speaks another format, or it did not say that it takes this one. A firmware before 1.6.0 and a format-6 song is the usual case. Under it: "SEND is off:" and the reason | dark |
+| **A DAMAGED SONG** | the packed song has the right layout, but a value in it is out of range (`SfxPackedSong.IsPlayable` is false). The device would answer BAD SONG. Under it: "SEND is off:" and the reason | dark |
+
+The reasons are the texts of `SfxLink.Refusal` ([section 6](#when-a-song-is-not-sent)).
+
+### A finer grid
+
+From firmware 1.6.0 on every pattern has its own grid: **1/16, 1/32 or 1/64**. That is 16, 32 or 64 steps for a full
+bar: a sixteenth is cut in 1, 2 or 4 steps. The grid is chosen on the device (SHIFT+F5 and SHIFT+F6 on its SEQ and
+AUTO pages, [the device's manual](MANUAL.md)). The package plays it, shows it and reads it; it does not set it.
+
+Three things stay as they were:
+
+- **The bar is counted in sixteenths.** `SfxSong.StepsPerPattern` is 1 … 16 for the whole song. A pattern plays that
+  many sixteenths, each in 1, 2 or 4 steps: `GridSteps(pattern)`.
+- **`SfxMusicPlayer.Step` is the sixteenth**, 0 … 15, whatever the grid of the pattern that plays. Code that waits
+  for `Step` to change, or counts sixteenths, works as before.
+- **`SfxSong`'s old step accessors mean "sixteenth".** `StepOn`, `StepNote`, `StepVelocity` and `LanePoint` take a
+  sixteenth 0 … 15 and read the **first** step of it. `StepLength` is in sixteenths, rounded up. In a pattern of 32
+  or 64 steps they do not see what stands between: use the `Grid…` members for that.
+
+What is new:
+
+| You want | You use |
+|---|---|
+| the step that plays, in the pattern's own grid | `SfxMusicPlayer.GridStep`: 0 … 15, 0 … 31 or 0 … 63; −1 before the first step |
+| how many steps a sixteenth has right now | `SfxMusicPlayer.StepsPerSixteenth`: 1, 2 or 4 |
+| a pattern's grid | `SfxSong.Grid(pattern)`: 16, 32 or 64 · `StepsPerSixteenth(pattern)`: 1, 2 or 4 · `GridSteps(pattern)`: the steps the bar plays of it |
+| whether a song uses a finer grid at all | `SfxSong.HasFinerGrid` |
+| every step of a pattern | `GridStepOn`, `GridStepNote`, `GridStepVelocity`, `GridStepLength` (in steps of that grid), `GridLanePoint` |
+| the same from bare bytes, without an asset | `SfxPackedSong` ([section 10](#sfxpackedsong-and-sfxsongtransfer)) |
+
+```csharp
+// every step of pattern B for sound 7, whatever its grid
+SfxSong song = music.song;
+for (int step = 0, n = song.GridSteps(1); step < n; step++)
+    if (song.GridStepOn(1, 6, step)) Debug.Log($"step {step + 1} of {song.Grid(1)}: note {song.GridStepNote(1, 6, step)}");
+
+// a light that blinks on every step of the pattern that plays, also at 1/64
+if (music.GridStep != lastGridStep) { lastGridStep = music.GridStep; Blink(); }
+```
+
+`GridStep`, like `Step`, is read from the audio thread's state a moment after the step began: it is good for a
+light, not for timing a sound to the sample.
+
+> **What is tested, and what is not.** `tests/dotnet` plays a 64-step pattern through the native library and reads
+> the player's state: 1.024 s into it at 120 BPM it is on the 9th sixteenth and the 33rd grid step (`Step` 8, `GridStep` 32 or 33), at 4 steps a sixteenth. It
+> also checks that a format-5 song renders bit for bit as it did before the finer grid, and that the songs of formats
+> 1 to 5, converted to format 6, play the same samples. In the inspectors' test project, eight tests are about a song
+> with patterns of 32 and 64 steps: its grids, the old accessors, the rows, the tiles, the notes, the lanes, the five
+> numbers and SEND. **Not done:** `GridStep` and `StepsPerSixteenth` were not read from a running `SfxMusicPlayer`
+> in a Unity test, only from the engine underneath; the demo song and the showcase use sixteenths only; the two
+> snippets above were not compiled; and nobody has listened to a finer pattern in Unity.
 
 ### Intensity and layers
 
@@ -740,7 +810,7 @@ music.loopPattern = false;         // the song's own order again
 With `playOnEnable` and `loopPattern` both on, the song starts on `startPattern` and stays there. `Play()`, `Stop()`
 and `Reload()` leave the switch as it is.
 
-The device has the same switch from firmware 1.5.0 on: LOOP or SONG, F1 on its SEQ, SONG and AUTO pages
+The device has the same switch since its firmware 1.5: LOOP or SONG, F1 on its SEQ, SONG and AUTO pages
 ([the device's manual](MANUAL.md)). The two are separate: `loopPattern` is this player's, and is not sent to a device.
 
 > **What is tested, and what is not.** The switch is the engine's (`sfx_player_set_loop` in `core/sfx_song.h`, the
@@ -835,12 +905,21 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 
 > **What is tested, and what is not.** MIDI is implemented for Windows only (winmm).
 >
-> **The firmware is 1.5.0 now; the link was last run against 1.4.0.** Firmware 1.5.0 changes how the device's
-> sequencer is used ([the device's manual](MANUAL.md)). Its song format, its messages and its identity are those of
-> 1.4.0, apart from the version it reports: the firmware's own checks (`sh build.sh` in the source repository) send
-> the built 1.5.0 the identity request and read its answer, and read the song it sends, 55 messages and 7699 bytes
-> of format 5. Everything below that names the emulator was done with 1.4.0 or 1.3.1 and was not repeated with
-> 1.5.0. Firmware 1.5.0 was not run on hardware or in the plugin either.
+> **The firmware is 1.6.0 now; the link was last run against 1.4.0.** Firmware 1.6.0 gives every pattern its own
+> grid ([section 5](#a-finer-grid)), and with it three things on the wire changed: the song is in format 6 and has
+> no fixed length, the song message has a new shape, and the identity says song format 6 and 64 steps. None of this
+> has travelled over a MIDI port yet. What was done instead:
+> - The firmware's own checks (`sh build.sh` in the source repository) hand the built 1.6.0 the identity request
+>   and read its answer, and read the song it sends: 16 sounds, then the factory song in 11 pieces, 27 messages and
+>   2487 bytes of format 6. They also send it songs in both shapes of the message, doubled, out of order and one
+>   straight after another, and read back what it took.
+> - `tests/dotnet` gives the messages that firmware sent to the package's own receiver (`SfxSongTransfer`), and the
+>   song arrives whole. It also runs both shapes of the message through that receiver, and checks what `SendSong`
+>   would send to a device that said 1.6, to one that said 1.5 and to one that said nothing.
+>
+> Everything below that names the emulator was done with 1.4.0 or 1.3.1 and was not repeated since. Firmware 1.6.0
+> was not run on hardware or in the plugin either, and no firmware older than 1.6.0 was run against this package:
+> what is said below about an older firmware is reasoned from its code.
 >
 > **Tested end to end against the emulator**, over two loopMIDI ports, with Unity 6000.3 on Windows 11
 > (`Tests/LinkTakes.cs` in the showcase, run against `tests/emulator-link.mjs`; firmware 1.4.0, and 1.3.1 before it):
@@ -876,15 +955,24 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > - It listens on its own output port (a virtual cable's port is both), so the firmware hears what it sends. Its
 >   own sound dumps came back and were loaded into the selected kit.
 >
-> Since then both ends put every piece of a song where it belongs and take the song when all 39 are there: in any
-> order, and a piece that is there already, byte for byte, is ignored. A piece that is there already with other
-> bytes begins a new transfer, and a transfer that broke off is forgotten after two seconds. The firmware ignores a
-> dump or a piece that is exactly what it just sent. With that, 100 of 100 transfers to Unity arrived, and the round
-> trip to the device passes with every message doubled.
+> Since then both ends put every piece of a song where it belongs and take the song when all its pieces are
+> there: in any order, and a piece that is there already, byte for byte, is ignored. A piece that is there already
+> with other bytes begins a new transfer, and a transfer that broke off is forgotten after two seconds. The firmware
+> ignores a dump or a piece that is exactly what it just sent. With that, 100 of 100 transfers to Unity arrived, and
+> the round trip to the device passed with every message doubled (firmware 1.4.0, the message of then).
 >
-> **A limit that remains.** No piece says which song it belongs to. If a transfer breaks off and a *different* song
-> follows within two seconds, pieces of the two can add up to a whole song, and that mixture is taken. Wait two
-> seconds after a transfer that failed, or send the same song again.
+> **New with 1.6.0, in the firmware and in `SfxSongTransfer` alike:** after a song is whole its pieces stay, and
+> pieces that come then are counted again. Once every piece has come again and at least one had other bytes, that
+> is the next song, and it is taken. So a second song sent straight after the first arrives even when it differs
+> in its last piece only; before, it was dropped without a word. The same song sent again gives nothing new: no
+> second `SongReceived`. (`RequestSong()` forgets what was collected, so a song you ask for again does arrive.) A
+> first piece whose bytes do not begin with the format it names is no piece.
+>
+> **Limits that remain.** No piece says which song it belongs to. If a transfer breaks off and a *different* song
+> of as many pieces follows within two seconds, and that one loses pieces too, pieces of the two can add up to a
+> whole song, and that mixture is taken. Wait two seconds after a transfer that failed, or send the same song
+> again. And a host that doubles only some of the pieces can leave the count above waiting for a piece: then no
+> song arrives until one is sent again after two seconds.
 >
 > The song in the demo project came in as a file, not over MIDI ([below](#a-song-without-midi)).
 
@@ -897,7 +985,7 @@ From the top:
 |---|---|
 | **The top line** | the pad touched last, here or on the device, the engine of the patch that came from it, and the link dot |
 | **FROM THE DEVICE** | six bars: what the device's knobs 1 – 4, A and B sent last on its LINK page (CC 20 – 25). `-` until one has sent |
-| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows). While linked, one more line says what the device is, as it answered: `VIBE FM, firmware 1.4.0, profile 1`. If nothing answered within a second it reads `no identity: firmware before 1.4, or nothing answers` ([below](#what-the-device-is-the-identity)) |
+| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows). While linked, one more line says what the device is, as it answered: `VIBE FM, firmware 1.6.0, profile 1`. If nothing answered within a second it reads `no identity: firmware before 1.4, or nothing answers` ([below](#what-the-device-is-the-identity)) |
 | **PADS PLAY** · **PADS FETCH THEIR PATCH** | two tabs over 16 pad tiles. On the first, a pad plays on the device for as long as the mouse holds it. On the second, a click asks the device for that pad's patch. A pad whose patch has come carries its engine's short name and colour. The pads need the port TO DEVICE |
 | **The text field** · **SHOW ON DEVICE** | writes up to 24 characters on the device's top line. ENTER in the field does the same |
 | **PATCHES FROM THE DEVICE** | what arrived, newest first (the last 32), each a tile: pad number, engine, time, the sound's waveform, **PLAY** and **SAVE** (**SHOW** once it is an asset). With **SAVE AS THEY ARRIVE** on (green; it is on at first), a patch is saved as soon as it arrives, into **FOLDER** (default `Assets/SfxForge`), named like `Pad03_SciFiFm` |
@@ -931,12 +1019,12 @@ The 18 bytes, each 0 … 127, become an `SfxDeviceInfo`:
 | Byte | `SfxDeviceInfo` | Today |
 |---|---|---|
 | 0 | `hardware`: 0 unknown, 1 VIBE FM. That is the SDK's host – the emulator, the plugin or the hardware; the firmware cannot tell them apart | 1 |
-| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 5 0 (over the link it was read from 1.4.0 only: 1 4 0) |
-| 4 … 16 | `profile`, an `SfxProfile`: its `id`, the patch format and the song format it speaks, and how much it holds: sounds in a kit, kits, patterns, steps, automation lanes, bars in an arrangement, voices, engines, wavetables, values in a patch | 1 · 2, 5 · 16, 2, 8, 16, 24, 32, 16, 5, 6, 25 |
+| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 6 0 (over the link it was read from 1.4.0 only: 1 4 0) |
+| 4 … 16 | `profile`, an `SfxProfile`: its `id`, the patch format and the song format it speaks, and how much it holds: sounds in a kit, kits, patterns, the most steps a pattern holds, automation lanes, bars in an arrangement, voices, engines, wavetables, values in a patch | 1 · 2, 6 · 16, 2, 8, 64, 24, 32, 16, 5, 6, 25. Firmware 1.4 and 1.5 said song format 5 and 16 steps; the `id` was 1 then too |
 | 17 | `flags`: `HasPads`, `HasEncoders` (CC 20 – 25 from its LINK page), `TakesSongSounds` (what `SendSong` sends before the song), `TakesTelemetry` (CC 10 – 17 on channel 2) | all four |
 
 ```csharp
-SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.4.0, profile 1"
+SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.6.0, profile 1"
 SfxLink.Shared.RequestIdentity();                                   // Open has asked already
 // later, any time:
 SfxDeviceInfo? device = SfxLink.Shared.Device;                      // null: it has not answered
@@ -949,26 +1037,61 @@ Three rules hold for every later version:
   18, or a byte above 127: not an identity.
 - **No answer has a meaning.** A firmware before 1.4.0 ignores the request. `Device` stays `null`, and after a
   second `IdentityUnanswered` is true. That device is taken for SFX FORGE on VIBE FM with a firmware before 1.4 and
-  profile 1 (`SfxDeviceInfo.AssumedBefore14`), and everything works with it as before. The same is seen when
-  nothing listens on the port at all, or when no input is open for the answer to come in on: the link cannot tell
-  these apart.
+  profile 1 as it was then: song format 5, 16 steps a pattern (`SfxDeviceInfo.AssumedBefore14`, whose profile is
+  `SfxProfile.VibeFm15`). Patches, pads, text and telemetry work with it as before. A song goes to it only in
+  format 5 ([below](#when-a-song-is-not-sent)). The same is seen when nothing listens on the port at all, or when
+  no input is open for the answer to come in on: the link cannot tell these apart.
 - **An identity is never anything else.** It is not taken for a patch or for a piece of a song, whatever its
   length, and one that arrives while a song is coming in leaves that transfer alone. The emulator delivers every
   message twice; the second identity says what the first said.
 
-**When the device speaks another format.** Once a device has said that its patch format or its song format is not
-this package's (2 and 5), `SendPatch` and `SendSong` send nothing and return `false`, and `LastRefusal` says why
-(`SfxLink.Refusal(device, song)` gives the same text for any `SfxDeviceInfo`). The Inspectors then show the
-reason under their keys and SEND stays dark. A device that has not answered is refused nothing. With firmware
-1.4.0 or 1.5.0 and this package the formats are the same, so this never happens today; it is there for the day one side is
-updated and the other is not.
+**When the device speaks another patch format.** Once a device has said that its patch format is not this package's
+(2), `SendPatch` and `SendSong` send nothing and return `false`, and `LastRefusal` says why
+(`SfxLink.Refusal(device, false)` gives the same text for any `SfxDeviceInfo`). The sound's Inspector then shows the
+reason under its keys and SEND stays dark. A device that has not answered is refused no patch. Every firmware so
+far speaks patch format 2, so this never happens today.
+
+### When a song is not sent
+
+A song is another matter since firmware 1.6.0, because two song formats and two shapes of the song message are in
+use. `SfxLink.Refusal(device, packedSong)` says why a song would not be sent to a device, or `null` when nothing
+stands against it. `SendSong` asks it first, sends nothing when it answers, returns `false` and keeps the text in
+`LastRefusal`. The song's Inspector shows it under its keys
+([section 5](#the-song-in-the-inspector)). It asks in this order:
+
+| | The question | The text |
+|---|---|---|
+| **1** | Are the bytes a packed song this version reads? | "this is not a packed song", or for a newer one "the song is in format 7, this SFX Forge knows up to 6: update the package" |
+| **2** | Is every value in it in range (`SfxPackedSong.IsPlayable`)? | "the song holds a value that is out of range (the device would answer BAD SONG): fetch it again from the device" |
+| **3** | The device said nothing, and the song is not in format 5? | "the device did not say that it takes song format 6 (firmware 1.6 on says so): connect it, or update its firmware" |
+| **4** | Did the device say a patch format other than 2, a song format above 6, or one below 5? | "the device (…) speaks patch format 3, this SFX Forge speaks 2: update the package", and the like |
+| **5** | Did the device say song format 5, and the song is in another? | "the device (VIBE FM, firmware 1.5.0, profile 1) speaks song format 5, the song is in format 6: update the device's firmware". For an older song: "… the song is in format 4: fetch the song again from the device" |
+
+What that comes to:
+
+| The device | A format-6 song | A format-5 song | A song in format 1 to 4 |
+|---|---|---|---|
+| said song format 6 (firmware 1.6.0 on) | sent, in the new message | sent, in the new message | sent, in the new message |
+| said song format 5 (firmware 1.4, 1.5) | refused: update the device's firmware | sent, in the message of before | refused: fetch it again |
+| said nothing (before 1.4, or nothing answers) | refused: it did not say that it takes it | sent, in the message of before | refused |
+
+> **Why the package refuses in words.** Firmware 1.5.0 and every one before it does not know the new song message
+> and drops each piece of it without a word: no toast on the device, no answer on the wire. A SEND that looks as if
+> it worked and changes nothing is worse than one that is refused, so the package does not send. This is reasoned
+> from the older firmware's code and from what the identity says; no older firmware was run against this package.
+>
+> **Right after `Open`** the device has not answered yet: `Device` is `null`, and until the identity arrives a
+> format-6 song is refused with text 3. Wait for `IdentityReceived` before the first `SendSong`.
+>
+> **`SfxNative.SongRegrid` and `SongConvert` do not make a song an older device takes.** They return format 6. A
+> format-5 song for an older device is one that came from that device, or an asset from before the change.
 
 ### Receiving a patch or a song
 
 | On the device | In Unity |
 |---|---|
 | **F5 EXPORT** on a sound page | `SfxLink.PatchReceived(slot, patch)`. The window, while it is open, saves it as an `SfxPreset` (with SAVE AS THEY ARRIVE on, as it is at first; otherwise SAVE on its tile) |
-| **F5 SEND** on the SONG page | 16 patches, then the song in 39 pieces: `SfxLink.SongReceived(song, sounds)`. The window saves an `SfxSong` |
+| **F5 SEND** on the SONG page | 16 patches, then the song in pieces of up to 240 bytes (11 for the factory song): `SfxLink.SongReceived(song, sounds)`. The window saves an `SfxSong`. A firmware up to 1.5.0 sends 39 pieces of 200 bytes, a format-5 song; both are taken |
 
 In your own code:
 
@@ -987,7 +1110,7 @@ update. In a scene, `SfxForgeLink` polls every frame.
 | You call on `SfxLink.Shared` | The device |
 |---|---|
 | `SendPatch(slot, patch)` | loads the patch into that pad and selects it |
-| `SendSong(sounds, song.data)` | replaces its song and the 16 sounds of its MUSIC kit, which the song plays. The kit that is shown is left alone. Needs firmware 1.3.1: an older one takes the song and ignores the sounds |
+| `SendSong(sounds, song.data)` | replaces its song and the 16 sounds of its MUSIC kit, which the song plays. The kit that is shown is left alone. To a device that said song format 6 the song goes in the message of firmware 1.6.0, whatever its format; to any other in the message of before, which carries a format-5 song only ([above](#when-a-song-is-not-sent)). Needs firmware 1.3.1: an older one takes the song and ignores the sounds |
 | `PlayPad(slot, velocity)` · `ReleasePad(slot)` | plays a pad |
 | `SendText("LEVEL 2")` | shows up to 24 ASCII characters on its top line |
 | `SendTelemetry(channel, value01)` | moves the held sound, or the music (below) |
@@ -995,7 +1118,10 @@ update. In a scene, `SfxForgeLink` polls every frame.
 
 Every call returns `false` when no output is open. `SendTelemetry` only sends when the 7-bit value changes, so
 calling it every frame is fine. `SendPatch` and `SendSong` also return `false`, and send nothing, to a device that
-said it speaks another format ([above](#what-the-device-is-the-identity)).
+cannot take what is sent; `LastRefusal` says why ([above](#when-a-song-is-not-sent)).
+
+The device answers a song on its display: `SONG LOADED`, `BAD SONG` for one with a value out of range, or
+`NEWER SONG: UPDATE` for a format above its own. None of these comes back over MIDI.
 
 ### Telemetry: the game drives the device while you listen
 
@@ -1037,17 +1163,39 @@ The ports chosen in the window are stored in PlayerPrefs. In a built player, nam
 
 | Format | Bytes | From |
 |---|---|---|
-| 5 (current) | 7699 | 24 automation lanes, an arrangement, the mix |
+| 6 (current) | 211 to 38 355 | firmware 1.6.0: a grid of 16, 32 or 64 steps for each pattern. Only the rows that are used are kept, so the length varies. The factory song is 2487 bytes |
+| 5 | 7699 | 24 automation lanes, an arrangement, the mix |
 | 4 | 6643 | one automation lane for each sound |
 | 3 | 4546 | before automation and the arrangement |
 | 2 | 2498 | before velocity and length |
 | 1 | 2455 | before the mixer |
 
-`SfxSong.IsValid` accepts all five and `SfxMusicPlayer` plays them. **Over MIDI only the current format travels**:
-`SfxLink.SendSong` and the **SEND** key of a song's Inspector need a 7699-byte song, and only a song in 39 pieces is
-received. For an older song the Inspector says AN OLDER SONG and SEND stays dark.
+`SfxSong.IsValid` accepts all six and `SfxMusicPlayer` plays them; `SfxSong.PackedFormat` says which one an asset
+holds. Formats 1 to 5 have 16 steps in every pattern. Nothing writes them any more: the firmware saves and sends
+format 6, and `SfxNative.SongConvert(bytes)` gives any of them as format 6, which plays the same samples.
 
-A packed song that begins with a number above 5 and is at least as long as a song is today (7699 bytes) was
+**Format 6, byte by byte.** Byte 0 is 6. Bytes 1 … 146 are the head, as format 5 has it: the song's own numbers,
+the layers, the mix, the lanes and the arrangement (`SfxProtocol.SongHead` is 147). Then a block for each of the
+eight patterns: a grid byte (0, 1, 2 for 16, 32, 64 steps), a mask of the sounds that have a row, a mask of the
+lanes that have one, and those rows. A sound's row is 51, 101 or 202 bytes; a lane's row is one byte a step. Every
+byte is 0 … 127. An empty song is 211 bytes (`SongBytesMin`), the fullest 38 355 (`SongBytesMax`).
+
+**Valid is not playable.** `IsValid` looks at the layout only: the first byte, a length that format can have, and
+in format 6 eight blocks that end exactly where the bytes end. `SfxPackedSong.IsPlayable(bytes)` also asks what the
+player and the device ask: a bar of 1 … 16 sixteenths, a tempo of 40 … 240, velocities up to 7, lengths below the
+grid, no step past the grid, and so on. A song that is valid and not playable was damaged on its way. The device
+answers it with BAD SONG, `SfxMusicPlayer` writes "is not a valid song" to the Console and stays silent, and the
+Inspector shows it with A DAMAGED SONG under its keys while a device is connected.
+
+**Over MIDI** a song travels in pieces. Firmware 1.6.0 sends and takes
+`F0 7D 56 42 05 <piece lo> <piece hi> <format> <pieces lo> <pieces hi> <1 … 240 bytes> F7`: at most 251 bytes a
+message and 160 pieces (`SfxProtocol.SongPieceBytes`, `SongPiecesMax`, `BuildSongPieces`). The factory song is 11
+pieces; with its 16 sounds a SEND is 27 messages. The message of before, `F0 7D 56 42 05 <piece> 39 <200 bytes> F7`,
+carries a format-5 song in 39 pieces (`BuildSong`); firmware 1.6.0 still takes it and no longer sends it.
+`SfxSongTransfer` collects either shape: give every message to `Take`, and `Song` has the bytes once they are whole.
+`SfxLink` does this for you.
+
+A packed song that begins with a number above 6 and is at least as long as the shortest song there is (211 bytes) was
 written by a newer SFX FORGE. It is **newer, not broken**: `SfxSong.IsNewer` is true
 (`SfxProtocol.IsNewerSong(bytes)` for any array), `IsValid` is false, it does not play, and its Inspector says
 A NEWER SONG instead of NO SONG YET. An `SfxMusicPlayer` given such a song stays silent and writes one warning
@@ -1060,10 +1208,23 @@ not know what they mean. Fewer bytes than a song or a patch has are a cut-off on
 sent a patch in format 3, this SFX Forge knows up to 2: it was not taken. Update the package to use it." The SFX
 Forge window writes that text to the Console and into its list of messages.
 
+> **An older package and a song from this one.** A package from before firmware 1.6.0 does not read format 6, and
+> it cannot tell that such a song is newer: to it a newer song is one of at least 7699 bytes, and most format-6
+> songs are shorter. What it does with an `SfxSong` asset that holds one:
+> - Its Inspector shows the banner FROM A NEWER SFX FORGE and the Console warns once, because the asset says asset
+>   format 2 ([below](#made-for-more-than-one-device)). That part works.
+> - Under the banner it says NO SONG YET, not A NEWER SONG, and an `SfxMusicPlayer` given the asset stays silent
+>   without a line of its own in the Console.
+> - Over the link it takes none of the new song messages and says nothing: `FETCH SONG` from a firmware 1.6.0 never
+>   brings a song.
+>
+> Nothing can be done about this in a package that is already out. Update the package. This was not run: no older
+> package was opened with such an asset; it is read from the older package's code.
+
 ### A song without MIDI
 
 The showcase's song was not fetched over MIDI. A script in the source repository (`tests/make-demo-song.mjs`) wrote
-what the firmware sends on SEND into a file – 16 patches of 28 bytes, then the 7699-byte song. That file is in the
+what the firmware sends on SEND into a file – 16 patches of 28 bytes, then the song, 2487 bytes of format 6. That file is in the
 sample, `Song/DemoSong.bytes`, and the sample's builder (`Editor/ShowcaseAudio.cs`) turns it into the asset
 `Song/DemoSong.asset`. This is the path that is proven to work:
 
@@ -1072,20 +1233,24 @@ sample, `Song/DemoSong.bytes`, and the sample's builder (`Editor/ShowcaseAudio.c
 byte[] raw = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/MySong.bytes").bytes;
 var sounds = new SfxPatch[SfxProtocol.Slots];
 for (int i = 0; i < sounds.Length; i++) SfxPatch.TryUnpack(raw, i * SfxPatch.Bytes, out sounds[i]);
-var packed = new byte[SfxProtocol.SongBytes];
+var packed = new byte[raw.Length - sounds.Length * SfxPatch.Bytes];      // the rest of the file: a song has no fixed size
 System.Array.Copy(raw, sounds.Length * SfxPatch.Bytes, packed, 0, packed.Length);
 var song = ScriptableObject.CreateInstance<SfxSong>();
 song.Set(sounds, packed);
 AssetDatabase.CreateAsset(song, "Assets/MySong.asset");
 ```
 
+`SfxProtocol.SongBytes` (7699) is still there for code written before, marked obsolete: a song has no fixed size
+from format 6 on. Use the file's own length as above, or `SongBytesV5`, `SongBytesMin` and `SongBytesMax`.
+
 The Inspector of an `SfxSong` shows the whole song ([section 5](#the-song-in-the-inspector)). An `SfxSong` made with
 **Assets > Create > SFX Forge > Song** is empty until a song is put into it; its Inspector then says NO SONG YET.
 
 ### Made for more than one device
 
-Today there is one device: SFX FORGE 1.x on VIBE FM. The Unity side and the device hold exactly the same things,
-and every sound and song made on one works on the other. That will not stay so. The Unity side can grow past what
+Today there is one device: SFX FORGE 1.x on VIBE FM. With firmware 1.6.0 the Unity side and the device hold exactly
+the same things, and every sound and song made on one works on the other. A firmware up to 1.5.0 already holds
+less: no finer grid and no format-6 song. It will go further. The Unity side can grow past what
 a device holds, and a firmware for other hardware may hold less. Version 1.0 does not do either. It reserves what
 both need, so that a project made with 1.0 does not break when they come.
 
@@ -1094,27 +1259,33 @@ both need, so that a project made with 1.0 does not break when they come.
 | | |
 |---|---|
 | **The identity** | a device says what it is and what it holds ([above](#what-the-device-is-the-identity)). `SfxLink.Device` has it; the window shows it |
-| **Format numbers on the wire** | a patch and a packed song begin with their format (2 and 5). A higher number is reported as newer, not as broken: `SfxPatch.IsNewer`, `SfxSong.IsNewer`, and `SfxLink.NewerReceived` for one that arrives over the link |
-| **A format number in the assets** | `SfxPreset` and `SfxSong` keep a serialized `format`, read as `Format`; `CurrentFormat` is 1. An asset file without the line – every asset made before the number was kept – is format 1. A file with a higher number was made by a newer SFX Forge: `IsFromNewerVersion` is true, its Inspector shows a banner, and the Console warns once for that asset: in the editor once a session for each asset file, in a built game once for each type and name. What this version reads of it plays. Both also keep `savedBy`, the asset format that wrote the file last; this version always writes 1 there |
-| **The profile type** | `SfxProfile` is a description of limits: the numbers of the identity. `SfxProfile.VibeFm1` is built from this package's own constants. `Fits(SfxPatch)` and `Fits(byte[] packedSong)` say whether a sound or a packed song is within a profile's limits |
+| **Format numbers on the wire** | a patch and a packed song begin with their format (2 and 6). A higher number is reported as newer, not as broken: `SfxPatch.IsNewer`, `SfxSong.IsNewer`, and `SfxLink.NewerReceived` for one that arrives over the link |
+| **A format number in the assets** | `SfxPreset` and `SfxSong` keep a serialized `format`, read as `Format`. An asset file without the line – every asset made before the number was kept – is format 1. A file with a number above the type's `CurrentFormat` was made by a newer SFX Forge: `IsFromNewerVersion` is true, its Inspector shows a banner, and the Console warns once for that asset: in the editor once a session for each asset file, in a built game once for each type and name. What this version reads of it plays. Both also keep `savedBy`, the asset format that wrote the file last; this version always writes its own `CurrentFormat` there |
+| **A song asset counts its own format** | `SfxPreset.CurrentFormat` is 1. `SfxSong.CurrentFormat` is 2 since firmware 1.6.0, and the number follows the packed song: an asset that holds a format-6 song says `format: 2`, one that holds an older song still says 1. `Set` writes it, and so does saving. That is how an older package knows a format-6 song asset at all ([above](#the-song-formats-the-package-reads)) |
+| **The profile type** | `SfxProfile` is a description of limits: the numbers of the identity. `SfxProfile.VibeFm1` is what firmware 1.6.0 offers, built from this package's own constants: song format 6, 64 steps a pattern. `SfxProfile.VibeFm15` is what firmware 1.4 and 1.5 said of themselves: song format 5, 16 steps. Both have `id` 1. `Fits(SfxPatch)` and `Fits(byte[] packedSong)` say whether a sound or a packed song is within a profile's limits |
 
 **Saving a newer asset here loses data.** Unity writes only the fields this version's classes have. If you change
 and save an asset that a newer SFX Forge made, what the newer version kept in it and this one does not know is
-gone from the file. The `format` number in the file stays as it was, and `savedBy` becomes 1: a newer SFX Forge
-that finds its own format with `savedBy: 1` can tell that the file went through this version and was cut down.
+gone from the file. The `format` number in the file stays as it was, and `savedBy` becomes this version's number
+(1 for a sound, 2 for a song): a newer SFX Forge that finds its own format with a lower `savedBy` can tell that the
+file went through this version and was cut down.
 Nothing in this version reads `savedBy`. The banner says that saving loses data; nothing stops you.
 
 **What does not exist:**
 
 - **No target switch.** There is nothing to set that says "this project is for device X". A profile cannot be
   chosen anywhere, and nothing is checked against one when you edit, bake or play.
-- **No Unity-only features.** Everything the package plays, the device plays. No sound or song made with 1.0 can
-  fail to fit `SfxProfile.VibeFm1`, so `Fits` answers true for all of them; it only says false for bytes that are
-  not of this version or out of range. The type is there so that a later version has a question to ask.
-- **No second device.** No firmware for other hardware exists, and no other profile than 1. The identity's
+- **No Unity-only features.** Everything the package plays, the device with firmware 1.6.0 plays. No sound or song
+  of this version can fail to fit `SfxProfile.VibeFm1`: `Fits` only says false for bytes that are not of this
+  version or out of range. `VibeFm15` is the first profile that holds less: `VibeFm15.Fits(song)` is false for a
+  format-6 song, and so for every pattern of 32 or 64 steps. `Fits` checks limits only. It does not say what a
+  device is sent (`SfxLink.Refusal`), nor whether the values inside are in range (`SfxPackedSong.IsPlayable`).
+- **No second device.** No firmware for other hardware exists, and no other profile `id` than 1. The identity's
   `hardware` byte has only ever been 1.
-- **Nothing converts.** A newer patch, song or asset is recognised and named, not read. To use it, update the
-  package.
+- **Nothing converts downwards.** An older song becomes format 6 (`SfxNative.SongConvert`), and a pattern can be
+  put into another grid (`SfxNative.SongRegrid`, with `SongRegridLoss` saying what a coarser grid would drop).
+  Nothing turns a format-6 song into format 5 for an older device. A newer patch, song or asset is recognised and
+  named, not read: to use it, update the package.
 
 ---
 
@@ -1826,12 +1997,15 @@ Only one Unity process can have the project open.
 ### The core is tested without Unity
 
 `tests/dotnet` in the source repository compiles the package's `Runtime/Core` folder with plain .NET, without Unity,
-and runs it against the native library: 143 checks. All 143 pass with the library built from this source, which is
+and runs it against the native library: 204 checks. All 204 pass with the library built from this source, which is
 the one in the package.
 
 | What is checked | |
 |---|---|
 | patches, songs and the link's messages | packing and unpacking, the older song formats, the identity, what is newer and what is broken |
+| the finer grid and song format 6 | each pattern's grid; a format-5 song renders bit for bit as before; formats 1 to 5 as format 6 play the same samples; a pattern made finer and coarser again; where the player is in a 64-step pattern |
+| a song on the wire | both shapes of the song message through `SfxSongTransfer`: out of order, doubled, one song straight after another, the longest song in 160 pieces, a first piece that names another format than its bytes |
+| what is playable, and what is sent | `IsPlayable` and the native player agree on 28 000 songs with one to three bytes changed; `SfxLink.Refusal` for a device that said 1.6, one that said 1.5 and one that said nothing |
 | the engine through the native library | bakes that sound and end in silence, notes in tune, the mix, velocity, length, automation, the arrangement and cues |
 | the loop flag | on: the pattern stays; a cue changes it on the bar line and that one stays; off: the arrangement goes on ([section 5](#holding-a-pattern-looppattern)) |
 | the tools' arithmetic ([section 11](#11-tools-for-designing-sounds)) | generators, variants, the shuffle, levels and matching, the text and `.syx` forms, bake options and the resampler |
@@ -1840,8 +2014,8 @@ They are numbers read from rendered samples. Nobody listened.
 
 ### The inspectors are tested in a project of their own
 
-The editor UI has its own tests: 147 EditMode tests in a small Unity project in the source repository,
-`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 147 passed
+The editor UI has its own tests: 169 EditMode tests in a small Unity project in the source repository,
+`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 169 passed
 with Unity 6000.3.8f1 on Windows x64. 45 of them are about the tools of
 [section 11](#11-tools-for-designing-sounds), which lists what they cover tool by tool.
 
@@ -1855,23 +2029,26 @@ with Unity 6000.3.8f1 on Windows x64. 45 of them are about the tools of
 | typed values | the texts `SfxUnits.TryParse` understands, and the panel's own call for a typed text. No key was pressed in a field |
 | the picture is the device's dry voice, and as long as the device says | compared with the lengths written on two of the device's own pictures |
 | the song panel shows what the song's bytes say | the demo song, and the same song in its older formats |
+| a song with finer patterns | 8 tests, with the next row, on the demo song with pattern B at 32 steps and C and F at 64: every pattern's grid, the old accessors count sixteenths, the rows show 16, 32 or 64 cells, a tile says its grid, notes are written at 16 steps only, a lane has its points on the finer steps, the five numbers still change it |
+| SEND is off for a song the device cannot take | the line under the keys for a device that said 1.6, one that said 1.5, one that said nothing, and a song with a value out of range: ANOTHER FORMAT, A DAMAGED SONG. The test asks `SfxSongPanel.LinkState` directly; no port was open and nothing was sent |
 | the five numbers of a song change the asset, and Undo takes them back | on the demo song's asset |
 | one bar sounds, and less intensity is less | `SfxSongPanel.RenderBar`, by what it renders |
 | the window shows its model | not connected, without ports, without MIDI, linked with patches and messages; and without the native library |
 | the window says what the device is | a model with an identity, one that says none answered, and none at all |
-| an asset file without a format line is format 1, one that says 2 is from a newer version | copies of this project's own asset files, as they are and with `format: 2` put in, imported by Unity; then one of them is saved, and the file is read back |
-| the banner of a newer asset, and A NEWER SONG | a sound, several sounds, a song, several songs, and a packed song that begins with 6; a cut-off one that begins with a higher number is not a newer song |
+| an asset file without a format line is format 1; a sound's file that says 2, and a song's that says 3, is from a newer version | copies of this project's own asset files, as they are and with a `format:` line put in, imported by Unity; then one of them is saved, and the file is read back |
+| a song asset's number follows its packed song | the demo song's file says `format: 2` and holds format 6; a song made from a format-5 song says 1; `Set` and saving write the number |
+| the banner of a newer asset, and A NEWER SONG | a sound, several sounds, a song, several songs, and a packed song that begins with a number above this version's; a cut-off one that begins with a higher number is not a newer song |
 | the warning is said once | counted, for an asset loaded twice and asked again; two newer files of the same name in two folders give two |
-| a newer asset saved here says who saved it | a file with `format: 2` and `savedBy: 2` is changed and saved; it is read back with `format: 2` and `savedBy: 1` |
+| a newer asset saved here says who saved it | a file with a higher `format` and `savedBy` is changed and saved; it is read back with the same `format` and this version's `savedBy` |
 | the tools of a sound: NEW, VARY, LEVEL, SHARE | 21 tests: what each key does to the asset, its note, and Undo ([section 11](#11-tools-for-designing-sounds)) |
 | a variation set, its BAKE and its player | 16 tests, on asset files the tests make and delete again |
 | the batch bake and its window | 8 tests: the files a run writes, their names, the same bytes twice, and the window over a model |
 
-**The pictures.** The same run writes 78 pictures to `out/inspector-shots` in the source repository: the sound
-inspector on every page and with each of its four tools open, the song inspector on every page, a variation set in
-three states, the two windows in their states and a sheet of the kit, each at several widths. A picture is the
-element tree and stylesheet the Inspector hosts, put into a panel that renders into a texture. The fourteen
-pictures of the editor UI in this manual are copies of fourteen of them.
+**The pictures.** The same run writes 90 pictures to `out/inspector-shots` in the source repository: the sound
+inspector on every page and with each of its four tools open, the song inspector on every page and with patterns
+of 32 and 64 steps, a variation set in three states, the two windows in their states and a sheet of the kit, each
+at several widths. A picture is the element tree and stylesheet the Inspector hosts, put into a panel that renders
+into a texture. The fifteen pictures of the editor UI in this manual are copies of fifteen of them.
 
 **What these tests do not show.**
 
@@ -1938,7 +2115,9 @@ What this does not tell you:
 | **Levels are measured, not judged** | the level line and MATCH read peak and plain RMS of a baked sound. That is not loudness as an ear hears it, and it is not the level of the game's mix |
 | **`volume` is not smoothed** | on either player. Fade a sound with `level`; ramp the music's `volume` yourself |
 | **No song editor** | a song is made on the device. In Unity you play it, look at it and shape it; its Inspector changes TEMPO, SWING and a sound's LAYER, VOLUME and PAN, nothing else |
-| **What the engine itself cannot do** | [MANUAL section 18](MANUAL.md#18-what-it-does-not-do): no samples, 16 steps a bar, 8 patterns, 16 voices |
+| **The grid is read, not set** | a pattern's grid is chosen on the device. In Unity `SfxNative.SongRegrid` gives the bytes of a song with a pattern in another grid; no Inspector key calls it |
+| **An older device takes no format-6 song** | firmware 1.5.0 and before drops the new song message without a word, so the package refuses in words before it sends ([section 6](#when-a-song-is-not-sent)). An older package does not read a format-6 song either ([section 6](#the-song-formats-the-package-reads)) |
+| **What the engine itself cannot do** | [MANUAL section 18](MANUAL.md#18-what-it-does-not-do): no samples, at most 64 steps a bar, 8 patterns, 16 voices |
 
 ### The silence checklist
 
@@ -1951,7 +2130,8 @@ What this does not tell you:
 | **Is there an AudioListener? Is the Game view muted?** | the players go through Unity's audio like everything else |
 | **Is `level` at 0, or `volume`, or the velocity?** | `level` defaults to 1, `volume` to 0.8 |
 | **Music: is `intensity` 0?** | then only the sounds with layer 0 play. In the demo song eight sounds have layer 0, and of those only the kick has notes: you hear the kick alone |
-| **Music: is the song valid?** | an empty `SfxSong` plays nothing. A warning "is not a valid song" means its data is damaged |
+| **Music: is the song valid?** | an empty `SfxSong` plays nothing. A warning "is not a valid song" means its data is damaged: a value in it is out of range (`SfxPackedSong.IsPlayable` is false) |
+| **Music: is the package older than the song?** | a package from before firmware 1.6.0 does not read a format-6 song: silence, and FROM A NEWER SFX FORGE in the asset's Inspector. Update the package |
 | **Music: is `playOnEnable` off?** | then call `Play()` |
 | **A baked clip is null** | no native library, or the patch was not valid |
 
@@ -1978,10 +2158,15 @@ What this does not tell you:
 | a port tile says NOT FOUND | the port chosen earlier is not there now. Start the device or the virtual cable, then **REFRESH PORTS** |
 | the window says NO MIDI PORTS | no MIDI device and no virtual cable. The window says what to install |
 | SEND, PLAY ON DEVICE or the window's pads are dark | no MIDI output is open: **CONNECT** in the window first |
-| the window says `no identity: firmware before 1.4, or nothing answers` | the device did not say what it is within a second. A firmware before 1.4.0 never does, and works all the same. Otherwise nothing listens on the port TO DEVICE, or the port FROM DEVICE is not the one the device sends on |
-| under the keys it says ANOTHER FORMAT (or ANOTHER PATCH FORMAT) and SEND is dark | the device said it speaks another patch or song format than this package. The line says which side to update |
+| the window says `no identity: firmware before 1.4, or nothing answers` | the device did not say what it is within a second. A firmware before 1.4.0 never does: sounds, pads, text and telemetry work with it all the same, and a song goes to it in format 5 only. Otherwise nothing listens on the port TO DEVICE, or the port FROM DEVICE is not the one the device sends on |
+| under a sound's keys it says ANOTHER PATCH FORMAT and SEND is dark | the device said it speaks another patch format than this package. The line says which side to update |
+| under a song's keys it says ANOTHER FORMAT and SEND is dark | the device cannot take this song. Most often: the song is in format 6 and the device is a firmware before 1.6.0, or has not said what it is. The line says what to do: update the device's firmware, connect it, or fetch the song again |
+| under a song's keys it says A DAMAGED SONG and SEND is dark | a value in the packed song is out of range; the device would answer BAD SONG. Fetch the song again from the device |
+| SEND was pressed and the device's song did not change | it was the same song as a moment before: sent again within two seconds, it loads nothing. Or the device shows BAD SONG or NEWER SONG: UPDATE on its top line. This package refuses before it sends where it can tell |
 | an Inspector shows FROM A NEWER SFX FORGE, and the Console warned once | the asset file says a higher asset format than this package writes. It plays as far as this version reads it. Saving it here loses the rest: update the package first |
-| a song's Inspector says A NEWER SONG | its packed song is in a format above 5. It does not play here. Update the package |
+| a song's Inspector says A NEWER SONG | its packed song is in a format above 6. It does not play here. Update the package |
+| a song's Inspector says NO SONG YET under FROM A NEWER SFX FORGE | this package is from before firmware 1.6.0 and the asset holds a format-6 song. Update the package |
+| a step is missing in the song's Inspector, or in what `StepOn` says | the pattern has a grid of 32 or 64 steps and the step is not the first of its sixteenth. Notes are written in the cells at 16 steps only; in code use `GridStepOn` and its siblings |
 | PLAY and BAKE WAV are dark, and the picture says NATIVE LIBRARY NOT FOUND | not Windows x64: the engine is not there. The values can still be edited |
 | the UNDO key is dark | Unity's next undo step is not a change made to this sound here. Ctrl+Z undoes whatever it is |
 | a value in the song's Inspector does not turn | it is one of those that only show (an outline, a dim ring): it is made on the device |
@@ -2056,7 +2241,8 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `void SetTrackMute(int sound, bool mute)` | |
 | `void SetMaster(SfxMaster what, int value)` | `DelayTime` 0 … 5; `DelayFeedback`, `ReverbSize`, `ReverbDamping`, `Drive` 0 … 127 |
 | `void Reload()` | takes the song asset again, with its own mix, without stopping |
-| `bool IsPlaying` · `int Step` · `int Pattern` · `int Bar` | where the song is. `Step` and `Bar` are −1 before the first step |
+| `bool IsPlaying` · `int Step` · `int Pattern` · `int Bar` | where the song is. `Step` is the sixteenth of the bar, 0 … 15, whatever the pattern's grid. `Step` and `Bar` are −1 before the first step |
+| `int GridStep` · `int StepsPerSixteenth` | the step in the grid of the pattern that plays: 0 … 15, 0 … 31 or 0 … 63, −1 before the first · the steps a sixteenth has in that grid: 1, 2 or 4 |
 | `void ApplyTelemetry(SfxTelemetry channel, float value01)` | `Intensity` and `Pattern`, as the device would |
 
 ### SfxSong (ScriptableObject)
@@ -2066,9 +2252,10 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `SfxPatch[] sounds` | the 16 sounds |
 | `byte[] data` | the packed song |
 | `bool IsValid` | |
-| `bool IsNewer` | the packed song begins with a format above 5 and has at least 7699 bytes: a newer song, not a broken one. It is not valid here |
-| `int Format` · `const int CurrentFormat = 1` · `bool IsFromNewerVersion` | the asset format the file was written in (a file without the number: 1), and whether it is above this version's |
-| `int Bpm` · `int StepsPerPattern` · `int Chain` | |
+| `bool IsNewer` | the packed song begins with a format above 6 and has at least 211 bytes: a newer song, not a broken one. It is not valid here |
+| `int PackedFormat` | the format of the packed song: 1 … 6, 0 when it is not a song this version reads |
+| `int Format` · `const int CurrentFormat = 2` · `bool IsFromNewerVersion` | the asset format the file was written in: 1, or 2 with a packed song of format 6 (a file without the number: 1), and whether it is above this version's |
+| `int Bpm` · `int StepsPerPattern` · `int Chain` | `StepsPerPattern` is the bar in sixteenths, 1 … 16 |
 | `int ArrangementBars` · `int ArrangementPattern(int bar)` | 0 bars: no arrangement |
 | `float Layer(int sound)` | from which intensity a sound plays; 0 = always |
 | `bool HasMix` · `float Volume(int sound)` · `float Pan(int sound)` | the song's own mix |
@@ -2076,23 +2263,67 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `void Set(SfxPatch[] newSounds, byte[] packedSong)` | fill the asset |
 
 Reading the packed song, as the Inspector does. None of these changes it. `pattern` is 0 … 7, `sound` 0 … 15,
-`step` 0 … 15, `lane` 0 … 23:
+`lane` 0 … 23. In the old accessors `step` is a **sixteenth**, 0 … 15; in the `Grid…` ones it is a step of the
+pattern's own grid, 0 … `Grid(pattern)` − 1:
 
 | Member | |
 |---|---|
-| `const int MaxSteps = 16`, `Lanes = 24`, `MaxBars = 32` | the most steps of a pattern, the automation lanes of a song, the most bars of an arrangement |
+| `const int MaxSteps = 16`, `Lanes = 24`, `MaxBars = 32` | the most sixteenths of a bar, the automation lanes of a song, the most bars of an arrangement |
+| `const int MaxGridSteps = 64` | the most steps a pattern holds: 16 sixteenths, each cut in up to 4 |
+| `int Grid(int pattern)` · `int StepsPerSixteenth(int pattern)` | the steps a full bar of the pattern has: 16, 32 or 64 · the steps a sixteenth has: 1, 2 or 4. 0: not a song, no such pattern |
+| `int GridSteps(int pattern)` · `bool HasFinerGrid` | the steps the pattern plays: `StepsPerPattern` × `StepsPerSixteenth` · a pattern of the song has a grid finer than sixteenths |
+| `bool GridStepOn(int pattern, int sound, int step)` · `int GridStepNote(…)` · `int GridStepVelocity(…)` | the same as the three below, for a step of the pattern's grid |
+| `int GridStepLength(int pattern, int sound, int step)` | how many steps of the pattern's grid it holds; 0 = by itself |
+| `int GridLanePoint(int pattern, int lane, int step)` | a lane's point on a step of the pattern's grid: −1 none, else 0 … 126 |
 | `int Swing` | 0 … 100 |
 | `int Scale` | the scale notes were entered in on the device: 0 chromatic, 1 major, 2 minor, 3 pentatonic |
 | `int LayerRaw(int sound)` · `int VolumeRaw(int sound)` · `int PanRaw(int sound)` | as the song keeps them, 0 … 127: layer 0 = always, volume 100 = as designed, pan 64 = the middle |
 | `bool Muted(int sound)` | muted in the song's mix |
 | `int Master(SfxMaster what)` | `DelayTime` 0 … 5, the others 0 … 127. For a song from before the mixer: the values it plays with |
-| `bool StepOn(int pattern, int sound, int step)` | the sound plays on that step |
+| `bool StepOn(int pattern, int sound, int step)` | the sound plays on that sixteenth: on its first step, in a pattern with a finer grid |
 | `int StepNote(int pattern, int sound, int step)` | 0 = the sound as designed, else a MIDI note |
 | `int StepVelocity(int pattern, int sound, int step)` | 0 … 7, soft … full; 5 in a song from before velocity |
-| `int StepLength(int pattern, int sound, int step)` | how many steps it holds; 0 = by itself |
+| `int StepLength(int pattern, int sound, int step)` | how many sixteenths it holds, rounded up in a pattern with a finer grid; 0 = by itself |
 | `int LaneSound(int lane)` | the sound a lane moves a knob of; −1: the lane is free |
 | `int LaneTarget(int lane)` | which knob: 0 none, 1 … 25 the sound's own values (`SfxParam` + 1), then its fader, its pan and the master's five |
-| `int LanePoint(int pattern, int lane, int step)` | −1: no point there (the one before holds), else 0 … 126 |
+| `int LanePoint(int pattern, int lane, int step)` | a lane's point on a sixteenth, on its first step in a pattern with a finer grid. −1: no point there (the one before holds), else 0 … 126 |
+
+### SfxPackedSong and SfxSongTransfer
+
+`SfxPackedSong` (static, in `Runtime/Core`, no Unity in it) reads a packed song of any format this version knows.
+It changes nothing and keeps nothing. Arguments out of range give `false`, 0, 5 (the velocity) or −1 (no point).
+
+| Member | |
+|---|---|
+| `int Format(byte[] song)` · `bool IsValid(byte[] song)` | 1 … 6, or 0 for bytes that are not a song this version reads · `Format` is not 0. They look at the layout only |
+| `bool IsPlayable(byte[] song)` | valid, and every value in it in range: what the player and the device ask. A song that is valid and not playable was damaged |
+| `int Div(byte[] song, int pattern)` · `int Grid(byte[] song, int pattern)` | the steps a sixteenth of the pattern has: 1, 2, 4 · the steps of a full bar: 16, 32, 64. Formats 1 to 5: 1 and 16 |
+| `bool StepOn(byte[] song, int pattern, int sound, int step)` · `int StepNote(…)` · `int StepVelocity(…)` · `int StepLength(…)` | a step of the pattern's own grid, 0 … `Grid` − 1. The length is in steps of that grid |
+| `int LanePoint(byte[] song, int pattern, int lane, int step)` | −1: no point there, else 0 … 126 |
+
+`SfxSongTransfer` (a class) collects a song that arrives piece by piece, in either shape of the song message.
+`SfxLink` has one; you need your own only when you read MIDI yourself.
+
+| Member | |
+|---|---|
+| `bool Take(byte[] message)` | one message. True: it was a piece, and it made the song whole |
+| `byte[] Song` | the whole song, its own length. `null` until all its pieces are here, and again once a piece of another song came |
+| `void Reset()` | forgets what was collected: before asking for a song again, or after a transfer broke off |
+| `static bool IsPiece(byte[] message)` | the message is a piece of a song this class collects: either shape, a count and a length that can be, a format up to 6 |
+
+The song's numbers in `SfxProtocol` (a static class):
+
+| Member | |
+|---|---|
+| `const int SongVersion = 6` | the first byte of a packed song this version writes |
+| `const int Steps = 16` · `GridSteps = 64` | the most sixteenths of a bar · the most steps a pattern holds |
+| `const int SongHead = 147` · `SongBytesMin = 211` · `SongBytesMax = 38355` | a format-6 song: its head, an empty song, the fullest one |
+| `const int SongBytesV5 = 7699` (and `V4` 6643, `V3` 4546, `V2` 2498, `V1` 2455) | the fixed lengths of the older formats |
+| `const int SongPieceBytes = 240` · `SongPiecesMax = 160` | the song message of firmware 1.6.0 on: the most bytes of a piece, the most pieces |
+| `const int OldSongPieceBytes = 200` · `OldSongPieces = 39` | the song message up to firmware 1.5.0 |
+| `byte[][] BuildSongPieces(byte[] song)` | a packed song of any format this version reads as messages in the shape of firmware 1.6.0. A firmware before it ignores them |
+| `byte[][] BuildSong(byte[] song)` | a format-5 song (7699 bytes) as the 39 messages every firmware up to 1.5.0 takes |
+| `SongBytes` · `SongChunkBytes` · `SongChunks` · `TryTakeSongChunk(…)` | obsolete, kept for code written before: the numbers and the reader of the old message only |
 
 ### SfxNative (static)
 
@@ -2102,7 +2333,20 @@ Reading the packed song, as the Inspector does. None of these changes it. `patte
 | `bool Bake(SfxPatch patch, out float[] left, out float[] right, int sampleRate = 48000, float velocity = 1f, int midiNote = 0, float semitones = 0f, float holdSeconds = 1.5f, float maxSeconds = 12f)` | the sound with its effects, as two channels |
 | `float[] BakeInterleaved(SfxPatch patch, int sampleRate = 48000, float velocity = 1f, int midiNote = 0, float semitones = 0f, float holdSeconds = 1.5f)` | the same, L R L R …; null if it failed |
 
+Tools for a packed song, new with the library's ABI 5. They allocate and are not for an audio thread:
+
+| Member | |
+|---|---|
+| `byte[] SongConvert(byte[] song)` | a packed song of any format this version reads, as format 6. `null`: not a song, or no library |
+| `byte[] SongRegrid(byte[] song, int pattern, int grid)` | the song with one pattern (0 … 7) in another grid: 0, 1, 2 = 16, 32, 64 steps a bar. Finer changes no sample; coarser drops what stands between the steps that stay. Format 6 comes back. `null`: not a song, no such pattern or grid |
+| `int SongRegridLoss(byte[] song, int pattern, int grid)` | the steps and points `SongRegrid` would drop; 0 when it only makes the grid finer. −1: not a song, no such pattern or grid |
+| `void PlayerGrid(IntPtr player, int[] out2)` | for a player you run yourself: the step in the grid of the pattern that plays (−1: none yet), and that grid's steps a sixteenth |
+
 The `Player…` and voice functions under them are what the two components call. Use the components.
+
+The package's `sfxforge.dll` is ABI 5, and this version's C# asks for exactly that. An editor that was open while
+the package was updated may still hold the older library: `SfxNative.Available` is then false until it is
+restarted. Nobody has called `SongRegrid` from a Unity script; `tests/dotnet` calls all three through the same C#.
 
 ### SfxVariationSet (ScriptableObject) and SfxVariationPlayer (component)
 
@@ -2164,7 +2408,9 @@ The `Player…` and voice functions under them are what the two components call.
 | `bool IdentityUnanswered` · `const double IdentityAnswerSeconds = 1.0` | asked, and that long without an answer: a firmware before 1.4, or nothing listens |
 | `bool SendPatch(int slot, SfxPatch patch)` · `bool RequestPatch(int slot)` | |
 | `bool SendSong(SfxPatch[] patches, byte[] song)` · `bool RequestSong()` | |
-| `string LastRefusal` · `static string Refusal(SfxDeviceInfo? device, bool song)` | why the last `SendPatch` or `SendSong` sent nothing to a device that speaks another format; `null` when it was not refused · the same question for any device |
+| `string LastRefusal` | why the last `SendPatch` or `SendSong` sent nothing; `null` when it was not refused |
+| `static string Refusal(SfxDeviceInfo? device, byte[] packedSong)` | why this song is not sent to that device, `null` when nothing stands against it: not a song or a newer one, a value out of range, a device that did not say it takes the format, a device that speaks another ([section 6](#when-a-song-is-not-sent)) |
+| `static string Refusal(SfxDeviceInfo? device, bool song)` | the same without a song: another patch format, a song format above 6 or below 5. A device that said song format 5 is not refused here |
 | `bool SendTelemetry(SfxTelemetry channel, float value01)` | |
 | `bool SendIntensity(float value01)` · `bool CuePattern(int pattern)` | the device's music |
 | `bool SendText(string text)` | 24 ASCII characters |
@@ -2178,13 +2424,14 @@ The `Player…` and voice functions under them are what the two components call.
 | `SfxDeviceInfo`: `int hardware` · `major`, `minor`, `patch` · `SfxProfile profile` · `int flags` | what an identity says. `hardware`: `HardwareUnknown` (0) or `HardwareVibeFm` (1) |
 | `bool HasPads` · `HasEncoders` · `TakesSongSounds` · `TakesTelemetry` | the flags, one by one |
 | `bool IsAtLeast(int major, int minor, int patch)` | the firmware is that version or later. False for an assumed device |
-| `static SfxDeviceInfo AssumedBefore14` · `bool assumed` | what a device that does not answer is taken for: VIBE FM, profile 1, pads, encoders, telemetry, no version. Whether it takes a song's sounds is not known (1.3.1 does), so that flag is off |
-| `string ToString()` | `"VIBE FM, firmware 1.4.0, profile 1"` |
+| `static SfxDeviceInfo AssumedBefore14` · `bool assumed` | what a device that does not answer is taken for: VIBE FM, profile 1 as it was then (`SfxProfile.VibeFm15`), pads, encoders, telemetry, no version. Whether it takes a song's sounds is not known (1.3.1 does), so that flag is off |
+| `string ToString()` | `"VIBE FM, firmware 1.6.0, profile 1"` |
 | `SfxProfile`: `int id` · `patchFormat`, `songFormat` · `sounds`, `kits`, `patterns`, `steps`, `lanes`, `bars` · `voices`, `engines`, `wavetables`, `patchValues` | the formats a device speaks and how much it holds |
-| `static SfxProfile VibeFm1` | SFX FORGE 1.x on VIBE FM: 1 · 2, 5 · 16, 2, 8, 16, 24, 32 · 16, 5, 6, 25 |
-| `bool Fits(SfxPatch patch)` · `bool Fits(byte[] packedSong)` | within the profile's limits. Every sound and song of this version fits `VibeFm1` |
+| `static SfxProfile VibeFm1` | SFX FORGE 1.6 on, on VIBE FM: 1 · 2, 6 · 16, 2, 8, 64, 24, 32 · 16, 5, 6, 25. `steps` is the most a pattern holds |
+| `static SfxProfile VibeFm15` | what firmware 1.4 and 1.5 said of themselves, and what one before them is taken for: the same with song format 5 and 16 steps |
+| `bool Fits(SfxPatch patch)` · `bool Fits(byte[] packedSong)` | within the profile's limits: a format up to its own, a length that format can have, every byte 0 … 127, a bar of 1 … 16 sixteenths, no pattern with more steps and no more bars than it holds. Every sound and song of this version fits `VibeFm1`; a format-6 song does not fit `VibeFm15`. Limits only: not what a device is sent (`SfxLink.Refusal`), not whether it plays (`SfxPackedSong.IsPlayable`) |
 | `SfxProtocol.BuildRequestIdentity()` · `BuildIdentity(SfxDeviceInfo)` · `TryParseIdentity(byte[], out SfxDeviceInfo)` | the two messages (`SfxProtocol` is a static class) |
-| `SfxProtocol.IsNewerSong(byte[] song)` · `SfxProtocol.NewerIn(byte[] message)` | a packed song of a higher format and at least today's length · what a message carries in a higher format ("a patch in format 3"), `null` for any other message |
+| `SfxProtocol.IsNewerSong(byte[] song)` · `SfxProtocol.NewerIn(byte[] message)` | a packed song of a higher format and at least as long as the shortest song there is (211 bytes) · what a message carries in a higher format ("a patch in format 3"), `null` for any other message |
 
 ### SfxForgeLink (component)
 
@@ -2234,6 +2481,7 @@ The `Player…` and voice functions under them are what the two components call.
 | `SfxPresetPanel.NewerBanner` · `SfxSongPanel.NewerBanner` (an `SfxBanner`: `Shown`, `Bold`, `Small`) · `SfxSongPanel.MessageText` | the notice of an asset from a newer version · what a song's Inspector says in place of a song |
 | `SfxForgeModel.identity`, `identityKnown` · `SfxForgeView.IdentityText` | the window's line that says what the device is |
 | `SfxSongPanel`: `Page`, `Pattern`, `Sound`, `Intensity`, `SetTempo(bpm)`, `SetSwing(swing)`, `SetLayer(sound, value)`, `SetVolume(sound, value)`, `SetPan(sound, value)` | what is looked at, and the five numbers that can be changed (the last three 0 … 127) |
+| `SfxSongPanel.PatternTitle` · `RowCount(sound)` · `static GridName(steps)` · `static LinkState(linked, port, device, song, out bold, out small, out colour)` | "PATTERN B  1/32" · the cells a row shows: 16, 32 or 64 · "1/16", "1/32", "1/64" · what the line under the keys says, and whether SEND is off |
 | `static float[] SfxSongPanel.RenderBar(SfxSong song, int pattern, float intensity01, int sampleRate = 48000)` | one bar as the game would play it, with what rings after it: stereo, L R L R …; null without the native library |
 | `SfxUnits.ParamText(SfxParam, int value)` · `ParamName(SfxParam, SfxEngine)` · `TryParse(SfxParam, string typed, out int value)` | a value as the device writes it, its name there, and a typed text back to a value |
 | `SfxPicture.Render(SfxPatch patch, float[] into)` | the samples the device draws a sound from (one dry voice, 24 kHz, `SfxPicture.Max` samples at most); returns how many |

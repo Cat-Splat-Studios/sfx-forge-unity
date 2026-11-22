@@ -106,7 +106,7 @@ namespace SfxShowcase.Tests
         }
 
         /// <summary>
-        /// Unity asks for the song; the device answers with its 16 sounds and the song in 39 pieces, and what arrives
+        /// Unity asks for the song; the device answers with its 16 sounds and the song in pieces (11 for the factory song), and what arrives
         /// plays: an <see cref="SfxMusicPlayer"/> is given the received song and its bar counter moves.
         /// </summary>
         [UnityTest, Explicit]
@@ -121,7 +121,7 @@ namespace SfxShowcase.Tests
             yield return Until(() => packed != null, AnswerSeconds);
 
             Assert.IsNotNull(packed, $"the song arrived within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, with its MIDI in and out on these ports?");
-            Assert.AreEqual(SfxProtocol.SongBytes, packed.Length, "a whole packed song");
+            Assert.IsTrue(SfxPackedSong.IsValid(packed), $"a whole packed song ({packed.Length} bytes, beginning with {(packed.Length > 0 ? packed[0] : -1)})");
             Assert.IsNotNull(sounds, "and all 16 sounds came with it");
             Debug.Log($"LINK: ok the song came from the device: {packed.Length} bytes and {sounds.Length} sounds in {messages.Count} messages");
 
@@ -173,14 +173,15 @@ namespace SfxShowcase.Tests
         /// Songs go TO the device and are asked back: what comes back is what was sent, the 16 sounds too.
         ///  1. a song, piece by piece in order;
         ///  2. another, last piece first;
-        ///  3. the last 20 pieces of one song and nothing more, then, after the two seconds in which the device forgets
-        ///     a transfer that broke off, another song whole with two pairs of neighbours swapped; and the same with
-        ///     the first 20 pieces of one, then another whole, last piece first. (Without those two seconds the pieces
+        ///  3. the last half of the pieces of one song and nothing more, then, after the two seconds in which the device
+        ///     forgets a transfer that broke off, another song whole with two pairs of neighbours swapped; and the same
+        ///     with the first half of one, then another whole, last piece first. (Without those two seconds the pieces
         ///     of the two songs can add up to a whole one: no piece says which song it belongs to.)
         ///  4. a song and 16 changed sounds with <c>SfxLink.SendSong</c>, all at once: the sounds must be in the MUSIC
         ///     kit and the kit that is selected on the device must be as it was.
         /// The three songs are the device's own and two made from it that differ from it and from each other in every
-        /// one of the 39 pieces, so that a piece that was lost, stale or from the wrong song shows wherever it is.
+        /// one of their pieces (240 bytes each: firmware 1.6.0), so that a piece that was lost, stale or from the wrong
+        /// song shows wherever it is.
         /// The device's own song and sounds are put back at the end, also when the test fails on the way.
         /// </summary>
         [UnityTest, Explicit]
@@ -211,7 +212,7 @@ namespace SfxShowcase.Tests
             }
             IEnumerator Send(byte[] song, int[] order, int from, int count)
             {
-                byte[][] pieces = SfxProtocol.BuildSong(song);
+                byte[][] pieces = SfxProtocol.BuildSongPieces(song);
                 for (int n = from; n < from + count; n++)
                 {
                     Assert.IsTrue(link.SendSysEx(pieces[order[n]]), $"piece {order[n]} goes out");
@@ -220,19 +221,20 @@ namespace SfxShowcase.Tests
                 yield return Until(() => false, 0.5f);
             }
 
-            int pieceCount = SfxProtocol.SongChunks;
-            var inOrder = new int[pieceCount];
-            var lastFirst = new int[pieceCount];
-            for (int i = 0; i < pieceCount; i++) { inOrder[i] = i; lastFirst[i] = pieceCount - 1 - i; }
-            var swapped = (int[])inOrder.Clone();
-            (swapped[9], swapped[10]) = (swapped[10], swapped[9]);
-            (swapped[36], swapped[37]) = (swapped[37], swapped[36]);
-
             yield return FetchSelectedPad();
             SfxPatch selectedPadBefore = pad;
             yield return Fetch();
             byte[] own = back;
             SfxPatch[] ownSounds = backSounds;
+            Assert.AreEqual(6, SfxPackedSong.Format(own), "the device's song is in format 6 (firmware 1.6.0 on)");
+            int pieceCount = (own.Length + SfxProtocol.SongPieceBytes - 1) / SfxProtocol.SongPieceBytes, half = pieceCount / 2;
+            Assert.GreaterOrEqual(pieceCount, 6, "a song of at least six pieces (the factory song has 11)");
+            var inOrder = new int[pieceCount];
+            var lastFirst = new int[pieceCount];
+            for (int i = 0; i < pieceCount; i++) { inOrder[i] = i; lastFirst[i] = pieceCount - 1 - i; }
+            var swapped = (int[])inOrder.Clone();
+            (swapped[1], swapped[2]) = (swapped[2], swapped[1]);
+            (swapped[pieceCount - 3], swapped[pieceCount - 2]) = (swapped[pieceCount - 2], swapped[pieceCount - 3]);
             restoreSong = own; restoreSounds = ownSounds;            // (TearDown puts them back if the test does not get to)
             byte[] second = AnotherSong(own), third = AnotherSong(second);
             for (int k = 0; k < pieceCount; k++)
@@ -251,18 +253,18 @@ namespace SfxShowcase.Tests
             Assert.AreEqual(0, Different(third, back), "sent last piece first: bytes in which the device's song differs from the one sent");
             Debug.Log("LINK: ok a song sent to the device last piece first came back the same");
 
-            // 3. a transfer that broke off, then a whole one: the last 20 pieces of one song, then another with neighbours swapped …
-            yield return Send(second, inOrder, pieceCount - 20, 20);
+            // 3. a transfer that broke off, then a whole one: the last half of one song's pieces, then another with neighbours swapped …
+            yield return Send(second, inOrder, pieceCount - half, half);
             yield return Until(() => false, ForgetSeconds);
             yield return Send(own, swapped, 0, pieceCount);
             yield return Fetch();
-            Assert.AreEqual(0, Different(own, back), "after the last 20 pieces of another song, a whole song with neighbours swapped: bytes that differ");
-            // … and the first 20 of one, then another, last piece first
-            yield return Send(third, inOrder, 0, 20);
+            Assert.AreEqual(0, Different(own, back), "after the last pieces of another song, a whole song with neighbours swapped: bytes that differ");
+            // … and the first half of one, then another, last piece first
+            yield return Send(third, inOrder, 0, half);
             yield return Until(() => false, ForgetSeconds);
             yield return Send(second, lastFirst, 0, pieceCount);
             yield return Fetch();
-            Assert.AreEqual(0, Different(second, back), "after the first 20 pieces of another song, a whole song last piece first: bytes that differ");
+            Assert.AreEqual(0, Different(second, back), "after the first pieces of another song, a whole song last piece first: bytes that differ");
             Debug.Log("LINK: ok a transfer that broke off (its first pieces, or its last) did not spoil the next");
 
             // 4. SfxLink.SendSong: 16 changed sounds and a song the device does not have, all at once
@@ -308,33 +310,52 @@ namespace SfxShowcase.Tests
 
         static bool PieceDiffers(byte[] a, byte[] b, int piece)
         {
-            int from = piece * SfxProtocol.SongChunkBytes, to = Math.Min(a.Length, from + SfxProtocol.SongChunkBytes);
+            int from = piece * SfxProtocol.SongPieceBytes, to = Math.Min(a.Length, from + SfxProtocol.SongPieceBytes);
             for (int i = from; i < to; i++) if (a[i] != b[i]) return true;
             return false;
         }
 
         /// <summary>
         /// A song that differs from the given one in every piece and is still a song the device takes and gives back
-        /// unchanged: another swing in the first piece, and in each further piece one note of a step or one value of an
-        /// automation lane, one higher. Where those are is the packed song's layout (core/sfx_song.h, sfx_song_pack):
-        /// at its end 8 patterns x 24 lanes x 16 values, before that 8 patterns x 16 sounds x (3 + 16 notes + 16 more).
+        /// unchanged, byte for byte and as long: another swing in the first piece, and in each further piece one note of
+        /// a sound's row, or one value of a lane's row, one higher. Where those are is the layout of a format-6 song
+        /// (core/sfx_song.h, sfx_song_pack): after the head of 147 bytes a block a pattern - its grid, the sounds and
+        /// the lanes that have a row, then those rows. (A note or a point that goes from nothing to something stays in
+        /// a row that is there, so no row comes or goes and the song keeps its length.)
         /// </summary>
         static byte[] AnotherSong(byte[] song)
         {
-            const int Patterns = 8, Sounds = 16, Steps = 16, Lanes = 24, Swing = 4, SwingMost = 100;
-            const int Record = 3 + Steps + Steps, FirstNote = 3;
-            int automation = song.Length - Patterns * Lanes * Steps, patterns = automation - Patterns * Sounds * Record;
+            const int Patterns = 8, Sounds = 16, Lanes = 24, Swing = 4, SwingMost = 100, Head = 147;
+            Assert.AreEqual(6, SfxPackedSong.Format(song), "a packed song of format 6");
+            var may = new bool[song.Length];                           // the bytes that may go one higher
+            int at = Head;
+            for (int p = 0; p < Patterns; p++)
+            {
+                int steps = 16 << song[at], bits = (steps + 6) / 7;
+                int rows = song[at + 1] | song[at + 2] << 7 | song[at + 3] << 14, lanes = song[at + 4] | song[at + 5] << 7 | song[at + 6] << 14 | song[at + 7] << 21;
+                at += 8;
+                for (int s = 0; s < Sounds; s++)
+                {
+                    if ((rows >> s & 1) == 0) continue;
+                    for (int i = 0; i < steps; i++) may[at + bits + i] = song[at + bits + i] < 126;      // its notes
+                    at += bits + 3 * steps;
+                }
+                for (int l = 0; l < Lanes; l++)
+                {
+                    if ((lanes >> l & 1) == 0) continue;
+                    for (int i = 0; i < steps; i++) may[at + i] = song[at + i] < 126;                    // its points
+                    at += steps;
+                }
+            }
             var other = (byte[])song.Clone();
             other[Swing] = (byte)((other[Swing] + 17) % (SwingMost + 1));
-            for (int piece = 1; piece < SfxProtocol.SongChunks; piece++)
+            for (int piece = 1; piece * SfxProtocol.SongPieceBytes < song.Length; piece++)
             {
-                int from = piece * SfxProtocol.SongChunkBytes, to = Math.Min(song.Length, from + SfxProtocol.SongChunkBytes);
-                for (int at = from; at < to; at++)
+                int from = piece * SfxProtocol.SongPieceBytes, to = Math.Min(song.Length, from + SfxProtocol.SongPieceBytes);
+                for (int i = from; i < to; i++)
                 {
-                    int inRecord = (at - patterns) % Record;
-                    bool aNote = at >= patterns && at < automation && inRecord >= FirstNote && inRecord < FirstNote + Steps;
-                    if (!aNote && at < automation) continue;
-                    other[at] = (byte)((other[at] + 1) & 0x7F);
+                    if (!may[i]) continue;
+                    other[i] = (byte)(other[i] + 1);
                     break;
                 }
             }
@@ -380,19 +401,19 @@ namespace SfxShowcase.Tests
             Assert.IsTrue(link.RequestIdentity(), "the request goes out");     // (Open asked once already: a second answer says the same)
             yield return Until(() => answers > 0, AnswerSeconds);
 
-            Assert.Greater(answers, 0, $"the device said what it is within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, firmware 1.4.0 or later, with its MIDI in and out on these ports?");
+            Assert.Greater(answers, 0, $"the device said what it is within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, firmware 1.6.0 or later, with its MIDI in and out on these ports?");
             Assert.IsTrue(link.Device.HasValue && link.Device.Value.Equals(said), "and the link keeps what it said");
             Debug.Log($"LINK: ok the device said what it is: {said} ({said.profile}; flags {said.flags})");
 
             Assert.AreEqual(SfxDeviceInfo.HardwareVibeFm, said.hardware, "it is SFX FORGE on VIBE FM");
-            Assert.IsTrue(said.IsAtLeast(1, 4, 0), $"its firmware is 1.4.0 or later (it says {said.major}.{said.minor}.{said.patch})");
-            Assert.AreEqual(SfxProfile.VibeFm1, said.profile, "its profile is the one this package is made for");
+            Assert.IsTrue(said.IsAtLeast(1, 6, 0), $"its firmware is 1.6.0 or later (it says {said.major}.{said.minor}.{said.patch})");
+            Assert.AreEqual(SfxProfile.VibeFm1, said.profile, "its profile is the one this package is made for: song format 6, up to 64 steps a pattern");
             Assert.IsTrue(said.HasPads, "it has pads");
             Assert.IsTrue(said.HasEncoders, "it has encoders for the game");
             Assert.IsTrue(said.TakesSongSounds, "it takes a song's sounds");
             Assert.IsTrue(said.TakesTelemetry, "it takes telemetry");
             Assert.IsNull(SfxLink.Refusal(link.Device, true), "so nothing stands against sending it a patch or a song");
-            Debug.Log("LINK: ok firmware 1.4.0 or later, the profile of this package, pads, encoders, a song's sounds, telemetry");
+            Debug.Log("LINK: ok firmware 1.6.0 or later, the profile of this package, pads, encoders, a song's sounds, telemetry");
         }
 
         /// <summary>What came in, in order and in short: "p3" a patch for pad 4, "s7/208" piece 7 of the song and its length, "id/24" an identity and its length, otherwise the first byte and the length.</summary>

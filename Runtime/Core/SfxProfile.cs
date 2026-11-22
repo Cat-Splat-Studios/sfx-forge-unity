@@ -14,21 +14,27 @@ namespace CatSplat.SfxForge
     {
         /// <summary>Which profile: 1 = SFX FORGE 1.x on VIBE FM.</summary>
         public int id;
-        /// <summary>The first byte of its patches (2) and of its packed song (5).</summary>
+        /// <summary>The first byte of its patches (2) and of its packed song (6; 5 up to firmware 1.5.0).</summary>
         public int patchFormat, songFormat;
-        /// <summary>Sounds in a kit (16), kits (2), patterns (8), steps in a pattern (16), automation lanes (24), bars in an arrangement (32).</summary>
+        /// <summary>Sounds in a kit (16), kits (2), patterns (8), the most steps a pattern holds (64; 16 up to firmware 1.5.0), automation lanes (24), bars in an arrangement (32).</summary>
         public int sounds, kits, patterns, steps, lanes, bars;
         /// <summary>Voices that sound at once (16), engines (5), wavetables (6), values in a patch (25).</summary>
         public int voices, engines, wavetables, patchValues;
 
-        /// <summary>What SFX FORGE 1.x offers on VIBE FM (the emulator, the plugin, the hardware).</summary>
+        /// <summary>What SFX FORGE 1.6 on offers on VIBE FM (the emulator, the plugin, the hardware): song format 6, up to 64 steps a pattern.</summary>
         public static SfxProfile VibeFm1 => new SfxProfile
         {
             id = 1, patchFormat = SfxPatch.Version, songFormat = SfxProtocol.SongVersion,
-            sounds = SfxProtocol.Slots, kits = SfxProtocol.Kits, patterns = SfxProtocol.Patterns, steps = SfxProtocol.Steps,
+            sounds = SfxProtocol.Slots, kits = SfxProtocol.Kits, patterns = SfxProtocol.Patterns, steps = SfxProtocol.GridSteps,
             lanes = SfxProtocol.Lanes, bars = SfxProtocol.Bars, voices = SfxProtocol.Voices,
             engines = SfxPatch.EngineCount, wavetables = SfxPatch.TableCount, patchValues = SfxPatch.ParamCount
         };
+
+        /// <summary>What the firmwares 1.4 and 1.5 said of themselves (and what one before them is taken for): song format 5, 16 steps a pattern.</summary>
+        public static SfxProfile VibeFm15
+        {
+            get { var p = VibeFm1; p.songFormat = 5; p.steps = SfxProtocol.Steps; return p; }
+        }
 
         /// <summary>
         /// The sound is one this profile's device can hold: the same patch format with as many values, an engine it
@@ -42,18 +48,28 @@ namespace CatSplat.SfxForge
         }
 
         /// <summary>
-        /// The packed song is within this profile's limits: a format up to its own, the length that format has, every
-        /// byte 0..127, no more steps in a pattern and no more bars arranged than it holds. An older song fits too –
-        /// that says nothing of the wire: a device takes a song only in its own format (SfxLink.SendSong).
+        /// The packed song is within this profile's limits: a format up to its own, a length that format can have, every
+        /// byte 0..127, a bar of 1..16 sixteenths, no pattern with more steps and no more bars arranged than it holds.
+        /// An older song fits too – that says nothing of the wire: SfxLink.Refusal says what a device is sent. Nor of
+        /// the values inside: SfxPackedSong.IsPlayable says whether the player takes them.
         /// </summary>
         public bool Fits(byte[] song)
         {
-            if (song == null || song.Length < 7 || song[0] < 1 || song[0] > songFormat || song[0] > SfxProtocol.SongVersion) return false;
+            if (song == null || song.Length < 7 || song[0] < 1 || song[0] > Math.Min(songFormat, SfxProtocol.SongVersion)) return false;
             int v = song[0];
-            int length = v == 5 ? SfxProtocol.SongBytes : v == 4 ? SfxProtocol.SongBytesV4 : v == 3 ? SfxProtocol.SongBytesV3 : v == 2 ? SfxProtocol.SongBytesV2 : SfxProtocol.SongBytesV1;
-            if (song.Length != length || sounds < SfxProtocol.Slots || patterns < SfxProtocol.Patterns) return false;
+            if (sounds < SfxProtocol.Slots || patterns < SfxProtocol.Patterns) return false;
             for (int i = 0; i < song.Length; i++) if (song[i] > 127) return false;
-            if (song[1] > steps) return false;
+            if (song[1] < 1 || song[1] > SfxProtocol.Steps) return false;                     // (the bar, in sixteenths: in every format)
+            if (v <= 5)
+            {
+                int length = v == 5 ? SfxProtocol.SongBytesV5 : v == 4 ? SfxProtocol.SongBytesV4 : v == 3 ? SfxProtocol.SongBytesV3 : v == 2 ? SfxProtocol.SongBytesV2 : SfxProtocol.SongBytesV1;
+                if (song.Length != length || song[1] > steps) return false;
+            }
+            else
+            {
+                if (!SfxPackedSong.IsValid(song)) return false;
+                for (int p = 0; p < SfxProtocol.Patterns; p++) if (SfxPackedSong.Grid(song, p) > steps) return false;      // (a pattern of 32 or 64 steps on a device that holds 16)
+            }
             if (v >= 4 && song[v == 4 ? 66 + SfxProtocol.Slots : 66] > bars) return false;       // (the arrangement's length: where SfxSong reads it)
             if (v >= 5 && lanes < SfxProtocol.Lanes) return false;
             return true;
@@ -110,12 +126,12 @@ namespace CatSplat.SfxForge
 
         /// <summary>
         /// A device that does not answer the request: a firmware before 1.4.0 ignores it. It is taken for SFX FORGE on
-        /// VIBE FM with profile 1, pads, encoders and telemetry. Whether it takes a song's sounds is not known (1.3.1
-        /// does, older ones do not), so that flag is not set.
+        /// VIBE FM with profile 1 as it was then (song format 5, 16 steps a pattern), pads, encoders and telemetry.
+        /// Whether it takes a song's sounds is not known (1.3.1 does, older ones do not), so that flag is not set.
         /// </summary>
         public static SfxDeviceInfo AssumedBefore14 => new SfxDeviceInfo
         {
-            hardware = HardwareVibeFm, profile = SfxProfile.VibeFm1, flags = FlagPads | FlagEncoders | FlagTelemetry, assumed = true
+            hardware = HardwareVibeFm, profile = SfxProfile.VibeFm15, flags = FlagPads | FlagEncoders | FlagTelemetry, assumed = true
         };
 
         public string HardwareName => hardware == HardwareVibeFm ? "VIBE FM" : hardware == HardwareUnknown ? "unknown hardware" : "hardware " + hardware;
