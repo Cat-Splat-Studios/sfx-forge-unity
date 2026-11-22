@@ -10,9 +10,9 @@ This build (1.6.0) was run without the emulator's page, in the VIBE FM SDK's com
 SysEx and stored files, in a small host of the source repository's own: its checks hand the built `.wasm`
 events and SysEx and read its sound, its MIDI and what it stores, and all 20 of them pass. A few of them also
 compare the display, to tell that it changed or that the LINK light is on: what a page shows and what a toast
-says is not read. It was not run against
-Unity: the link tests of the Unity manual were last run with firmware 1.4.0, in the SDK's local emulator, and
-were not repeated with this build. It was not run in the plugin or on hardware, and nobody has listened to
+says is not read. Against
+Unity, the six link tests of the Unity manual passed with firmware 1.6.0 in the SDK's local emulator on
+22 Nov 2026, with songs of sixteenths only. It was not run in the plugin or on hardware, and nobody has listened to
 what is new in it. Its source is not in this package.
 
 New in 1.6.0: each pattern has its own grid of 1/16, 1/32 or 1/64, which is 16, 32 or 64 steps a bar (SHIFT+F5

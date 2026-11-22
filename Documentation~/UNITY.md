@@ -905,49 +905,66 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 
 > **What is tested, and what is not.** MIDI is implemented for Windows only (winmm).
 >
-> **The firmware is 1.6.0 now; the link was last run against 1.4.0.** Firmware 1.6.0 gives every pattern its own
-> grid ([section 5](#a-finer-grid)), and with it three things on the wire changed: the song is in format 6 and has
-> no fixed length, the song message has a new shape, and the identity says song format 6 and 64 steps. None of this
-> has travelled over a MIDI port yet. What was done instead:
-> - The firmware's own checks (`sh build.sh` in the source repository) hand the built 1.6.0 the identity request
->   and read its answer, and read the song it sends: 16 sounds, then the factory song in 11 pieces, 27 messages and
->   2487 bytes of format 6. They also send it songs in both shapes of the message, doubled, out of order and one
->   straight after another, and read back what it took.
-> - `tests/dotnet` gives the messages that firmware sent to the package's own receiver (`SfxSongTransfer`), and the
->   song arrives whole. It also runs both shapes of the message through that receiver, and checks what `SendSong`
->   would send to a device that said 1.6, to one that said 1.5 and to one that said nothing.
->
-> Everything below that names the emulator was done with 1.4.0 or 1.3.1 and was not repeated since. Firmware 1.6.0
-> was not run on hardware or in the plugin either, and no firmware older than 1.6.0 was run against this package:
-> what is said below about an older firmware is reasoned from its code.
->
-> **Tested end to end against the emulator**, over two loopMIDI ports, with Unity 6000.3 on Windows 11
-> (`Tests/LinkTakes.cs` in the showcase, run against `tests/emulator-link.mjs`; firmware 1.4.0, and 1.3.1 before it):
-> - Unity asks for a pad's patch and for the song, and both arrive. The song that arrived was the demo project's
->   song, byte for byte, and an `SfxMusicPlayer` played it. Twenty transfers in a row all arrived.
-> - A song sent *to* the device comes back the same when asked for: sent piece by piece, last piece first, after a
+> **Firmware 1.6.0 was run against the emulator.** Firmware 1.6.0 gives every pattern its own grid
+> ([section 5](#a-finer-grid)), and with it three things on the wire changed: the song is in format 6 and has no
+> fixed length, the song message has a new shape, and the identity says song format 6 and 64 steps. On 22 Nov 2026
+> (the date in the logs, which is UTC) the six link tests of `Tests/LinkTakes.cs` in the showcase were run with
+> firmware 1.6.0 in the SDK's emulator (`tests/emulator-link.mjs`) and this package, over two loopMIDI ports, with
+> Unity 6000.3 on Windows 11, headless, in a copy of the demo project. All six passed, four times that day: twice
+> with the firmware as it was before its kit key moved to SHIFT + ENTER, in the emulator of SDK 27, and twice after,
+> in the emulator of SDK 28. The last of the four was the firmware as it is now. What the logs said, the same each
+> time but for one count:
+> - A patch came from the device when Unity asked for one: pad 1.
+> - The device said what it is: VIBE FM, firmware 1.6.0, profile 1, song format 6, 8 patterns of 64 steps, flags 15
+>   (all four).
+> - The song came from the device when Unity asked for it: 2487 bytes and 16 sounds. It was the demo project's
+>   song, byte for byte, and an `SfxMusicPlayer` played it. The firmware sends it in 27 messages; Unity counted 31,
+>   32, 31 and 32.
+> - Twenty transfers in a row all arrived whole.
+> - A song sent *to* the device came back the same when asked for: sent piece by piece, last piece first, after a
 >   transfer that broke off, and with `SendSong`, whose 16 sounds arrive in the MUSIC kit while the selected kit
->   stays as it was. The songs sent differ from the device's in every one of the 39 pieces.
-> - SEND and EXPORT pressed on the device arrive in a running game (`Tests/LinkSession.cs`, the link video).
-> - The game's intensity reaches the device: the INTENSITY on its SONG page followed the game's value. Text was
->   sent in the same session, but the page that was open does not show it, so nobody saw it arrive.
+>   stays as it was. The songs sent are the device's own song with the swing changed and one note or automation
+>   point raised in each later piece: they differ from it in every one of its 11 pieces.
+> - Pads, intensity, a cue and text were sent to the device. Nothing comes back for these, so the test only says
+>   that every message left.
+>
+> **Not repeated with 1.6.0:**
+> - The recorded session (`Tests/LinkSession.cs`, the link video): SEND and EXPORT pressed on the device and
+>   arriving in a running game. It was last run with firmware 1.4.0.
+> - Whether the device followed the game. With 1.4.0, in that session, the INTENSITY on its SONG page followed the
+>   game's value. Text was sent in the same session, but the page that was open does not show it, so nobody saw it
+>   arrive.
+> - A song with a pattern at 1/32 or 1/64. Every pattern of the songs that crossed has 16 steps, the demo song's
+>   and the test's own alike. A finer pattern has not travelled over a MIDI port. What was done instead:
+>   - The firmware's own checks (`sh build.sh` in the source repository) hand the built 1.6.0 the identity request
+>     and read its answer, and read the song it sends: 16 sounds, then the factory song in 11 pieces, 27 messages
+>     and 2487 bytes of format 6. They also send it songs in both shapes of the message, doubled, out of order and
+>     one straight after another, and read back what it took. One of them is a song with a pattern of 64 steps
+>     (`tests/check-atomic.mjs`).
+>   - `tests/dotnet` gives the messages that firmware sent to the package's own receiver (`SfxSongTransfer`), and
+>     the song arrives whole. It also runs both shapes of the message through that receiver, and checks what
+>     `SendSong` would send to a device that said 1.6, to one that said 1.5 and to one that said nothing.
+>
+> Firmware 1.6.0 was not run on hardware or in the plugin, and no firmware older than 1.6.0 was run against this
+> package: what is said below about an older firmware is reasoned from its code.
+>
+> **Earlier runs, with firmware 1.4.0** (the song message of then: a song was 39 pieces):
+> - The same six tests passed, with a package whose `Open` already sent the identity request before anything else.
+>   The identity then read: VIBE FM, firmware 1.4.0, profile 1, all four flags.
+> - The recorded session passed: SEND and EXPORT pressed on the device arrived in a running game.
+> - Before that, the tests that existed then were run with firmware 1.3.1, which has no identity.
 >
 > **Not tested:** the hardware and the plugin; pads and encoders coming *from* the device (`onPad`, `onEncoder`,
 > `SfxEncoderBinding`); `SendPatch`; the SFX Forge window and the two Inspectors, whose keys nobody has pressed
 > against a device. The window has only been shown a model filled in by its own tests.
 >
-> **The identity** ([below](#what-the-device-is-the-identity), firmware 1.4.0) is tested on the Unity side without
-> a device: its bytes, what is and is not one, and what the link does with one that arrives in the middle of a
-> song (`tests/dotnet`). Against the emulator with firmware 1.4.0, `TheDeviceSaysWhatItIs` in `Tests/LinkTakes.cs`
-> asked for it and got: VIBE FM, firmware 1.4.0, profile 1, all four flags.
+> **The identity** ([below](#what-the-device-is-the-identity), firmware 1.4.0 on) is also tested on the Unity side
+> without a device: its bytes, what is and is not one, and what the link does with one that arrives in the middle
+> of a song (`tests/dotnet`). That a pad's patch asked for right after the request still arrives (the host sends
+> one SysEx a block, so the dump waits for the identity) is checked on the built firmware by
+> `tests/check-identity.mjs` in the source repository, which hands it the messages directly.
 >
-> **The takes above were repeated with firmware 1.4.0** and this package, whose `Open` sends the identity request
-> before anything else: the six link tests and the recorded session all passed. That a pad's patch asked for right
-> after the request still arrives (the host sends one SysEx a block, so the dump waits for the identity) is also
-> checked on the built firmware by `tests/check-identity.mjs` in the source repository, which hands it the
-> messages directly.
->
-> **Found by these tests**, all three in how the emulator moves MIDI, none of them in the hardware's path:
+> **Found by the earlier runs**, all three in how the emulator moves MIDI, none of them in the hardware's path:
 > - Its MIDI output sometimes delivers two neighbouring SysEx messages in the wrong order: 3 of the first 60 song
 >   transfers had two pieces swapped, and the package dropped such a song.
 > - Its page handed every incoming message to the firmware twice. The firmware took a repeated piece for a new
@@ -1019,7 +1036,7 @@ The 18 bytes, each 0 … 127, become an `SfxDeviceInfo`:
 | Byte | `SfxDeviceInfo` | Today |
 |---|---|---|
 | 0 | `hardware`: 0 unknown, 1 VIBE FM. That is the SDK's host – the emulator, the plugin or the hardware; the firmware cannot tell them apart | 1 |
-| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 6 0 (over the link it was read from 1.4.0 only: 1 4 0) |
+| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 6 0 (read over the link from 1.6.0 in the emulator, and from 1.4.0 before it) |
 | 4 … 16 | `profile`, an `SfxProfile`: its `id`, the patch format and the song format it speaks, and how much it holds: sounds in a kit, kits, patterns, the most steps a pattern holds, automation lanes, bars in an arrangement, voices, engines, wavetables, values in a patch | 1 · 2, 6 · 16, 2, 8, 64, 24, 32, 16, 5, 6, 25. Firmware 1.4 and 1.5 said song format 5 and 16 steps; the `id` was 1 then too |
 | 17 | `flags`: `HasPads`, `HasEncoders` (CC 20 – 25 from its LINK page), `TakesSongSounds` (what `SendSong` sends before the song), `TakesTelemetry` (CC 10 – 17 on channel 2) | all four |
 

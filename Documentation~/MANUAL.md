@@ -67,6 +67,25 @@ This manual describes firmware 1.6.0.
 | **11** | **the keys** | play the selected sound as an instrument, in tune |
 | **12** | **RETURN · HOME** | back to the first page · the controls of this page |
 
+**ENTER** has no number in the picture; it is the key right of OCT +. **SHIFT + ENTER**, a short press, changes kit
+([section 4](#4-two-kits)). DATA pressed counts as ENTER. ENTER held for a good half second is FOCUS, as in other
+VIBE firmwares whose DATA has a job of its own: a frame appears on the display, DATA moves it from control to
+control, ENTER presses or edits the one it is on, and RETURN ends it. With the frame on F1 – F6, SHIFT + ENTER is
+SHIFT + that key, not the kit key; anywhere else it changes kit.
+
+**SHIFT held and DATA turned** is the VIBE's, in every firmware: a frame appears over F1 – F6, DATA moves it, and
+ENTER or DATA pressed then presses the framed key. So do not turn DATA on the way to SHIFT + ENTER: ENTER would press
+a soft key (F1 PRESET, or MUTATE, RANDOM, SAVE …) and the kit stays. If it happened, let SHIFT go and start again;
+F3 UNDO takes back a sound that changed.
+
+**On the VIBE itself, SHIFT + K1 – K6 play notes.** The VIBE does this, in every firmware: the six keys play the
+first six notes of the VIBE's key and scale (SETTINGS → KEYS), here into the selected sound, as the keys do, and
+SHIFT + RETURN keeps them playing without SHIFT until it is pressed again. SFX FORGE never gets these presses and has
+no job of its own on them. In the emulator and the plugin the keys on the screen play instead, and SHIFT + K1 – K6
+are simply K1 – K6. The SDK also says that a firmware sees SHIFT let go before the first of these notes. So after
+a note played this way, SHIFT + ENTER may need SHIFT let go and held again. All this is read from the VIBE FM SDK,
+version 28; it was not tried on hardware.
+
 ### The pages
 
 Six K keys, thirteen pages. Pressing a K key again walks to its next page.
@@ -140,7 +159,15 @@ SFX FORGE holds two sets of 16 sounds.
 | Where it goes | straight to the output, beside the song | through the mixer: fader, pan, mute |
 | F1 PRESET offers | 16 sound effects | 23 instruments |
 
-**SHIFT + K1** changes kit. The top line says which one you are in. Going to a song page chooses MUSIC by itself.
+**SHIFT + ENTER** changes kit: hold SHIFT and press ENTER shortly. Let ENTER go first: the press counts when ENTER
+comes up, and SHIFT must still be down then. It works on every page. On a sound page you stay on that page; from the
+mixer, a song page or LINK it goes to the first sound page. Do not turn DATA while SHIFT is down
+([section 2](#2-the-device) says why). The top line says which kit you are in. Going to a song page chooses MUSIC by
+itself.
+
+With the mouse, in the Playground and the plugin: double-click SHIFT, so that it stays down, then click ENTER, and
+click SHIFT again to let it go. Or use the stage's SFX / MUSIC buttons ([section 14](#14-the-stage)). In the
+Playground the computer's Shift + Enter does it too; the plugin does not pass those keys on.
 
 Nothing stops you from sequencing a laser or playing a footstep on the keys. The kits only keep the two jobs apart.
 
@@ -1069,7 +1096,8 @@ F2 holds one step only: the first edit after switching on takes the other song's
 | **Older firmware** | 1.5.0 and before drop a song from 1.6.0 without a word, and do not see what 1.6.0 saved on the device ([section 15](#songs-formats-and-older-firmware), [section 16](#the-song-and-older-firmware)) |
 | **Platforms** | the Unity package runs on Windows x64 so far. Its MIDI link is tested against the emulator over a virtual cable, not against the hardware |
 | **The stage** | has no control for the swing, the click or ERASE; they are on the device |
-| **What is tested** | firmware 1.6.0 passes all 20 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. It has not been run on the hardware or in the plugin. The link was last tested against the emulator with firmware 1.4.0. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
+| **SHIFT + K1 – K6, SHIFT + RETURN** | have no job in SFX FORGE. On the VIBE itself they are the VIBE's: SHIFT + K1 – K6 play notes and SHIFT + RETURN locks that ([section 2](#2-the-device)). That is read from the SDK, not tried on hardware |
+| **What is tested** | firmware 1.6.0 passes all 22 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. It has not been run on the hardware or in the plugin. The link was last tested against the emulator with firmware 1.6.0 (22 Nov 2026: the six link tests of the Unity manual, with songs of sixteenths only; SEND and EXPORT pressed on the device were last tried with 1.4.0). A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
 
 ---
 
@@ -1083,7 +1111,7 @@ For those who know their way around: every page and every shortcut on one pictur
 
 ### The same, as tables
 
-**Everywhere:** pads play · keys play the selected sound in tune · DATA selects · SHIFT + K1 the other kit ·
+**Everywhere:** pads play · keys play the selected sound in tune · DATA selects · SHIFT + ENTER the other kit ·
 PLAY STOP: a pattern round and round (LOOP) or the song (SONG) · REC: what is played is recorded · SHIFT + REC the
 click · MENU the tour · HOME this page's controls · A the output volume (not on SEQ, SONG, AUTO and LINK: see below) · SHIFT + MENU twice: reset.
 

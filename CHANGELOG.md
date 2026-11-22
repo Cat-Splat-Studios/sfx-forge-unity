@@ -95,7 +95,7 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
   one profile id; nothing can be targeted at another, and nothing converts a newer patch, song or asset.
 - `loopPattern` is tested in the engine through the native library, and inside Unity by one Play mode test of the
   sample, headless and muted; nobody has listened to it. Firmware 1.6.0 passes its own checks; the link was
-  last run against 1.4.0.
+  last run against it in the emulator (six tests, songs of sixteenths only).
 - The tools for designing sounds are measured, not heard: nobody has listened to a generated sound, a variant or
   a baked file. A variation set that is not baked plays only where the native library is, and nothing checks at
   build time that a set is baked or up to date.
