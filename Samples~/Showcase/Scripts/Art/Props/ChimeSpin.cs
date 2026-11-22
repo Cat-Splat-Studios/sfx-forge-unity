@@ -10,8 +10,10 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("The diamond whose width is scaled.")]
         Transform diamond;
+
         [SerializeField, Tooltip("Turning speed, radians per second.")]
         float turnRate = 3f;
+
         [SerializeField, Tooltip("Phase shift per metre along x, radians: the wave along a line of Chimes.")]
         float phasePerMetre = 0.6f;
 

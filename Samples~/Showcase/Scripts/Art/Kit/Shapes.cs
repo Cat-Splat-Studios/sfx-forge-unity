@@ -13,7 +13,12 @@ namespace SfxShowcase.Art
         const float LongestMiter = 3f;
 
         /// <summary>An ellipse (a circle when both radii are equal).</summary>
-        public static List<Vector2> Ellipse(Vector2 center, float radiusX, float radiusY, int segments = ArtStyle.CircleSegments)
+        public static List<Vector2> Ellipse(
+            Vector2 center,
+            float radiusX,
+            float radiusY,
+            int segments = ArtStyle.CircleSegments
+        )
         {
             var points = new List<Vector2>(segments);
             for (int i = 0; i < segments; i++)
@@ -21,6 +26,7 @@ namespace SfxShowcase.Art
                 Vector2 direction = MeshBuilder.Direction(360f * i / segments);
                 points.Add(center + new Vector2(direction.x * radiusX, direction.y * radiusY));
             }
+
             return points;
         }
 
@@ -34,10 +40,34 @@ namespace SfxShowcase.Art
         public static List<Vector2> RoundedRect(Vector2 min, Vector2 max, float cornerRadius, int cornerSegments = 4)
         {
             var points = new List<Vector2>(4 * (cornerSegments + 1));
-            AddCorner(points, new Vector2(min.x + cornerRadius, min.y + cornerRadius), cornerRadius, 180f, cornerSegments);
-            AddCorner(points, new Vector2(max.x - cornerRadius, min.y + cornerRadius), cornerRadius, 270f, cornerSegments);
-            AddCorner(points, new Vector2(max.x - cornerRadius, max.y - cornerRadius), cornerRadius, 0f, cornerSegments);
-            AddCorner(points, new Vector2(min.x + cornerRadius, max.y - cornerRadius), cornerRadius, 90f, cornerSegments);
+            AddCorner(
+                points,
+                new Vector2(min.x + cornerRadius, min.y + cornerRadius),
+                cornerRadius,
+                180f,
+                cornerSegments
+            );
+            AddCorner(
+                points,
+                new Vector2(max.x - cornerRadius, min.y + cornerRadius),
+                cornerRadius,
+                270f,
+                cornerSegments
+            );
+            AddCorner(
+                points,
+                new Vector2(max.x - cornerRadius, max.y - cornerRadius),
+                cornerRadius,
+                0f,
+                cornerSegments
+            );
+            AddCorner(
+                points,
+                new Vector2(min.x + cornerRadius, max.y - cornerRadius),
+                cornerRadius,
+                90f,
+                cornerSegments
+            );
             return points;
         }
 
@@ -48,15 +78,20 @@ namespace SfxShowcase.Art
         public static List<Vector2> Diamond(float halfWidth, float halfHeight, float roundness)
         {
             List<Vector2> points = RoundedRect(-Vector2.one, Vector2.one, roundness);
+
             // A unit square's corner is sqrt(2) from the centre; rounding pulls it in by radius * (sqrt(2) - 1).
             float reach = Mathf.Sqrt(2f) - roundness * (Mathf.Sqrt(2f) - 1f);
             Vector2 diagonal = MeshBuilder.Direction(45f);
             for (int i = 0; i < points.Count; i++)
             {
                 Vector2 point = points[i];
-                var turned = new Vector2(point.x * diagonal.x - point.y * diagonal.y, point.x * diagonal.y + point.y * diagonal.x);
+                var turned = new Vector2(
+                    point.x * diagonal.x - point.y * diagonal.y,
+                    point.x * diagonal.y + point.y * diagonal.x
+                );
                 points[i] = new Vector2(turned.x / reach * halfWidth, turned.y / reach * halfHeight);
             }
+
             return points;
         }
 
@@ -72,7 +107,10 @@ namespace SfxShowcase.Art
             float end = 450f - tangent;
             var points = new List<Vector2>(segments + 2);
             for (int i = 0; i <= segments; i++)
+            {
                 points.Add(MeshBuilder.Direction(Mathf.Lerp(start, end, i / (float)segments)) * radius);
+            }
+
             points.Add(new Vector2(0f, length));
             return points;
         }
@@ -95,6 +133,7 @@ namespace SfxShowcase.Art
                 Vector2 normalAfter = RightNormal(current, next) * outwards;
                 grown.Add(current + Miter(normalBefore, normalAfter, distance));
             }
+
             return grown;
         }
 
@@ -105,7 +144,11 @@ namespace SfxShowcase.Art
         public static Vector2 RightNormal(Vector2 a, Vector2 b)
         {
             Vector2 along = b - a;
-            if (along.sqrMagnitude < 1e-10f) return Vector2.zero;
+            if (along.sqrMagnitude < 1e-10f)
+            {
+                return Vector2.zero;
+            }
+
             along.Normalize();
             return new Vector2(along.y, -along.x);
         }
@@ -116,10 +159,22 @@ namespace SfxShowcase.Art
         /// </summary>
         public static Vector2 Miter(Vector2 normalBefore, Vector2 normalAfter, float distance)
         {
-            if (normalBefore == Vector2.zero) normalBefore = normalAfter;
-            if (normalAfter == Vector2.zero) normalAfter = normalBefore;
+            if (normalBefore == Vector2.zero)
+            {
+                normalBefore = normalAfter;
+            }
+
+            if (normalAfter == Vector2.zero)
+            {
+                normalAfter = normalBefore;
+            }
+
             float denominator = 1f + Vector2.Dot(normalBefore, normalAfter);
-            if (denominator < 1e-4f) return normalBefore * distance;
+            if (denominator < 1e-4f)
+            {
+                return normalBefore * distance;
+            }
+
             Vector2 miter = (normalBefore + normalAfter) * (distance / denominator);
             return Vector2.ClampMagnitude(miter, distance * LongestMiter);
         }
@@ -127,7 +182,9 @@ namespace SfxShowcase.Art
         static void AddCorner(List<Vector2> points, Vector2 center, float radius, float startDegrees, int segments)
         {
             for (int i = 0; i <= segments; i++)
+            {
                 points.Add(center + MeshBuilder.Direction(startDegrees + 90f * i / segments) * radius);
+            }
         }
 
         static float SignedArea(IReadOnlyList<Vector2> polygon)
@@ -139,6 +196,7 @@ namespace SfxShowcase.Art
                 Vector2 b = polygon[(i + 1) % polygon.Count];
                 twiceArea += a.x * b.y - b.x * a.y;
             }
+
             return twiceArea * 0.5f;
         }
     }

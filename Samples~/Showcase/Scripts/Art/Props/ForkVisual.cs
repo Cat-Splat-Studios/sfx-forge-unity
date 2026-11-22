@@ -9,16 +9,26 @@ namespace SfxShowcase.Art
     /// </summary>
     public sealed class ForkVisual : PropVisual
     {
-        [SerializeField, Tooltip("The Dormant Grey look, shown until the fork is struck. None for the Resonator, which is always lit.")]
+        [
+            SerializeField,
+            Tooltip(
+                "The Dormant Grey look, shown until the fork is struck. None for the Resonator, which is always lit."
+            )
+        ]
         GameObject unlitPart;
+
         [SerializeField, Tooltip("The Fork Green look.")]
         GameObject litPart;
+
         [SerializeField, Tooltip("How far the prongs shiver, as a fraction of the fork's width.")]
         float ringAmount = 0.12f;
+
         [SerializeField, Tooltip("Shivers per second.")]
         float ringFrequency = 9f;
+
         [SerializeField, Tooltip("How fast the ringing dies away, per second.")]
         float ringDamping = 2.5f;
+
         [SerializeField, Tooltip("Seconds the fork rings for.")]
         float ringSeconds = 1.6f;
 
@@ -62,12 +72,22 @@ namespace SfxShowcase.Art
                 enabled = false;
                 return;
             }
-            SetWidth(1f + ringAmount * Mathf.Exp(-ringDamping * sinceStruck) * Mathf.Sin(2f * Mathf.PI * ringFrequency * sinceStruck));
+
+            SetWidth(
+                1f
+                    + ringAmount
+                        * Mathf.Exp(-ringDamping * sinceStruck)
+                        * Mathf.Sin(2f * Mathf.PI * ringFrequency * sinceStruck)
+            );
         }
 
         void ShowLit(bool lit)
         {
-            if (unlitPart == null) return;
+            if (unlitPart == null)
+            {
+                return;
+            }
+
             unlitPart.SetActive(!lit);
             litPart.SetActive(lit);
         }

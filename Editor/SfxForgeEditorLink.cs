@@ -20,16 +20,35 @@ namespace CatSplat.SfxForge.Editor
             EditorApplication.update += SfxLink.Shared.Poll;
             AssemblyReloadEvents.beforeAssemblyReload += SfxLink.Shared.Close;
             EditorApplication.quitting += SfxLink.Shared.Close;
-            if (EditorPrefs.GetBool(ConnectedPref, false)) EditorApplication.delayCall += () => Connect(false);
+            if (EditorPrefs.GetBool(ConnectedPref, false))
+            {
+                EditorApplication.delayCall += () => Connect(false);
+            }
         }
 
-        public static string InputPort { get => PlayerPrefs.GetString(SfxForgeLink.InputPref, ""); set => PlayerPrefs.SetString(SfxForgeLink.InputPref, value ?? ""); }
-        public static string OutputPort { get => PlayerPrefs.GetString(SfxForgeLink.OutputPref, ""); set => PlayerPrefs.SetString(SfxForgeLink.OutputPref, value ?? ""); }
+        public static string InputPort
+        {
+            get => PlayerPrefs.GetString(SfxForgeLink.InputPref, "");
+            set => PlayerPrefs.SetString(SfxForgeLink.InputPref, value ?? "");
+        }
+
+        public static string OutputPort
+        {
+            get => PlayerPrefs.GetString(SfxForgeLink.OutputPref, "");
+            set => PlayerPrefs.SetString(SfxForgeLink.OutputPref, value ?? "");
+        }
 
         public static bool Connect(bool complain = true)
         {
             bool ok = SfxLink.Shared.Open(InputPort, OutputPort);
-            if (!ok && complain) Debug.LogWarning($"SFX Forge: could not open every MIDI port (in '{InputPort}', out '{OutputPort}'). Is another program holding it?");
+            if (!ok && complain)
+            {
+                Debug.LogWarning(
+                    $"SFX Forge: could not open every MIDI port (in '{InputPort}', out '{OutputPort}'). "
+                        + "Is another program holding it?"
+                );
+            }
+
             EditorPrefs.SetBool(ConnectedPref, SfxLink.Shared.IsOpen);
             return ok;
         }
@@ -44,7 +63,12 @@ namespace CatSplat.SfxForge.Editor
         public static void Preview(SfxPatch patch, float holdSeconds = 0.8f)
         {
             float[] samples = SfxNative.BakeInterleaved(patch, 48000, 1f, 0, 0f, holdSeconds);
-            if (samples == null || samples.Length == 0) { Debug.LogWarning("SFX Forge: the native library (sfxforge) is not available on this platform."); return; }
+            if (samples == null || samples.Length == 0)
+            {
+                Debug.LogWarning("SFX Forge: the native library (sfxforge) is not available on this platform.");
+                return;
+            }
+
             PreviewSamples(samples, 48000);
         }
 
@@ -52,23 +76,36 @@ namespace CatSplat.SfxForge.Editor
         /// Plays stereo samples (L R L R …) through the computer's speakers, in place of what the preview played.
         /// pitch and volume are the preview AudioSource's: 1 and 1 play the samples as they are.
         /// </summary>
-        public static void PreviewSamples(float[] interleaved, int sampleRate, float pitch = 1f, float volume = 1f)
-            => PreviewSamples(interleaved, sampleRate, 2, pitch, volume);
+        public static void PreviewSamples(float[] interleaved, int sampleRate, float pitch = 1f, float volume = 1f) =>
+            PreviewSamples(interleaved, sampleRate, 2, pitch, volume);
 
         /// <summary>As PreviewSamples, for samples of one channel or two.</summary>
         public static void PreviewSamples(float[] samples, int sampleRate, int channels, float pitch, float volume)
         {
-            if (channels < 1 || samples == null || samples.Length < channels) return;
+            if (channels < 1 || samples == null || samples.Length < channels)
+            {
+                return;
+            }
+
             if (preview == null)
             {
-                var go = EditorUtility.CreateGameObjectWithHideFlags("SFX Forge Preview", HideFlags.HideAndDontSave, typeof(AudioSource));
+                var go = EditorUtility.CreateGameObjectWithHideFlags(
+                    "SFX Forge Preview",
+                    HideFlags.HideAndDontSave,
+                    typeof(AudioSource)
+                );
                 preview = go.GetComponent<AudioSource>();
             }
+
             var clip = AudioClip.Create("SFX Forge Preview", samples.Length / channels, channels, sampleRate, false);
             clip.hideFlags = HideFlags.HideAndDontSave;
             clip.SetData(samples, 0);
             preview.Stop();
-            if (preview.clip != null) Object.DestroyImmediate(preview.clip);
+            if (preview.clip != null)
+            {
+                Object.DestroyImmediate(preview.clip);
+            }
+
             preview.clip = clip;
             preview.pitch = pitch;
             preview.volume = Mathf.Clamp01(volume);
@@ -78,12 +115,19 @@ namespace CatSplat.SfxForge.Editor
         /// <summary>Silence: what the preview plays stops.</summary>
         public static void StopPreview()
         {
-            if (preview != null) preview.Stop();
+            if (preview != null)
+            {
+                preview.Stop();
+            }
         }
 
         public static SfxPreset CreatePreset(SfxPatch patch, string folder, string name)
         {
-            if (string.IsNullOrEmpty(folder) || !folder.StartsWith("Assets")) folder = "Assets/SfxForge";
+            if (string.IsNullOrEmpty(folder) || !folder.StartsWith("Assets"))
+            {
+                folder = "Assets/SfxForge";
+            }
+
             Directory.CreateDirectory(folder);
             AssetDatabase.Refresh();
             var asset = ScriptableObject.CreateInstance<SfxPreset>();
@@ -95,7 +139,11 @@ namespace CatSplat.SfxForge.Editor
 
         public static SfxSong CreateSong(SfxPatch[] sounds, byte[] packedSong, string folder, string name)
         {
-            if (string.IsNullOrEmpty(folder) || !folder.StartsWith("Assets")) folder = "Assets/SfxForge";
+            if (string.IsNullOrEmpty(folder) || !folder.StartsWith("Assets"))
+            {
+                folder = "Assets/SfxForge";
+            }
+
             Directory.CreateDirectory(folder);
             AssetDatabase.Refresh();
             var asset = ScriptableObject.CreateInstance<SfxSong>();
@@ -105,51 +153,90 @@ namespace CatSplat.SfxForge.Editor
             return asset;
         }
 
-        /// <summary>The preset as a 16-bit WAV next to its asset (48 kHz, stereo, as designed); returns the imported clip.</summary>
+        /// <summary>
+        /// The preset as a 16-bit WAV next to its asset (48 kHz, stereo, as designed); returns the imported clip.
+        /// </summary>
         public static AudioClip BakeWav(SfxPreset preset) => BakeWav(preset, null);
 
         /// <summary>
-        /// The preset as a 16-bit WAV, rendered with these options (null: the defaults). path null: next to its asset, under
-        /// its name. Returns the imported clip; null where the native library is missing, the options are out of range or
-        /// the engine gave no sound - the Console says which.
+        /// The preset as a 16-bit WAV, rendered with these options (null: the defaults). path null: next to its asset,
+        /// under its name. Returns the imported clip; null where the native library is missing, the options are out of
+        /// range or the engine gave no sound - the Console says which.
         /// </summary>
         public static AudioClip BakeWav(SfxPreset preset, SfxBakeOptions options, string path = null)
         {
-            if (preset == null) return null;
-            if (options == null) options = new SfxBakeOptions();
+            if (preset == null)
+            {
+                return null;
+            }
+
+            if (options == null)
+            {
+                options = new SfxBakeOptions();
+            }
+
             string problem = options.Problem();
-            if (problem != null) { Debug.LogWarning("SFX Forge: nothing baked - " + problem + "."); return null; }
+            if (problem != null)
+            {
+                Debug.LogWarning("SFX Forge: nothing baked - " + problem + ".");
+                return null;
+            }
+
             SfxBaked baked = SfxBake.Render(preset.patch, preset.holdSeconds, options);
             if (baked == null || baked.samples.Length == 0)
             {
-                Debug.LogWarning(SfxNative.Available ? "SFX Forge: nothing baked - the engine did not render '" + preset.name + "'." : "SFX Forge: nothing to bake (the native library is missing on this platform).", preset);
+                Debug.LogWarning(
+                    SfxNative.Available
+                        ? "SFX Forge: nothing baked - the engine did not render '" + preset.name + "'."
+                        : "SFX Forge: nothing to bake (the native library is missing on this platform).",
+                    preset
+                );
                 return null;
             }
+
             if (string.IsNullOrEmpty(path))
             {
                 string asset = AssetDatabase.GetAssetPath(preset);
                 path = string.IsNullOrEmpty(asset) ? $"Assets/{preset.name}.wav" : Path.ChangeExtension(asset, ".wav");
             }
+
             SfxWav.Write(path, baked.samples, baked.sampleRate, baked.channels);
             AssetDatabase.ImportAsset(path);
             return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
         }
 
-        /// <summary>The patch as a .syx file: the load message for a pad (SfxPatchText.ToSyx). Any path, also outside the project.</summary>
-        public static void ExportSyx(SfxPatch patch, int pad, string path) => File.WriteAllBytes(path, SfxPatchText.ToSyx(patch, pad));
+        /// <summary>
+        /// The patch as a .syx file: the load message for a pad (SfxPatchText.ToSyx). Any path, also
+        /// outside the project.
+        /// </summary>
+        public static void ExportSyx(SfxPatch patch, int pad, string path) =>
+            File.WriteAllBytes(path, SfxPatchText.ToSyx(patch, pad));
 
         /// <summary>Reads a .syx file (SfxPatchText.ParseSyx). A file that cannot be read: NoPatchInFile.</summary>
         public static SfxTextResult ImportSyx(string path, out SfxPatch patch, out int pad)
         {
-            patch = default; pad = 0;
+            patch = default;
+            pad = 0;
             byte[] file;
             try
             {
-                if (string.IsNullOrEmpty(path) || !File.Exists(path)) return SfxTextResult.NoPatchInFile;
-                if (new FileInfo(path).Length > SfxPatchText.MaxFile) return SfxTextResult.TooLarge;
+                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                {
+                    return SfxTextResult.NoPatchInFile;
+                }
+
+                if (new FileInfo(path).Length > SfxPatchText.MaxFile)
+                {
+                    return SfxTextResult.TooLarge;
+                }
+
                 file = File.ReadAllBytes(path);
             }
-            catch (System.Exception) { return SfxTextResult.NoPatchInFile; }
+            catch (System.Exception)
+            {
+                return SfxTextResult.NoPatchInFile;
+            }
+
             return SfxPatchText.ParseSyx(file, out patch, out pad);
         }
     }

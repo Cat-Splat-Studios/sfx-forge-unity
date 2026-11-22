@@ -22,7 +22,14 @@ namespace SfxShowcase.Art
         {
             var brio = new GameObject("Brio");
 
-            GameObject trail = kit.CreatePart("Trail", null, DepthLayer.Character, TrailOrder, brio.transform, transparent: true);
+            GameObject trail = kit.CreatePart(
+                "Trail",
+                null,
+                DepthLayer.Character,
+                TrailOrder,
+                brio.transform,
+                transparent: true
+            );
             trail.AddComponent<CharacterTrail>().Configure(player);
 
             Transform pose = NewGroup("Pose", brio.transform);
@@ -35,7 +42,14 @@ namespace SfxShowcase.Art
             Transform footBlur = Part(kit, "Foot Blur", FootBlurMesh, InFrontOfBody, standing, Vector2.zero);
 
             Transform tucked = NewGroup("Tucked", pose);
-            Transform halo = kit.CreatePart("Charge Halo", kit.SharedMesh("Brio Charge Halo", HaloMesh), DepthLayer.Character, BehindBody, tucked, transparent: true).transform;
+            Transform halo = kit.CreatePart(
+                "Charge Halo",
+                kit.SharedMesh("Brio Charge Halo", HaloMesh),
+                DepthLayer.Character,
+                BehindBody,
+                tucked,
+                transparent: true
+            ).transform;
             Transform ball = Part(kit, "Ball", BallMesh, 0, tucked, Vector2.zero);
 
             var visual = brio.AddComponent<CharacterVisual>();
@@ -52,19 +66,36 @@ namespace SfxShowcase.Art
             return group;
         }
 
-        static Transform Part(ArtKit kit, string name, System.Func<Mesh> mesh, int order, Transform parent, Vector2 position)
+        static Transform Part(
+            ArtKit kit,
+            string name,
+            System.Func<Mesh> mesh,
+            int order,
+            Transform parent,
+            Vector2 position
+        )
         {
-            Transform part = kit.CreatePart(name, kit.SharedMesh("Brio " + name, mesh), DepthLayer.Character, order, parent).transform;
+            Transform part = kit.CreatePart(
+                name,
+                kit.SharedMesh("Brio " + name, mesh),
+                DepthLayer.Character,
+                order,
+                parent
+            ).transform;
             part.localPosition = position;
             return part;
         }
 
         static Mesh BodyMesh()
         {
-            return new InkedShape().Add(Shapes.Ellipse(Vector2.zero, BodyRadius, BodyRadius), Palette.BrioYellow).ToMesh("Brio Body");
+            return new InkedShape()
+                .Add(Shapes.Ellipse(Vector2.zero, BodyRadius, BodyRadius), Palette.BrioYellow)
+                .ToMesh("Brio Body");
         }
 
-        /// <summary>The crest: a leaf standing on the head. Its origin is its round root, so it leans about that.</summary>
+        /// <summary>
+        /// The crest: a leaf standing on the head. Its origin is its round root, so it leans about that.
+        /// </summary>
         static Mesh CrestMesh()
         {
             return new InkedShape().Add(Shapes.Teardrop(0.6f, 0.15f), Palette.EmberOrange).ToMesh("Brio Crest");
@@ -81,7 +112,9 @@ namespace SfxShowcase.Art
 
         static Mesh FootMesh()
         {
-            return new InkedShape().Add(Shapes.Ellipse(Vector2.zero, 0.17f, 0.09f, 16), Palette.EmberOrange).ToMesh("Brio Foot");
+            return new InkedShape()
+                .Add(Shapes.Ellipse(Vector2.zero, 0.17f, 0.09f, 16), Palette.EmberOrange)
+                .ToMesh("Brio Foot");
         }
 
         /// <summary>What the feet become at top speed: one flattened oval ring where they were cycling.</summary>
@@ -95,30 +128,57 @@ namespace SfxShowcase.Art
                 int next = (i + 1) % outer.Count;
                 shape.Add(new[] { inner[i], outer[i], outer[next], inner[next] }, Palette.EmberOrange);
             }
+
             return shape.ToMesh("Brio Foot Blur");
         }
 
-        /// <summary>Brio tucked: the circle with one stripe across it, off-centre, so every turn of the ball is visible.</summary>
+        /// <summary>
+        /// Brio tucked: the circle with one stripe across it, off-centre, so every turn of the ball is visible.
+        /// </summary>
         static Mesh BallMesh()
         {
-            const float stripeLowDegrees = 11.5f, stripeHighDegrees = 39.8f;
+            const float stripeLowDegrees = 11.5f;
+            const float stripeHighDegrees = 39.8f;
             const int arcSteps = 6;
             var stripe = new List<Vector2>();
             for (int i = 0; i <= arcSteps; i++)
-                stripe.Add(MeshBuilder.Direction(Mathf.Lerp(stripeLowDegrees, stripeHighDegrees, i / (float)arcSteps)) * BodyRadius);
+            {
+                stripe.Add(
+                    MeshBuilder.Direction(Mathf.Lerp(stripeLowDegrees, stripeHighDegrees, i / (float)arcSteps))
+                        * BodyRadius
+                );
+            }
+
             for (int i = 0; i <= arcSteps; i++)
-                stripe.Add(MeshBuilder.Direction(Mathf.Lerp(180f - stripeHighDegrees, 180f - stripeLowDegrees, i / (float)arcSteps)) * BodyRadius);
+            {
+                stripe.Add(
+                    MeshBuilder.Direction(
+                        Mathf.Lerp(180f - stripeHighDegrees, 180f - stripeLowDegrees, i / (float)arcSteps)
+                    ) * BodyRadius
+                );
+            }
+
             return new InkedShape()
                 .Add(Shapes.Ellipse(Vector2.zero, BodyRadius, BodyRadius), Palette.BrioYellow)
                 .AddDetail(stripe, Palette.EmberOrange)
                 .ToMesh("Brio Ball");
         }
 
-        /// <summary>The ring that swells round Brio while a Wind-Up charges. Translucent: transparent material.</summary>
+        /// <summary>
+        /// The ring that swells round Brio while a Wind-Up charges. Translucent: transparent material.
+        /// </summary>
         static Mesh HaloMesh()
         {
             var builder = new MeshBuilder();
-            builder.AddArc(Vector2.zero, 0.6f, 0.72f, 0f, 360f, ArtStyle.CircleSegments, Palette.WithAlpha(Palette.BrioYellow, 0.45f));
+            builder.AddArc(
+                Vector2.zero,
+                0.6f,
+                0.72f,
+                0f,
+                360f,
+                ArtStyle.CircleSegments,
+                Palette.WithAlpha(Palette.BrioYellow, 0.45f)
+            );
             return builder.ToMesh("Brio Charge Halo");
         }
     }

@@ -1,5 +1,5 @@
-using UnityEngine;
 using SfxShowcase.Core;
+using UnityEngine;
 
 namespace SfxShowcase.Gameplay
 {
@@ -24,26 +24,34 @@ namespace SfxShowcase.Gameplay
     [DisallowMultipleComponent]
     public sealed class PlayerController : PlayerBase
     {
-        /// <summary>Slower than this counts as standing still (for standing firm on a slope and for which way to face).</summary>
+        /// <summary>
+        /// Slower than this counts as standing still (for standing firm on a slope and for which way to face).
+        /// </summary>
         const float StandstillSpeed = 0.05f;
 
         [Tooltip("Every number that shapes the movement.")]
-        [SerializeField] PlayerTuning tuning = new PlayerTuning();
+        [SerializeField]
+        PlayerTuning tuning = new PlayerTuning();
 
         [Tooltip("The art kit: used for the dust, the Burst puff and the scattered Chimes.")]
-        [SerializeField] ArtKitBase art;
+        [SerializeField]
+        ArtKitBase art;
 
         [Tooltip("The level: where a run starts and how deep a pit is.")]
-        [SerializeField] LevelDescriptor level;
+        [SerializeField]
+        LevelDescriptor level;
 
         [Tooltip("The run: it holds the Chime count and says whether the game is being played.")]
-        [SerializeField] GameSession session;
+        [SerializeField]
+        GameSession session;
 
         [Tooltip("The kinematic body that carries the player through the physics world, so triggers fire.")]
-        [SerializeField] Rigidbody2D body;
+        [SerializeField]
+        Rigidbody2D body;
 
         [Tooltip("The trigger circle the level's pieces touch; its radius follows the Tuck.")]
-        [SerializeField] CircleCollider2D touchCollider;
+        [SerializeField]
+        CircleCollider2D touchCollider;
 
         // The simulated state. The position is the centre of the collision circle.
         Vector2 position;
@@ -90,40 +98,59 @@ namespace SfxShowcase.Gameplay
 
         /// <inheritdoc/>
         public override Vector2 Position => transform.position;
+
         /// <inheritdoc/>
         public override Vector2 Velocity => velocity;
+
         /// <inheritdoc/>
         public override float GroundSpeed => grounded ? groundSpeed : 0f;
+
         /// <inheritdoc/>
         public override float TopSpeed => tuning.topSpeed;
+
         /// <inheritdoc/>
         public override bool IsGrounded => grounded;
+
         /// <inheritdoc/>
-        public override float GroundAngle => grounded ? Mathf.Atan2(-groundNormal.x, groundNormal.y) * Mathf.Rad2Deg : 0f;
+        public override float GroundAngle =>
+            grounded ? Mathf.Atan2(-groundNormal.x, groundNormal.y) * Mathf.Rad2Deg : 0f;
+
         /// <inheritdoc/>
         public override bool IsRolling => tucked;
+
         /// <inheritdoc/>
         public override bool IsCharging => charging;
+
         /// <inheritdoc/>
         public override float Charge01 => charging ? charge : 0f;
+
         /// <inheritdoc/>
         public override int Facing => facing;
+
         /// <inheritdoc/>
         public override bool IsAttacking => tucked || charging;
+
         /// <inheritdoc/>
         public override bool IsInvulnerable => invulnerableTimer > 0f || respawnTimer > 0f;
+
         /// <inheritdoc/>
         public override bool HasControl => controlGranted && !finished && respawnTimer <= 0f;
+
         /// <inheritdoc/>
         public override TerrainPlane Plane => plane;
 
         /// <summary>The numbers that shape the movement.</summary>
         public PlayerTuning Tuning => tuning;
 
-        /// <summary>Where the controls are read from: <see cref="PlayerBase.InputOverride"/> when set, otherwise the keyboard and gamepad.</summary>
+        /// <summary>
+        /// Where the controls are read from: <see cref="PlayerBase.InputOverride"/> when set, otherwise the
+        /// keyboard and gamepad.
+        /// </summary>
         public IPlayerInput ActiveInput => InputOverride ?? deviceInput;
 
-        /// <summary>The direction of positive ground speed: the ground normal turned a quarter clockwise (+x on flat ground).</summary>
+        /// <summary>
+        /// The direction of positive ground speed: the ground normal turned a quarter clockwise (+x on flat ground).
+        /// </summary>
         Vector2 Tangent => new Vector2(groundNormal.y, -groundNormal.x);
 
         /// <summary>Input acts on the character: in control, and not flying back from a hit.</summary>
@@ -134,9 +161,17 @@ namespace SfxShowcase.Gameplay
 
         // ---- Setup -----------------------------------------------------------------------------------------------
 
-        /// <summary>Connects the player to what it needs; called once by <see cref="GameplayInstaller"/> while the scene is built.</summary>
-        public void Wire(ArtKitBase artKit, LevelDescriptor levelDescriptor, GameSession gameSession,
-                         Rigidbody2D kinematicBody, CircleCollider2D triggerCollider)
+        /// <summary>
+        /// Connects the player to what it needs; called once by <see cref="GameplayInstaller"/> while
+        /// the scene is built.
+        /// </summary>
+        public void Wire(
+            ArtKitBase artKit,
+            LevelDescriptor levelDescriptor,
+            GameSession gameSession,
+            Rigidbody2D kinematicBody,
+            CircleCollider2D triggerCollider
+        )
         {
             art = artKit;
             level = levelDescriptor;
@@ -145,7 +180,10 @@ namespace SfxShowcase.Gameplay
             touchCollider = triggerCollider;
         }
 
-        /// <summary>Gives or takes the controls; the session calls this when the run starts. A Jump already held is not a new press.</summary>
+        /// <summary>
+        /// Gives or takes the controls; the session calls this when the run starts. A Jump already held is
+        /// not a new press.
+        /// </summary>
         public void SetControl(bool granted)
         {
             controlGranted = granted;
@@ -188,30 +226,46 @@ namespace SfxShowcase.Gameplay
             if (respawnTimer > 0f)
             {
                 respawnTimer -= deltaTime;
-                if (respawnTimer <= 0f) CompleteRespawn();
+                if (respawnTimer <= 0f)
+                {
+                    CompleteRespawn();
+                }
+
                 return;
             }
 
             invulnerableTimer = Mathf.Max(0f, invulnerableTimer - deltaTime);
-            if (grounded) controlLockTimer = Mathf.Max(0f, controlLockTimer - deltaTime);
+            if (grounded)
+            {
+                controlLockTimer = Mathf.Max(0f, controlLockTimer - deltaTime);
+            }
 
             HandleActions(deltaTime);
             Simulate(deltaTime);
             CountFootsteps(deltaTime);
 
-            if (position.y < level.KillY) BeginRespawn();
+            if (position.y < level.KillY)
+            {
+                BeginRespawn();
+            }
+
             body.MovePosition(position);
         }
 
         /// <summary>
-        /// Samples the controls. Called every rendered frame as well as every fixed step, so a quick tap of Jump between
-        /// two fixed steps is not lost: the press is latched here and consumed by <see cref="ConsumeJumpPress"/>.
+        /// Samples the controls. Called every rendered frame as well as every fixed step, so a quick tap of Jump
+        /// between two fixed steps is not lost: the press is latched here and consumed by
+        /// <see cref="ConsumeJumpPress"/>.
         /// </summary>
         void ReadInput()
         {
             IPlayerInput input = ActiveInput;
             bool held = input.JumpHeld;
-            if (held && !previousJumpHeld && HasControl) jumpPressLatched = true;
+            if (held && !previousJumpHeld && HasControl)
+            {
+                jumpPressLatched = true;
+            }
+
             previousJumpHeld = held;
             jumpHeld = held;
             downHeld = input.Down;
@@ -238,8 +292,14 @@ namespace SfxShowcase.Gameplay
             float stepTime = deltaTime / steps;
             for (int i = 0; i < steps; i++)
             {
-                if (grounded) GroundStep(stepTime);
-                else AirStep(stepTime);
+                if (grounded)
+                {
+                    GroundStep(stepTime);
+                }
+                else
+                {
+                    AirStep(stepTime);
+                }
             }
         }
 
@@ -254,13 +314,27 @@ namespace SfxShowcase.Gameplay
                 CancelWindUp();
                 return;
             }
-            if (!grounded) return;
+
+            if (!grounded)
+            {
+                return;
+            }
 
             if (charging)
             {
-                if (!downHeld) ReleaseBurst();
-                else if (jumpPressed) AddCharge();
-                else charge *= Mathf.Exp(-tuning.windUpLeak * deltaTime);
+                if (!downHeld)
+                {
+                    ReleaseBurst();
+                }
+                else if (jumpPressed)
+                {
+                    AddCharge();
+                }
+                else
+                {
+                    charge *= Mathf.Exp(-tuning.windUpLeak * deltaTime);
+                }
+
                 return;
             }
 
@@ -271,12 +345,24 @@ namespace SfxShowcase.Gameplay
                 charge = 0f;
                 AddCharge();
             }
-            else if (jumpPressed) Jump();
-            else if (!tucked && downHeld && speed >= tuning.tuckStartSpeed) StartTuck();
-            else if (tucked && speed < tuning.tuckEndSpeed) EndTuck();
+            else if (jumpPressed)
+            {
+                Jump();
+            }
+            else if (!tucked && downHeld && speed >= tuning.tuckStartSpeed)
+            {
+                StartTuck();
+            }
+            else if (tucked && speed < tuning.tuckEndSpeed)
+            {
+                EndTuck();
+            }
         }
 
-        /// <summary>Leaves the ground along the surface normal, keeping the speed along the ground: a slope throws the jump with it.</summary>
+        /// <summary>
+        /// Leaves the ground along the surface normal, keeping the speed along the ground: a slope throws
+        /// the jump with it.
+        /// </summary>
         void Jump()
         {
             Vector2 launch = Tangent * groundSpeed + groundNormal * tuning.JumpSpeed;
@@ -288,6 +374,7 @@ namespace SfxShowcase.Gameplay
                 tucked = true;
                 SetRadius(tuning.tuckedRadius);
             }
+
             GameEvents.RaiseJumped();
         }
 
@@ -310,7 +397,9 @@ namespace SfxShowcase.Gameplay
             GameEvents.RaiseWindUpCharged(charge);
         }
 
-        /// <summary>Lets the Wind-Up go: the player shoots off tucked, the way it faces, as fast as the charge allows.</summary>
+        /// <summary>
+        /// Lets the Wind-Up go: the player shoots off tucked, the way it faces, as fast as the charge allows.
+        /// </summary>
         void ReleaseBurst()
         {
             float released = charge;
@@ -330,14 +419,20 @@ namespace SfxShowcase.Gameplay
 
         // ---- On the ground ---------------------------------------------------------------------------------------
 
-        /// <summary>One piece of ground movement: change the ground speed, stop at walls, move along the surface, follow it.</summary>
+        /// <summary>
+        /// One piece of ground movement: change the ground speed, stop at walls, move along the surface, follow it.
+        /// </summary>
         void GroundStep(float deltaTime)
         {
             Vector2 tangent = Tangent;
             ApplyGroundForces(deltaTime, tangent);
 
             float move = groundSpeed * deltaTime;
-            if (move != 0f) move = StopAtWall(tangent, move);
+            if (move != 0f)
+            {
+                move = StopAtWall(tangent, move);
+            }
+
             position += tangent * move;
 
             FollowGround(tangent);
@@ -355,6 +450,7 @@ namespace SfxShowcase.Gameplay
                 groundSpeed = 0f;
                 return;
             }
+
             if (finished)
             {
                 groundSpeed = Mathf.MoveTowards(groundSpeed, 0f, finishBraking * deltaTime);
@@ -365,24 +461,40 @@ namespace SfxShowcase.Gameplay
 
             bool inputIgnored = !CanAct || controlLockTimer > 0f || IsCrouching;
             float move = inputIgnored ? 0f : moveInput;
-            if (tucked) ApplyTuckedControl(move, deltaTime);
-            else ApplyRunningControl(move, deltaTime, IsSteeperThanStandFirm(tangent));
+            if (tucked)
+            {
+                ApplyTuckedControl(move, deltaTime);
+            }
+            else
+            {
+                ApplyRunningControl(move, deltaTime, IsSteeperThanStandFirm(tangent));
+            }
 
             groundSpeed = Mathf.Clamp(groundSpeed, -tuning.topSpeed, tuning.topSpeed);
 
-            if (Mathf.Abs(groundSpeed) > StandstillSpeed) facing = groundSpeed > 0f ? 1 : -1;
-            else if (CanAct && moveInput != 0f) facing = moveInput > 0f ? 1 : -1;
+            if (Mathf.Abs(groundSpeed) > StandstillSpeed)
+            {
+                facing = groundSpeed > 0f ? 1 : -1;
+            }
+            else if (CanAct && moveInput != 0f)
+            {
+                facing = moveInput > 0f ? 1 : -1;
+            }
         }
 
         /// <summary>
-        /// The slope factor: gravity felt along the ground. The tangent's y is the sine of the slope in the direction of
-        /// positive ground speed, so going uphill loses speed and going downhill gains it. Tucked, the factor is larger.
+        /// The slope factor: gravity felt along the ground. The tangent's y is the sine of the slope in the
+        /// direction of positive ground speed, so going uphill loses speed and going downhill gains it. Tucked, the
+        /// factor is larger.
         /// </summary>
         void ApplySlope(float deltaTime, Vector2 tangent)
         {
             float slopeSine = tangent.y;
             bool standsFirm = !tucked && Mathf.Abs(groundSpeed) < StandstillSpeed && !IsSteeperThanStandFirm(tangent);
-            if (standsFirm) return;
+            if (standsFirm)
+            {
+                return;
+            }
 
             float factor = tuning.slopeFactorRunning;
             if (tucked)
@@ -390,6 +502,7 @@ namespace SfxShowcase.Gameplay
                 bool uphill = groundSpeed * slopeSine > 0f;
                 factor = uphill ? tuning.slopeFactorTuckedUphill : tuning.slopeFactorTuckedDownhill;
             }
+
             groundSpeed -= factor * slopeSine * deltaTime;
         }
 
@@ -418,32 +531,48 @@ namespace SfxShowcase.Gameplay
                     GameEvents.RaiseSkidded();
                     art.SpawnEffect(EffectKind.Dust, FeetPosition());
                 }
+
                 float before = groundSpeed;
                 groundSpeed += move * tuning.braking * deltaTime;
-                if (before * groundSpeed < 0f) groundSpeed = 0f;
+                if (before * groundSpeed < 0f)
+                {
+                    groundSpeed = 0f;
+                }
+
                 return;
             }
 
             skidding = false;
             if (move == 0f)
             {
-                if (!slopeCarries) groundSpeed = Mathf.MoveTowards(groundSpeed, 0f, tuning.friction * deltaTime);
+                if (!slopeCarries)
+                {
+                    groundSpeed = Mathf.MoveTowards(groundSpeed, 0f, tuning.friction * deltaTime);
+                }
+
                 return;
             }
 
             // Holding forward builds speed up to cruise. Speed above cruise was earned elsewhere and only leaks away.
             float speed = Mathf.Abs(groundSpeed);
-            speed = speed < tuning.cruiseSpeed
-                ? Mathf.Min(speed + tuning.acceleration * deltaTime, tuning.cruiseSpeed)
-                : Mathf.Max(speed - tuning.overCruiseDrag * deltaTime, tuning.cruiseSpeed);
+            speed =
+                speed < tuning.cruiseSpeed
+                    ? Mathf.Min(speed + tuning.acceleration * deltaTime, tuning.cruiseSpeed)
+                    : Mathf.Max(speed - tuning.overCruiseDrag * deltaTime, tuning.cruiseSpeed);
             groundSpeed = move * speed;
         }
 
-        /// <summary>Tucked: the stick cannot add speed, only brake a little; low friction lets the roll carry.</summary>
+        /// <summary>
+        /// Tucked: the stick cannot add speed, only brake a little; low friction lets the roll carry.
+        /// </summary>
         void ApplyTuckedControl(float move, float deltaTime)
         {
             bool braking = move != 0f && move * groundSpeed < 0f;
-            if (braking) groundSpeed = Mathf.MoveTowards(groundSpeed, 0f, tuning.tuckBraking * deltaTime);
+            if (braking)
+            {
+                groundSpeed = Mathf.MoveTowards(groundSpeed, 0f, tuning.tuckBraking * deltaTime);
+            }
+
             groundSpeed = Mathf.MoveTowards(groundSpeed, 0f, tuning.tuckFriction * deltaTime);
         }
 
@@ -455,20 +584,26 @@ namespace SfxShowcase.Gameplay
         {
             float direction = Mathf.Sign(move);
             float distance = Mathf.Abs(move);
-            if (!sensor.CastSolid(position, tangent * direction, radius + distance, plane, out SensorHit wall)) return move;
+            if (!sensor.CastSolid(position, tangent * direction, radius + distance, plane, out SensorHit wall))
+            {
+                return move;
+            }
 
             bool isWall = Vector2.Dot(wall.Normal, groundNormal) < Mathf.Cos(tuning.wallAngle * Mathf.Deg2Rad);
-            if (!isWall) return move;
+            if (!isWall)
+            {
+                return move;
+            }
 
             groundSpeed = 0f;
             return direction * Mathf.Min(distance, wall.Distance - radius);
         }
 
         /// <summary>
-        /// The two floor sensors: rays from just behind and just ahead of the centre, pointing into the ground whichever
-        /// way it faces. Where both find the same stretch of ground, the line between the two points is the new ground
-        /// direction, which turns the player smoothly over corners and round loops. Where they disagree (a ledge, a
-        /// step) the nearer one wins. Where neither finds anything, the ground has ended.
+        /// The two floor sensors: rays from just behind and just ahead of the centre, pointing into the ground
+        /// whichever way it faces. Where both find the same stretch of ground, the line between the two points is the
+        /// new ground direction, which turns the player smoothly over corners and round loops. Where they disagree (a
+        /// ledge, a step) the nearer one wins. Where neither finds anything, the ground has ended.
         /// </summary>
         void FollowGround(Vector2 tangent)
         {
@@ -478,8 +613,24 @@ namespace SfxShowcase.Gameplay
             Vector2 intoGround = -groundNormal;
             Vector2 spread = tangent * tuning.footSpread;
 
-            bool backFound = sensor.CastFloor(position - spread, intoGround, reach, plane, standingSurface, oneWayMinimum, out SensorHit back);
-            bool frontFound = sensor.CastFloor(position + spread, intoGround, reach, plane, standingSurface, oneWayMinimum, out SensorHit front);
+            bool backFound = sensor.CastFloor(
+                position - spread,
+                intoGround,
+                reach,
+                plane,
+                standingSurface,
+                oneWayMinimum,
+                out SensorHit back
+            );
+            bool frontFound = sensor.CastFloor(
+                position + spread,
+                intoGround,
+                reach,
+                plane,
+                standingSurface,
+                oneWayMinimum,
+                out SensorHit front
+            );
             if (!backFound && !frontFound)
             {
                 LeaveGround();
@@ -501,7 +652,10 @@ namespace SfxShowcase.Gameplay
             SensorHit nearest = !frontFound || (backFound && back.Distance <= front.Distance) ? back : front;
             position += groundNormal * (radius - nearest.Distance);
             standingSurface = nearest.Surface;
-            if (Vector2.Dot(nearest.Normal, groundNormal) >= followDot) groundNormal = nearest.Normal;
+            if (Vector2.Dot(nearest.Normal, groundNormal) >= followDot)
+            {
+                groundNormal = nearest.Normal;
+            }
         }
 
         /// <summary>
@@ -510,17 +664,33 @@ namespace SfxShowcase.Gameplay
         /// </summary>
         void LoseGripIfTooSlow()
         {
-            if (Mathf.Abs(groundSpeed) >= tuning.slipSpeed) return;
-            if (groundNormal.y >= Mathf.Cos(tuning.slipAngle * Mathf.Deg2Rad)) return;
+            if (Mathf.Abs(groundSpeed) >= tuning.slipSpeed)
+            {
+                return;
+            }
+
+            if (groundNormal.y >= Mathf.Cos(tuning.slipAngle * Mathf.Deg2Rad))
+            {
+                return;
+            }
 
             controlLockTimer = tuning.slipControlLock;
-            if (groundNormal.y < Mathf.Cos(tuning.detachAngle * Mathf.Deg2Rad)) LeaveGround();
+            if (groundNormal.y < Mathf.Cos(tuning.detachAngle * Mathf.Deg2Rad))
+            {
+                LeaveGround();
+            }
         }
 
-        /// <summary>The ground is gone (a ledge, a jump, a hit, a lost grip): ground speed becomes a velocity along the tangent.</summary>
+        /// <summary>
+        /// The ground is gone (a ledge, a jump, a hit, a lost grip): ground speed becomes a velocity along the tangent.
+        /// </summary>
         void LeaveGround()
         {
-            if (!grounded) return;
+            if (!grounded)
+            {
+                return;
+            }
+
             velocity = Tangent * groundSpeed;
             grounded = false;
             groundSpeed = 0f;
@@ -532,14 +702,20 @@ namespace SfxShowcase.Gameplay
 
         // ---- In the air ------------------------------------------------------------------------------------------
 
-        /// <summary>One piece of air movement: steer, fall, move, then let the sensors land the player or slide it along what it touches.</summary>
+        /// <summary>
+        /// One piece of air movement: steer, fall, move, then let the sensors land the player or slide it along
+        /// what it touches.
+        /// </summary>
         void AirStep(float deltaTime)
         {
             ApplyAirForces(deltaTime);
             position += velocity * deltaTime;
 
             SenseFloorInAir();
-            if (grounded) return;
+            if (grounded)
+            {
+                return;
+            }
 
             SlideAlong(position, Vector2.right, true);
             SlideAlong(position, Vector2.left, true);
@@ -555,14 +731,27 @@ namespace SfxShowcase.Gameplay
             {
                 // Steering never pushes past cruise speed, but it does not take away speed earned on the ground either.
                 if (move * velocity.x < tuning.cruiseSpeed)
-                    velocity.x = Mathf.MoveTowards(velocity.x, move * tuning.cruiseSpeed, tuning.airAcceleration * deltaTime);
+                {
+                    velocity.x = Mathf.MoveTowards(
+                        velocity.x,
+                        move * tuning.cruiseSpeed,
+                        tuning.airAcceleration * deltaTime
+                    );
+                }
+
                 facing = move > 0f ? 1 : -1;
             }
 
-            if (jumping && !jumpHeld && velocity.y > tuning.jumpCutSpeed) velocity.y = tuning.jumpCutSpeed;
+            if (jumping && !jumpHeld && velocity.y > tuning.jumpCutSpeed)
+            {
+                velocity.y = tuning.jumpCutSpeed;
+            }
 
             bool nearTopOfRise = velocity.y > 0f && velocity.y < tuning.airDragMaxRiseSpeed;
-            if (nearTopOfRise) velocity.x *= Mathf.Exp(-tuning.airDrag * deltaTime);
+            if (nearTopOfRise)
+            {
+                velocity.x *= Mathf.Exp(-tuning.airDrag * deltaTime);
+            }
 
             velocity.y = Mathf.Max(velocity.y - tuning.gravity * deltaTime, -tuning.maxFallSpeed);
         }
@@ -577,35 +766,76 @@ namespace SfxShowcase.Gameplay
             float oneWayMinimum = radius - tuning.oneWayTolerance;
             Vector2 spread = Vector2.right * tuning.footSpread;
 
-            bool leftFound = sensor.CastFloor(position - spread, Vector2.down, reach, plane, null, oneWayMinimum, out SensorHit left);
-            bool rightFound = sensor.CastFloor(position + spread, Vector2.down, reach, plane, null, oneWayMinimum, out SensorHit right);
+            bool leftFound = sensor.CastFloor(
+                position - spread,
+                Vector2.down,
+                reach,
+                plane,
+                null,
+                oneWayMinimum,
+                out SensorHit left
+            );
+            bool rightFound = sensor.CastFloor(
+                position + spread,
+                Vector2.down,
+                reach,
+                plane,
+                null,
+                oneWayMinimum,
+                out SensorHit right
+            );
             bool leftTouches = leftFound && Touches(left);
             bool rightTouches = rightFound && Touches(right);
-            if (!leftTouches && !rightTouches) return;
+            if (!leftTouches && !rightTouches)
+            {
+                return;
+            }
 
             SensorHit touched = !rightTouches || (leftTouches && Clearance(left) <= Clearance(right)) ? left : right;
             bool landable = touched.Normal.y >= Mathf.Cos(tuning.maxLandingAngle * Mathf.Deg2Rad);
-            if (landable) Land(touched);
-            else PushOutAndSlide(touched);
+            if (landable)
+            {
+                Land(touched);
+            }
+            else
+            {
+                PushOutAndSlide(touched);
+            }
         }
 
-        /// <summary>The distance from the centre to the surface of a hit, measured along the surface's normal.</summary>
+        /// <summary>
+        /// The distance from the centre to the surface of a hit, measured along the surface's normal.
+        /// </summary>
         float Clearance(SensorHit hit) => Vector2.Dot(position - hit.Point, hit.Normal);
 
-        /// <summary>Whether the collision circle reaches the surface of a hit while moving into it (not away from it).</summary>
+        /// <summary>
+        /// Whether the collision circle reaches the surface of a hit while moving into it (not away from it).
+        /// </summary>
         bool Touches(SensorHit hit) => Clearance(hit) <= radius && Vector2.Dot(velocity, hit.Normal) <= 0f;
 
         /// <summary>A wall or ceiling sensor in the air: a ray of one radius; what it meets is slid along.</summary>
         void SlideAlong(Vector2 origin, Vector2 direction, bool wallsOnly)
         {
-            if (!sensor.CastSolid(origin, direction, radius, plane, out SensorHit hit)) return;
+            if (!sensor.CastSolid(origin, direction, radius, plane, out SensorHit hit))
+            {
+                return;
+            }
 
             bool isFloor = hit.Normal.y >= Mathf.Cos(tuning.maxLandingAngle * Mathf.Deg2Rad);
-            if (wallsOnly && isFloor) return;
-            if (Touches(hit)) PushOutAndSlide(hit);
+            if (wallsOnly && isFloor)
+            {
+                return;
+            }
+
+            if (Touches(hit))
+            {
+                PushOutAndSlide(hit);
+            }
         }
 
-        /// <summary>Moves the circle out of a surface and removes the part of the velocity that points into it.</summary>
+        /// <summary>
+        /// Moves the circle out of a surface and removes the part of the velocity that points into it.
+        /// </summary>
         void PushOutAndSlide(SensorHit hit)
         {
             position += hit.Normal * (radius - Clearance(hit));
@@ -631,15 +861,20 @@ namespace SfxShowcase.Gameplay
                 tucked = false;
                 SetRadius(tuning.standingRadius);
             }
+
             if (knockedBack)
             {
                 knockedBack = false;
                 groundSpeed = 0f;
             }
+
             velocity = Tangent * groundSpeed;
 
             GameEvents.RaiseLanded(impactSpeed);
-            if (impactSpeed >= tuning.dustImpactSpeed) art.SpawnEffect(EffectKind.Dust, FeetPosition());
+            if (impactSpeed >= tuning.dustImpactSpeed)
+            {
+                art.SpawnEffect(EffectKind.Dust, FeetPosition());
+            }
         }
 
         // ---- What the level's pieces do to the player (IPlayerActor) ---------------------------------------------
@@ -647,7 +882,10 @@ namespace SfxShowcase.Gameplay
         /// <inheritdoc/>
         public override void Bounce(Vector2 launchVelocity)
         {
-            if (finished || respawnTimer > 0f) return;
+            if (finished || respawnTimer > 0f)
+            {
+                return;
+            }
 
             CancelWindUp();
             knockedBack = false;
@@ -671,7 +909,10 @@ namespace SfxShowcase.Gameplay
         /// <inheritdoc/>
         public override bool Hurt(Vector2 sourcePosition)
         {
-            if (IsInvulnerable || finished || session.Phase != GamePhase.Playing) return false;
+            if (IsInvulnerable || finished || session.Phase != GamePhase.Playing)
+            {
+                return false;
+            }
 
             GameEvents.RaiseHurt();
             int carried = session.DropAllChimes();
@@ -698,8 +939,13 @@ namespace SfxShowcase.Gameplay
         /// <inheritdoc/>
         public override void Rebound()
         {
-            // Only ever a push upwards: a player still rising faster than this (a jump taken beside the Clipper) keeps its rise.
-            if (grounded || velocity.y >= tuning.reboundSpeed) return;
+            // Only ever a push upwards: a player still rising faster than
+            // this (a jump taken beside the Clipper) keeps its rise.
+            if (grounded || velocity.y >= tuning.reboundSpeed)
+            {
+                return;
+            }
+
             velocity.y = tuning.reboundSpeed;
             jumping = false;
         }
@@ -713,7 +959,11 @@ namespace SfxShowcase.Gameplay
         /// <inheritdoc/>
         public override void SetCheckpoint(int index, Vector2 respawnPosition)
         {
-            if (index <= checkpointIndex) return;
+            if (index <= checkpointIndex)
+            {
+                return;
+            }
+
             checkpointIndex = index;
             checkpointPosition = respawnPosition;
         }
@@ -721,15 +971,24 @@ namespace SfxShowcase.Gameplay
         /// <inheritdoc/>
         public override void Finish()
         {
-            if (finished || session.Phase != GamePhase.Playing) return;
+            if (finished || session.Phase != GamePhase.Playing)
+            {
+                return;
+            }
 
             finished = true;
             CancelWindUp();
-            if (grounded && tucked) EndTuck();
+            if (grounded && tucked)
+            {
+                EndTuck();
+            }
 
             // Constant braking that stops from the arrival speed in the stopping distance: v² = 2·a·d.
             float arrivalSpeed = velocity.magnitude;
-            finishBraking = Mathf.Max(tuning.finishMinBraking, arrivalSpeed * arrivalSpeed / (2f * tuning.finishStopDistance));
+            finishBraking = Mathf.Max(
+                tuning.finishMinBraking,
+                arrivalSpeed * arrivalSpeed / (2f * tuning.finishStopDistance)
+            );
 
             GameEvents.RaiseGoalReached();
             session.EndRun();
@@ -771,7 +1030,9 @@ namespace SfxShowcase.Gameplay
 
         // ---- Getting lost and coming back ------------------------------------------------------------------------
 
-        /// <summary>A pit, or a hit with no Chimes: the player freezes, loses its Chimes and reappears after a pause.</summary>
+        /// <summary>
+        /// A pit, or a hit with no Chimes: the player freezes, loses its Chimes and reappears after a pause.
+        /// </summary>
         void BeginRespawn()
         {
             LeaveGround();
@@ -785,9 +1046,8 @@ namespace SfxShowcase.Gameplay
 
         void CompleteRespawn()
         {
-            Vector2 point = checkpointIndex >= 0
-                ? checkpointPosition + Vector2.up * tuning.respawnLift
-                : level.SpawnPoint;
+            Vector2 point =
+                checkpointIndex >= 0 ? checkpointPosition + Vector2.up * tuning.respawnLift : level.SpawnPoint;
             PlaceAt(point);
             invulnerableTimer = tuning.respawnInvulnerableSeconds;
             GameEvents.RaiseRespawned(Sections.At(point.x));
@@ -797,15 +1057,25 @@ namespace SfxShowcase.Gameplay
 
         void Untuck()
         {
-            if (!tucked) return;
+            if (!tucked)
+            {
+                return;
+            }
+
             tucked = false;
             SetRadius(tuning.standingRadius);
         }
 
-        /// <summary>Changes the collision radius; on the ground the centre moves so the circle keeps touching the surface.</summary>
+        /// <summary>
+        /// Changes the collision radius; on the ground the centre moves so the circle keeps touching the surface.
+        /// </summary>
         void SetRadius(float newRadius)
         {
-            if (grounded) position += groundNormal * (newRadius - radius);
+            if (grounded)
+            {
+                position += groundNormal * (newRadius - radius);
+            }
+
             radius = newRadius;
             touchCollider.radius = newRadius;
         }
@@ -831,7 +1101,10 @@ namespace SfxShowcase.Gameplay
             float speed01 = Mathf.Clamp01(speed / tuning.topSpeed);
             float stride = DesignTargets.StrideLength(speed01);
             strideDistance += speed * deltaTime;
-            if (strideDistance < stride) return;
+            if (strideDistance < stride)
+            {
+                return;
+            }
 
             strideDistance -= stride;
             GameEvents.RaiseFootstep(speed01);

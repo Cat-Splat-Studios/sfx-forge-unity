@@ -10,12 +10,16 @@ namespace SfxShowcase.Core
     {
         /// <inheritdoc/>
         public abstract GamePhase Phase { get; }
+
         /// <inheritdoc/>
         public abstract int ChimeCount { get; }
+
         /// <inheritdoc/>
         public abstract float ElapsedSeconds { get; }
+
         /// <inheritdoc/>
         public abstract float TopSpeedReached { get; }
+
         /// <inheritdoc/>
         public abstract SectionId CurrentSection { get; }
 

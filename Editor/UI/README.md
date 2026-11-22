@@ -1,6 +1,6 @@
 # The kit: SFX FORGE's display, in UI Toolkit
 
-What the inspectors and the window are built from. It mirrors the device's display (`sfx-forge/sfx-forge.c`: the colours
+What the inspectors and the window are built from. It mirrors the device's display (`sfx-forge/fw_draw_parts.h`: the colours
 BG, PANEL, LINE, DIM, TEXT, the engines' colours, and its drawing code). Editor only; no fonts, no images, no other package.
 
 Everything sits in **one panel**: `SfxUI.Panel()` – dark, warm, round corners, and it carries the stylesheet

@@ -12,11 +12,19 @@ namespace SfxShowcase.Audio
     /// </summary>
     public sealed class LiveVoicePool : MonoBehaviour
     {
-        [Tooltip("The pool's voices: SfxPlayer components, each on its own AudioSource. Their Volume is the pool's volume.")]
-        [SerializeField] SfxPlayer[] voices = new SfxPlayer[0];
+        [Tooltip(
+            "The pool's voices: SfxPlayer components, each on its own AudioSource. Their Volume is the pool's volume."
+        )]
+        [SerializeField]
+        SfxPlayer[] voices = new SfxPlayer[0];
 
-        [Tooltip("Seconds after a trigger during which a voice counts as busy even if it does not report sound yet (the audio thread starts it a moment later).")]
-        [Min(0f)] [SerializeField] float claimSeconds = 0.1f;
+        [Tooltip(
+            "Seconds after a trigger during which a voice counts as busy even if it does not report sound "
+                + "yet (the audio thread starts it a moment later)."
+        )]
+        [Min(0f)]
+        [SerializeField]
+        float claimSeconds = 0.1f;
 
         float[] startedAt = new float[0];
 
@@ -26,7 +34,10 @@ namespace SfxShowcase.Audio
         void Awake()
         {
             startedAt = new float[voices.Length];
-            for (int i = 0; i < startedAt.Length; i++) startedAt[i] = float.NegativeInfinity;
+            for (int i = 0; i < startedAt.Length; i++)
+            {
+                startedAt[i] = float.NegativeInfinity;
+            }
         }
 
         /// <summary>
@@ -35,29 +46,56 @@ namespace SfxShowcase.Audio
         /// </summary>
         public void Play(SfxPreset preset, float velocity, float semitones, int midiNote)
         {
-            if (preset == null || voices.Length == 0 || startedAt.Length != voices.Length) return;
+            if (preset == null || voices.Length == 0 || startedAt.Length != voices.Length)
+            {
+                return;
+            }
+
             int index = ChooseVoice(preset);
             SfxPlayer voice = voices[index];
-            if (voice == null) return;
+            if (voice == null)
+            {
+                return;
+            }
+
             voice.preset = preset;
             voice.Play(velocity, semitones, midiNote);
             startedAt[index] = Time.time;
         }
 
-        /// <summary>The voice already playing this preset, else a silent one, else the one that started longest ago.</summary>
+        /// <summary>
+        /// The voice already playing this preset, else a silent one, else the one that started longest ago.
+        /// </summary>
         int ChooseVoice(SfxPreset preset)
         {
             for (int i = 0; i < voices.Length; i++)
-                if (voices[i] != null && voices[i].preset == preset) return i;
+            {
+                if (voices[i] != null && voices[i].preset == preset)
+                {
+                    return i;
+                }
+            }
 
             int oldest = 0;
             for (int i = 0; i < voices.Length; i++)
             {
-                if (voices[i] == null) continue;
+                if (voices[i] == null)
+                {
+                    continue;
+                }
+
                 bool busy = voices[i].IsPlaying || Time.time - startedAt[i] < claimSeconds;
-                if (!busy) return i;
-                if (startedAt[i] < startedAt[oldest]) oldest = i;
+                if (!busy)
+                {
+                    return i;
+                }
+
+                if (startedAt[i] < startedAt[oldest])
+                {
+                    oldest = i;
+                }
             }
+
             return oldest;
         }
     }

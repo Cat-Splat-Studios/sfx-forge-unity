@@ -1,13 +1,13 @@
-using UnityEngine;
 using SfxShowcase.Core;
+using UnityEngine;
 
 namespace SfxShowcase.Gameplay
 {
     /// <summary>
     /// The keyboard and gamepad, read through Unity's legacy Input Manager (the one this project has enabled).
-    /// Left/right: arrows, A/D or the left stick. Down: down arrow, S or the stick. Jump: Space, Z or a gamepad face button.
-    /// This is the only class that touches <see cref="Input"/>; to change the controls, or to move to the Input System
-    /// package, replace this one class (or set <see cref="PlayerBase.InputOverride"/>).
+    /// Left/right: arrows, A/D or the left stick. Down: down arrow, S or the stick. Jump: Space, Z or a gamepad face
+    /// button. This is the only class that touches <see cref="Input"/>; to change the controls, or to move to the Input
+    /// System package, replace this one class (or set <see cref="PlayerBase.InputOverride"/>).
     /// </summary>
     public sealed class DeviceInput : IPlayerInput
     {

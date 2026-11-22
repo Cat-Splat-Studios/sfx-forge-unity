@@ -41,8 +41,19 @@ namespace SfxShowcase.Art
         public void AddQuad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color) =>
             AddQuad(a, b, c, d, color, color, color, color);
 
-        /// <summary>A quad a-b-c-d with a colour per corner (the sky gradient and the trail's fade – nothing else).</summary>
-        public void AddQuad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color colorA, Color colorB, Color colorC, Color colorD)
+        /// <summary>
+        /// A quad a-b-c-d with a colour per corner (the sky gradient and the trail's fade – nothing else).
+        /// </summary>
+        public void AddQuad(
+            Vector2 a,
+            Vector2 b,
+            Vector2 c,
+            Vector2 d,
+            Color colorA,
+            Color colorB,
+            Color colorC,
+            Color colorD
+        )
         {
             int first = vertices.Count;
             AddVertex(a, colorA);
@@ -64,9 +75,17 @@ namespace SfxShowcase.Art
         /// <summary>A convex polygon (corners in order round the edge), drawn as a fan.</summary>
         public void AddPolygon(IReadOnlyList<Vector2> points, Color color)
         {
-            if (points.Count < 3) return;
+            if (points.Count < 3)
+            {
+                return;
+            }
+
             int first = vertices.Count;
-            for (int i = 0; i < points.Count; i++) AddVertex(points[i], color);
+            for (int i = 0; i < points.Count; i++)
+            {
+                AddVertex(points[i], color);
+            }
+
             for (int i = 1; i < points.Count - 1; i++)
             {
                 triangles.Add(first);
@@ -91,14 +110,27 @@ namespace SfxShowcase.Art
         /// <summary>
         /// A piece of a ring round a centre, between two radii and two angles (degrees, counter-clockwise from +x).
         /// </summary>
-        public void AddArc(Vector2 center, float innerRadius, float outerRadius, float startDegrees, float endDegrees, int segments, Color color)
+        public void AddArc(
+            Vector2 center,
+            float innerRadius,
+            float outerRadius,
+            float startDegrees,
+            float endDegrees,
+            int segments,
+            Color color
+        )
         {
             Vector2 previous = Direction(startDegrees);
             for (int i = 1; i <= segments; i++)
             {
                 Vector2 next = Direction(Mathf.Lerp(startDegrees, endDegrees, i / (float)segments));
-                AddQuad(center + previous * innerRadius, center + previous * outerRadius,
-                        center + next * outerRadius, center + next * innerRadius, color);
+                AddQuad(
+                    center + previous * innerRadius,
+                    center + previous * outerRadius,
+                    center + next * outerRadius,
+                    center + next * innerRadius,
+                    color
+                );
                 previous = next;
             }
         }
@@ -132,6 +164,7 @@ namespace SfxShowcase.Art
         void AddVertex(Vector2 position, Color color)
         {
             vertices.Add(new Vector3(position.x, position.y, 0f));
+
             // Vertex colours reach the shader untouched, so a linear-space project needs them converted here.
             colors.Add(QualitySettings.activeColorSpace == ColorSpace.Linear ? color.linear : color);
         }

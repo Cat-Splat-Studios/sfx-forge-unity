@@ -18,28 +18,40 @@ namespace SfxShowcase.Core
 
         /// <inheritdoc/>
         public abstract GameObject CreateGround(IReadOnlyList<Vector2> surface, float bottomY);
+
         /// <inheritdoc/>
         public abstract GameObject CreatePlatform(IReadOnlyList<Vector2> surface, float thickness);
+
         /// <inheritdoc/>
         public abstract GameObject CreateLoop(Vector2 center, float radius, float thickness);
+
         /// <inheritdoc/>
         public abstract GameObject CreateChime();
+
         /// <inheritdoc/>
         public abstract PropVisual CreateWoofer();
+
         /// <inheritdoc/>
         public abstract GameObject CreateStatic(int seed);
+
         /// <inheritdoc/>
         public abstract GameObject CreateClipper();
+
         /// <inheritdoc/>
         public abstract PropVisual CreateTuningFork();
+
         /// <inheritdoc/>
         public abstract PropVisual CreateResonator();
+
         /// <inheritdoc/>
         public abstract GameObject CreateCharacter(PlayerBase player);
+
         /// <inheritdoc/>
         public abstract GameObject CreateBackground(Camera camera, Rect levelBounds);
+
         /// <inheritdoc/>
         public abstract GameObject CreateHud(Camera camera, PlayerBase player, GameSessionBase session);
+
         /// <inheritdoc/>
         public abstract void SpawnEffect(EffectKind kind, Vector2 position);
     }

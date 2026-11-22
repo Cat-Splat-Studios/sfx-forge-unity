@@ -12,7 +12,8 @@ namespace SfxShowcase.Level
     public sealed class SectionTrigger : MonoBehaviour
     {
         [Tooltip("The section the run starts in, announced when the game starts before the player has been seen.")]
-        [SerializeField] SectionId startSection = SectionId.SoftStart;
+        [SerializeField]
+        SectionId startSection = SectionId.SoftStart;
 
         PlayerBase player;
         SectionId current;
@@ -30,19 +31,33 @@ namespace SfxShowcase.Level
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.TryGetComponent(out PlayerBase entered)) player = entered;
+            if (other.TryGetComponent(out PlayerBase entered))
+            {
+                player = entered;
+            }
         }
 
         void OnTriggerExit2D(Collider2D other)
         {
-            if (other.TryGetComponent(out PlayerBase left) && left == player) player = null;
+            if (other.TryGetComponent(out PlayerBase left) && left == player)
+            {
+                player = null;
+            }
         }
 
         void Update()
         {
-            if (!running || player == null) return;
+            if (!running || player == null)
+            {
+                return;
+            }
+
             SectionId section = Sections.At(player.Position.x);
-            if (section == current) return;
+            if (section == current)
+            {
+                return;
+            }
+
             current = section;
             GameEvents.RaiseSectionEntered(current);
         }

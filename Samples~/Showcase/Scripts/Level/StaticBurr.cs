@@ -16,7 +16,10 @@ namespace SfxShowcase.Level
 
         void Touch(Collider2D other)
         {
-            if (other.TryGetComponent(out PlayerBase player)) player.Hurt(transform.position);
+            if (other.TryGetComponent(out PlayerBase player))
+            {
+                player.Hurt(transform.position);
+            }
         }
     }
 }

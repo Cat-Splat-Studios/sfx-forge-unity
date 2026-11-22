@@ -11,8 +11,32 @@ namespace CatSplat.SfxForge
     /// </summary>
     public static class SfxPackedSong
     {
-        const int Slots = SfxProtocol.Slots, Patterns = SfxProtocol.Patterns, Lanes = SfxProtocol.Lanes, Bars = SfxProtocol.Bars, Sixteenths = SfxProtocol.Steps;
-        const int Scales = 4, DelayTimes = 6;    // (SFX_SCALE_COUNT, SFX_DELAY_TIMES of core/sfx_song.h)
+        const int Slots = SfxProtocol.Slots;
+        const int Patterns = SfxProtocol.Patterns;
+        const int Lanes = SfxProtocol.Lanes;
+        const int Bars = SfxProtocol.Bars;
+        const int Sixteenths = SfxProtocol.Steps;
+
+        // (SFX_SCALE_COUNT, SFX_DELAY_TIMES of core/sfx_song.h)
+        const int Scales = 4;
+        const int DelayTimes = 6;
+
+        // ---- where the head's values stand (core/sfx_song.h, section 4, has the whole layout). Byte 0 is the format.
+        // Format 1 ends after the layers; the formats 2 and 3 after the master; format 4 has its 16 lane targets at
+        // HeadArrangement and the arrangement after them; from format 5 on the arrangement (its length, 32 bars) is
+        // followed by the 24 lanes, two bytes each: the sound + 1, then the target. That makes 147 bytes
+        // (SfxProtocol.SongHead).
+        internal const int HeadBar = 1; // the bar in sixteenths
+        internal const int HeadBpm = 2; // the tempo, two bytes: its high seven bits, then its low seven
+        internal const int HeadSwing = 4;
+        internal const int HeadScale = 5;
+        internal const int HeadChain = 6;
+        internal const int HeadLayers = 7; // a byte a sound
+        internal const int HeadVolumes = HeadLayers + Slots; // 23
+        internal const int HeadPans = HeadVolumes + Slots; // 39
+        internal const int HeadMutes = HeadPans + Slots; // 55: 16 bits in three bytes
+        internal const int HeadMaster = HeadMutes + 3; // 58: eight bytes, the first five in use
+        internal const int HeadArrangement = HeadMaster + 8; // 66
 
         /// <summary>
         /// 1..6 for a song this version reads, else 0. Formats 1 to 5 are known by their length and their first byte.
@@ -21,17 +45,30 @@ namespace CatSplat.SfxForge
         /// </summary>
         public static int Format(byte[] song)
         {
-            if (song == null || song.Length < 7) return 0;
+            if (song == null || song.Length < 7)
+            {
+                return 0;
+            }
+
             int n = song.Length;
             switch (song[0])
             {
-                case 1: return n == SfxProtocol.SongBytesV1 ? 1 : 0;
-                case 2: return n == SfxProtocol.SongBytesV2 ? 2 : 0;
-                case 3: return n == SfxProtocol.SongBytesV3 ? 3 : 0;
-                case 4: return n == SfxProtocol.SongBytesV4 ? 4 : 0;
-                case 5: return n == SfxProtocol.SongBytesV5 ? 5 : 0;
-                case 6: return n >= SfxProtocol.SongBytesMin && n <= SfxProtocol.SongBytesMax && Block6(song, Patterns) == n ? 6 : 0;
+                case 1:
+                    return n == SfxProtocol.SongBytesV1 ? 1 : 0;
+                case 2:
+                    return n == SfxProtocol.SongBytesV2 ? 2 : 0;
+                case 3:
+                    return n == SfxProtocol.SongBytesV3 ? 3 : 0;
+                case 4:
+                    return n == SfxProtocol.SongBytesV4 ? 4 : 0;
+                case 5:
+                    return n == SfxProtocol.SongBytesV5 ? 5 : 0;
+                case 6:
+                    return n >= SfxProtocol.SongBytesMin && n <= SfxProtocol.SongBytesMax && Block6(song, Patterns) == n
+                        ? 6
+                        : 0;
             }
+
             return 0;
         }
 
@@ -40,42 +77,132 @@ namespace CatSplat.SfxForge
 
         /// <summary>
         /// A song the player and the device take: IsValid, and every value in it in range - what sfx_song_unpack
-        /// (core/sfx_song.h) asks, in the same order: no byte over 127; a bar of 1..16 sixteenths, a tempo of 40..240, a
-        /// swing up to 100, a scale and a chain there are; a delay time, an arrangement and lanes that can be; and in
+        /// (core/sfx_song.h) asks, in the same order: no byte over 127; a bar of 1..16 sixteenths, a tempo of 40..240,
+        /// a swing up to 100, a scale and a chain there are; a delay time, an arrangement and lanes that can be; and in
         /// format 6 no spare bit in a block's masks, no step past the grid, velocities up to 7, lengths below the grid.
-        /// IsValid looks at the layout only (it is asked for every step an Inspector draws); a song that is valid and not
-        /// playable was damaged on its way: the device answers such a one with BAD SONG, SfxNative.PlayerSetSong with
-        /// false, and SfxLink.Refusal says so before anything is sent.
+        /// IsValid looks at the layout only (it is asked for every step an Inspector draws); a song that is valid and
+        /// not playable was damaged on its way: the device answers such a one with BAD SONG, SfxNative.PlayerSetSong
+        /// with false, and SfxLink.Refusal says so before anything is sent.
         /// </summary>
         public static bool IsPlayable(byte[] song)
         {
+            // a layout this version knows, and no byte over 127
             int f = Format(song);
-            if (f == 0) return false;
-            for (int i = 0; i < song.Length; i++) if (song[i] > 127) return false;
-            int bpm = song[2] << 7 | song[3];
-            if (song[1] < 1 || song[1] > Sixteenths || bpm < 40 || bpm > 240 || song[4] > 100 || song[5] >= Scales || song[6] < 1 || song[6] > Patterns) return false;
-            if (f >= 2 && song[7 + Slots * 3 + 3] >= DelayTimes) return false;                  // (the master's first value: the echo's time)
+            if (f == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < song.Length; i++)
+            {
+                if (song[i] > 127)
+                {
+                    return false;
+                }
+            }
+
+            // the head: the bar, the tempo, the swing, the scale, the chain
+            int bpm = song[HeadBpm] << 7 | song[HeadBpm + 1];
+            if (
+                song[HeadBar] < 1
+                || song[HeadBar] > Sixteenths
+                || bpm < 40
+                || bpm > 240
+                || song[HeadSwing] > 100
+                || song[HeadScale] >= Scales
+                || song[HeadChain] < 1
+                || song[HeadChain] > Patterns
+            )
+            {
+                return false;
+            }
+
+            // (the master's first value: the echo's time)
+            if (f >= 2 && song[HeadMaster] >= DelayTimes)
+            {
+                return false;
+            }
+
+            // format 4 on: the arrangement, and what the automation lanes name
             if (f >= 4)
             {
                 int a = Arr(song);
-                if (song[a] > Bars) return false;
-                for (int i = 0; i < Bars; i++) if (song[a + 1 + i] >= Patterns) return false;
-                if (f == 4) { for (int t = 0; t < Slots; t++) if (song[66 + t] >= SfxAutoTarget.Count) return false; }
-                else for (int l = 0; l < Lanes; l++) if (song[a + 1 + Bars + l * 2] > Slots || song[a + 2 + Bars + l * 2] >= SfxAutoTarget.Count) return false;
+                if (song[a] > Bars)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < Bars; i++)
+                {
+                    if (song[a + 1 + i] >= Patterns)
+                    {
+                        return false;
+                    }
+                }
+
+                if (f == 4)
+                {
+                    for (int t = 0; t < Slots; t++)
+                    {
+                        if (song[HeadArrangement + t] >= SfxAutoTarget.Count)
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int l = 0; l < Lanes; l++)
+                    {
+                        if (song[a + 1 + Bars + l * 2] > Slots || song[a + 2 + Bars + l * 2] >= SfxAutoTarget.Count)
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
-            if (f < 6) return true;
+
+            // before format 6 that is all there is to ask
+            if (f < 6)
+            {
+                return true;
+            }
+
+            // format 6, a block a pattern: its masks, then its rows - step bits, then a note, velocity, length a step
             int o = SfxProtocol.SongHead;
             for (int p = 0; p < Patterns; p++)
             {
-                if (song[o + 3] > 3 || song[o + 7] > 7) return false;                           // (a spare bit in the masks)
-                int g = Sixteenths << song[o], nb = (g + 6) / 7, rows = Bits(Rows6(song, o)), row = nb + 3 * g, r = o + 8;
+                // (a spare bit in the masks)
+                if (song[o + 3] > 3 || song[o + 7] > 7)
+                {
+                    return false;
+                }
+
+                int g = Sixteenths << song[o];
+                int nb = StepBitBytes(g);
+                int rows = Bits(Rows6(song, o));
+                int row = RowBytes6(g);
+                int r = o + 8;
                 for (int k = 0; k < rows; k++, r += row)
                 {
-                    if (song[r + nb - 1] >> (g - (nb - 1) * 7) != 0) return false;              // a step bit from the grid's last step on
-                    for (int i = 0; i < g; i++) if (song[r + nb + g + i] > 7 || song[r + nb + 2 * g + i] > g - 1) return false;
+                    // a step bit past the grid's last step (bit g or higher)
+                    if (song[r + nb - 1] >> (g - (nb - 1) * 7) != 0)
+                    {
+                        return false;
+                    }
+
+                    for (int i = 0; i < g; i++)
+                    {
+                        if (song[r + nb + g + i] > 7 || song[r + nb + 2 * g + i] > g - 1)
+                        {
+                            return false;
+                        }
+                    }
                 }
+
                 o += 8 + rows * row + Bits(Lanes6(song, o)) * g;
             }
+
             return true;
         }
 
@@ -83,19 +210,33 @@ namespace CatSplat.SfxForge
         public static int Div(byte[] song, int pattern)
         {
             int f = Format(song);
-            if (f == 0 || pattern < 0 || pattern >= Patterns) return 0;
+            if (f == 0 || pattern < 0 || pattern >= Patterns)
+            {
+                return 0;
+            }
+
             return f < 6 ? 1 : 1 << song[Block6(song, pattern)];
         }
 
         /// <summary>The steps a pattern has in a full bar: 16, 32, 64. 0: not a song, no such pattern.</summary>
         public static int Grid(byte[] song, int pattern) => Sixteenths * Div(song, pattern);
 
-        /// <summary>The sound (0..15) plays on this step (0 .. Grid - 1, in the pattern's own grid) of this pattern (0..7).</summary>
+        /// <summary>
+        /// The sound (0..15) plays on this step (0 .. Grid - 1, in the pattern's own grid) of this pattern (0..7).
+        /// </summary>
         public static bool StepOn(byte[] song, int pattern, int sound, int step)
         {
             int at = Row(song, pattern, sound, step, out int f, out int g);
-            if (at < 0) return false;
-            if (f == 6) return (song[at + step / 7] >> (step % 7) & 1) != 0;
+            if (at < 0)
+            {
+                return false;
+            }
+
+            if (f == 6)
+            {
+                return (song[at + step / 7] >> (step % 7) & 1) != 0;
+            }
+
             return ((song[at] | song[at + 1] << 7 | (song[at + 2] & 3) << 14) >> step & 1) != 0;
         }
 
@@ -103,69 +244,154 @@ namespace CatSplat.SfxForge
         public static int StepNote(byte[] song, int pattern, int sound, int step)
         {
             int at = Row(song, pattern, sound, step, out int f, out int g);
-            if (at < 0) return 0;
-            return (f == 6 ? song[at + (g + 6) / 7 + step] : song[at + 3 + step]) & 127;
+            if (at < 0)
+            {
+                return 0;
+            }
+
+            return (f == 6 ? song[at + StepBitBytes(g) + step] : song[at + 3 + step]) & 127;
         }
 
-        /// <summary>How hard a step is played: 0..7, soft .. full (5 = as it always was, and where nothing is kept).</summary>
+        /// <summary>
+        /// How hard a step is played: 0..7, soft .. full (5 = as it always was, and where nothing is kept).
+        /// </summary>
         public static int StepVelocity(byte[] song, int pattern, int sound, int step)
         {
             int at = Row(song, pattern, sound, step, out int f, out int g);
-            if (at < 0 || f < 3) return 5;
-            return (f == 6 ? song[at + (g + 6) / 7 + g + step] : song[at + 3 + Sixteenths + step]) & 7;
+            if (at < 0 || f < 3)
+            {
+                return 5;
+            }
+
+            return (f == 6 ? song[at + StepBitBytes(g) + g + step] : song[at + 3 + Sixteenths + step]) & 7;
         }
 
-        /// <summary>How many steps of the pattern's grid a step holds: 0 = by itself (to the sound's end, its next note or the bar line).</summary>
+        /// <summary>
+        /// How many steps of the pattern's grid a step holds: 0 = by itself (to the sound's end, its next note
+        /// or the bar line).
+        /// </summary>
         public static int StepLength(byte[] song, int pattern, int sound, int step)
         {
             int at = Row(song, pattern, sound, step, out int f, out int g);
-            if (at < 0 || f < 3) return 0;
-            return f == 6 ? song[at + (g + 6) / 7 + 2 * g + step] & 127 : song[at + 3 + Sixteenths + step] >> 3 & 15;
+            if (at < 0 || f < 3)
+            {
+                return 0;
+            }
+
+            return f == 6
+                ? song[at + StepBitBytes(g) + 2 * g + step] & 127
+                : song[at + 3 + Sixteenths + step] >> 3 & 15;
         }
 
-        /// <summary>A lane's (0..23) point on a step of a pattern: -1 = none there (the point before holds), else the value 0..126.</summary>
+        /// <summary>
+        /// A lane's (0..23) point on a step of a pattern: -1 = none there (the point before holds), else
+        /// the value 0..126.
+        /// </summary>
         public static int LanePoint(byte[] song, int pattern, int lane, int step)
         {
             int f = Format(song);
-            if (f == 0 || pattern < 0 || pattern >= Patterns || lane < 0 || lane >= Lanes || step < 0) return -1;
+            if (f == 0 || pattern < 0 || pattern >= Patterns || lane < 0 || lane >= Lanes || step < 0)
+            {
+                return -1;
+            }
+
             if (f == 6)
             {
-                int o = Block6(song, pattern), g = Sixteenths << song[o];
-                int rows = Rows6(song, o), lanes = Lanes6(song, o);
-                if (step >= g || (lanes >> lane & 1) == 0) return -1;
-                return (song[o + 8 + Bits(rows) * ((g + 6) / 7 + 3 * g) + Bits(lanes & ((1 << lane) - 1)) * g + step] & 127) - 1;
+                int o = Block6(song, pattern);
+                int g = Sixteenths << song[o];
+                int rows = Rows6(song, o);
+                int lanes = Lanes6(song, o);
+                if (step >= g || (lanes >> lane & 1) == 0)
+                {
+                    return -1;
+                }
+
+                // past the block's eight bytes and its sounds' rows: the rows of the lanes before this one
+                int lanesBefore = Bits(lanes & ((1 << lane) - 1));
+                return (song[o + 8 + Bits(rows) * RowBytes6(g) + lanesBefore * g + step] & 127) - 1;
             }
-            if (step >= Sixteenths) return -1;
-            if (f == 4) return lane < Slots ? song[At(song, pattern, lane) + 3 + 2 * Sixteenths + step] - 1 : -1;     // (format 4: one lane a sound, at the end of its row)
-            if (f < 5) return -1;
-            return song[Body(song) + Patterns * Slots * RowBytes(song) + (pattern * Lanes + lane) * Sixteenths + step] - 1;
+
+            if (step >= Sixteenths)
+            {
+                return -1;
+            }
+
+            // (format 4: one lane a sound, at the end of its row)
+            if (f == 4)
+            {
+                return lane < Slots ? song[At(song, pattern, lane) + 3 + 2 * Sixteenths + step] - 1 : -1;
+            }
+
+            if (f < 5)
+            {
+                return -1;
+            }
+
+            return song[Body(song) + Patterns * Slots * RowBytes(song) + (pattern * Lanes + lane) * Sixteenths + step]
+                - 1;
         }
 
-        // ---- formats 1 to 5: a row of 16 steps for every sound of every pattern - 3 bytes of steps, 16 notes, then (format 3 on)
-        // 16 accents (velocity and length), then (format 4 only) its one lane. Format 5: the lanes' points after all the rows.
-        static int Arr(byte[] d) => d[0] == 4 ? 66 + Slots : 66;                // (format 4 kept one lane target for each sound before the arrangement)
-        static int Body(byte[] d) => d[0] >= 5 ? Arr(d) + 1 + Bars + Lanes * 2 : d[0] == 4 ? Arr(d) + 1 + Bars : d[0] >= 2 ? 66 : 7 + Slots;
-        static int RowBytes(byte[] d) => d[0] == 4 ? 3 + 3 * Sixteenths : d[0] == 3 || d[0] >= 5 ? 3 + 2 * Sixteenths : 3 + Sixteenths;
+        // ---- formats 1 to 5: a row of 16 steps for every sound of every pattern - 3 bytes of steps, 16 notes, then
+        // (format 3 on) 16 accents (velocity and length), then (format 4 only) its one lane. Format 5: the lanes'
+        // points after all the rows. (format 4 kept one lane target for each sound before the arrangement)
+        static int Arr(byte[] d) => d[0] == 4 ? HeadArrangement + Slots : HeadArrangement;
+
+        static int Body(byte[] d) =>
+            d[0] >= 5 ? Arr(d) + 1 + Bars + Lanes * 2
+            : d[0] == 4 ? Arr(d) + 1 + Bars
+            : d[0] >= 2 ? HeadArrangement
+            : HeadLayers + Slots;
+
+        static int RowBytes(byte[] d) =>
+            d[0] == 4 ? 3 + 3 * Sixteenths
+            : d[0] == 3 || d[0] >= 5 ? 3 + 2 * Sixteenths
+            : 3 + Sixteenths;
+
         static int At(byte[] d, int pattern, int sound) => Body(d) + (pattern * Slots + sound) * RowBytes(d);
 
-        // ---- format 6: the head of format 5 (147 bytes), then a block a pattern: its grid, the sounds with a row (16 bits in
-        // three bytes), the lanes with a row (24 bits in four), then those rows. A sound's row: the steps that are on (7 bits a
-        // byte), a note, a velocity and a length for every step. A lane's row: a point for every step.
-        static int Rows6(byte[] d, int o) => d[o + 1] & 127 | (d[o + 2] & 127) << 7 | (d[o + 3] & 3) << 14;
-        static int Lanes6(byte[] d, int o) => d[o + 4] & 127 | (d[o + 5] & 127) << 7 | (d[o + 6] & 127) << 14 | (d[o + 7] & 7) << 21;
-        static int Bits(int v) { int n = 0; for (; v != 0; v &= v - 1) n++; return n; }
+        // ---- format 6: the head of format 5 (147 bytes), then a block a pattern: its grid, the sounds with a row (16
+        // bits in three bytes), the lanes with a row (24 bits in four), then those rows. A sound's row: the steps that
+        // are on (7 bits a byte), a note, a velocity and a length for every step. A lane's row: a point for every step.
+        // (g is a pattern's steps: 16, 32 or 64. o is where its block begins.)
 
-        // where block `pattern` begins (pattern 8: where the last one ends) - the sum of the blocks before it. -1: a block's
-        // head lies outside the bytes, or names a grid there is none of.
+        // the bytes the step bits of one row take, 7 bits a byte: 3, 5 or 10
+        static int StepBitBytes(int g) => (g + 6) / 7;
+
+        // the bytes of one sound's row: the step bits, then a note, a velocity and a length for every step
+        static int RowBytes6(int g) => StepBitBytes(g) + 3 * g;
+
+        static int Rows6(byte[] d, int o) => d[o + 1] & 127 | (d[o + 2] & 127) << 7 | (d[o + 3] & 3) << 14;
+
+        static int Lanes6(byte[] d, int o) =>
+            d[o + 4] & 127 | (d[o + 5] & 127) << 7 | (d[o + 6] & 127) << 14 | (d[o + 7] & 7) << 21;
+
+        static int Bits(int v)
+        {
+            int n = 0;
+            for (; v != 0; v &= v - 1)
+            {
+                n++;
+            }
+
+            return n;
+        }
+
+        // where block `pattern` begins (pattern 8: where the last one ends) - the sum of the blocks before it. -1: a
+        // block's head lies outside the bytes, or names a grid there is none of.
         static int Block6(byte[] d, int pattern)
         {
             int o = SfxProtocol.SongHead;
             for (int p = 0; p < pattern; p++)
             {
-                if (o + 8 > d.Length || d[o] > 2) return -1;
+                if (o + 8 > d.Length || d[o] > 2)
+                {
+                    return -1;
+                }
+
                 int g = Sixteenths << d[o];
-                o += 8 + Bits(Rows6(d, o)) * ((g + 6) / 7 + 3 * g) + Bits(Lanes6(d, o)) * g;
+                o += 8 + Bits(Rows6(d, o)) * RowBytes6(g) + Bits(Lanes6(d, o)) * g;
             }
+
             return pattern < Patterns && (o + 8 > d.Length || d[o] > 2) ? -1 : o;
         }
 
@@ -173,13 +399,27 @@ namespace CatSplat.SfxForge
         // f: the song's format, g: the pattern's steps
         static int Row(byte[] song, int pattern, int sound, int step, out int f, out int g)
         {
-            f = Format(song); g = Sixteenths;
-            if (f == 0 || pattern < 0 || pattern >= Patterns || sound < 0 || sound >= Slots || step < 0) return -1;
-            if (f < 6) return step < Sixteenths ? At(song, pattern, sound) : -1;
-            int o = Block6(song, pattern), rows = Rows6(song, o);
+            f = Format(song);
+            g = Sixteenths;
+            if (f == 0 || pattern < 0 || pattern >= Patterns || sound < 0 || sound >= Slots || step < 0)
+            {
+                return -1;
+            }
+
+            if (f < 6)
+            {
+                return step < Sixteenths ? At(song, pattern, sound) : -1;
+            }
+
+            int o = Block6(song, pattern);
+            int rows = Rows6(song, o);
             g = Sixteenths << song[o];
-            if (step >= g || (rows >> sound & 1) == 0) return -1;
-            return o + 8 + Bits(rows & ((1 << sound) - 1)) * ((g + 6) / 7 + 3 * g);
+            if (step >= g || (rows >> sound & 1) == 0)
+            {
+                return -1;
+            }
+
+            return o + 8 + Bits(rows & ((1 << sound) - 1)) * RowBytes6(g);
         }
     }
 }

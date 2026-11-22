@@ -4,12 +4,14 @@ namespace SfxShowcase.Core
 {
     /// <summary>
     /// What the level's pieces may DO to the player. The player raises the matching <see cref="GameEvents"/> for what
-    /// happens to it (Hurt, ChimesScattered, ChimeCollected, Respawned, GoalReached); the piece raises the event that is
-    /// about itself (WooferBounced, ClipperDefeated, CheckpointReached, SectionEntered, FinalLaunch).
+    /// happens to it (Hurt, ChimesScattered, ChimeCollected, Respawned, GoalReached); the piece raises the event that
+    /// is about itself (WooferBounced, ClipperDefeated, CheckpointReached, SectionEntered, FinalLaunch).
     /// </summary>
     public interface IPlayerActor
     {
-        /// <summary>A Woofer fires: the velocity is replaced by this one (m/s, world space), whatever the player was doing.</summary>
+        /// <summary>
+        /// A Woofer fires: the velocity is replaced by this one (m/s, world space), whatever the player was doing.
+        /// </summary>
         void Bounce(Vector2 launchVelocity);
 
         /// <summary>
@@ -24,7 +26,9 @@ namespace SfxShowcase.Core
         /// <summary>Chimes picked up from the level.</summary>
         void AddChimes(int count);
 
-        /// <summary>A Tuning Fork was passed: later respawns happen here. The index is the fork's, 0 = the first.</summary>
+        /// <summary>
+        /// A Tuning Fork was passed: later respawns happen here. The index is the fork's, 0 = the first.
+        /// </summary>
         void SetCheckpoint(int index, Vector2 respawnPosition);
 
         /// <summary>The Resonator was passed: control is taken away, the player brakes and the run ends.</summary>

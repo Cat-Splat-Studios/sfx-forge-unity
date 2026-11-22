@@ -17,7 +17,10 @@ namespace SfxShowcase.Tests
     /// </summary>
     public sealed class ShowcaseAudioTests : ShowcaseTestBase
     {
-        /// <summary>The demo song's breakdown, the pattern Static Field holds (the only section that holds one): the song's arrangement only gets there after eight bars.</summary>
+        /// <summary>
+        /// The demo song's breakdown, the pattern Static Field holds (the only section that holds one): the song's
+        /// arrangement only gets there after eight bars.
+        /// </summary>
         const int PatternE = 4;
 
         /// <summary>For how many bars the held pattern is watched after it was cued.</summary>
@@ -25,7 +28,10 @@ namespace SfxShowcase.Tests
 
         static void IgnoreWithoutTheNativeLibrary()
         {
-            if (!SfxNative.Available) Assert.Ignore("SFX FORGE's native library is not available here: there is no sound to check.");
+            if (!SfxNative.Available)
+            {
+                Assert.Ignore("SFX FORGE's native library is not available here: there is no sound to check.");
+            }
         }
 
         // ---- Use 1: one-shots --------------------------------------------------------------------------------------
@@ -37,8 +43,14 @@ namespace SfxShowcase.Tests
             IgnoreWithoutTheNativeLibrary();
             var effects = UnityEngine.Object.FindFirstObjectByType<SoundEffects>();
             var effectsSource = effects.GetComponent<AudioSource>();
-            Assert.IsNull(effectsSource.clip, "the effects source has no clip of its own: nothing here is an audio file");
-            Assert.IsTrue(effects.HasBakedClip(GameSound.Jump), "the jump was baked from its patch when the scene started");
+            Assert.IsNull(
+                effectsSource.clip,
+                "the effects source has no clip of its own: nothing here is an audio file"
+            );
+            Assert.IsTrue(
+                effects.HasBakedClip(GameSound.Jump),
+                "the jump was baked from its patch when the scene started"
+            );
             Assert.Less(Loudest(effectsSource), 0.0001f, "before the jump the effects are silent");
 
             yield return StartRun();
@@ -46,7 +58,14 @@ namespace SfxShowcase.Tests
             yield return UntilRealTime(() => events.Jumps > 0, 1f);
             Assert.AreEqual(1, events.Jumps);
             float heard = 0f;
-            yield return UntilRealTime(() => { heard = Mathf.Max(heard, Loudest(effectsSource)); return heard > 0.01f; }, 1f);
+            yield return UntilRealTime(
+                () =>
+                {
+                    heard = Mathf.Max(heard, Loudest(effectsSource));
+                    return heard > 0.01f;
+                },
+                1f
+            );
             Assert.Greater(heard, 0.01f, "the baked SFX FORGE clip comes out of the effects AudioSource");
 
             // the live route: a Chime is synthesized by an SfxPlayer of the pool as it is collected
@@ -54,7 +73,10 @@ namespace SfxShowcase.Tests
             Assert.AreEqual(AudioInstaller.LiveVoiceCount, voices.Length, "the pool has its live voices");
             player.AddChimes(1);
             yield return UntilRealTime(() => Array.Exists(voices, voice => voice.IsPlaying), 1f);
-            Assert.IsTrue(Array.Exists(voices, voice => voice.IsPlaying), "a collected Chime sounds on a live SfxPlayer");
+            Assert.IsTrue(
+                Array.Exists(voices, voice => voice.IsPlaying),
+                "a collected Chime sounds on a live SfxPlayer"
+            );
         }
 
         // ---- Use 2: held sounds that follow the game ---------------------------------------------------------------
@@ -79,8 +101,16 @@ namespace SfxShowcase.Tests
             Assert.IsTrue(rev.IsPlaying, "the first tap starts the rev on its SfxPlayer");
             float pitchAfterOneTap = rev.pitchSemitones;
 
-            for (int tap = 0; tap < 4; tap++) yield return TapJump();
-            Assert.Greater(rev.pitchSemitones, pitchAfterOneTap + 1f, "more charge bends the rev's pitch upwards while it sounds");
+            for (int tap = 0; tap < 4; tap++)
+            {
+                yield return TapJump();
+            }
+
+            Assert.Greater(
+                rev.pitchSemitones,
+                pitchAfterOneTap + 1f,
+                "more charge bends the rev's pitch upwards while it sounds"
+            );
             Assert.Greater(rev.fm, 0f, "and deepens its FM");
 
             input.Down = false;
@@ -119,13 +149,21 @@ namespace SfxShowcase.Tests
             Assert.IsNotNull(music, "the scene has its music player");
             Assert.IsNotNull(music.GetComponent<MusicDirector>(), "and the music has its director");
             yield return StartRun();
-            CollectionAssert.AreEqual(new[] { SectionId.SoftStart }, events.Sections, "the first section is announced when the run starts");
+            CollectionAssert.AreEqual(
+                new[] { SectionId.SoftStart },
+                events.Sections,
+                "the first section is announced when the run starts"
+            );
 
             // onto the landing flat of Static Field, five sections on: nothing walks or falls there
             SectionInfo staticField = Sections.Get(SectionId.StaticField);
             player.PlaceAt(new Vector2(staticField.StartX + 3f, level.Checkpoints[1].y + 1f));
             yield return UntilRealTime(() => events.Sections.Count > 1, 2f);
-            CollectionAssert.AreEqual(new[] { SectionId.SoftStart, SectionId.StaticField }, events.Sections, "crossing into a section announces it, once");
+            CollectionAssert.AreEqual(
+                new[] { SectionId.SoftStart, SectionId.StaticField },
+                events.Sections,
+                "crossing into a section announces it, once"
+            );
 
             IgnoreWithoutTheNativeLibrary();
             yield return UntilRealTime(() => music.IsPlaying, 2f);
@@ -135,12 +173,23 @@ namespace SfxShowcase.Tests
             // bar it can only be the cue.
             float barSeconds = music.song.StepsPerPattern * 60f / music.song.Bpm / 4f;
             yield return UntilRealTime(() => music.Pattern == PatternE, barSeconds + 1f);
-            Assert.AreEqual(PatternE, music.Pattern, "the music changes to the section's pattern (E) on the next bar line");
+            Assert.AreEqual(
+                PatternE,
+                music.Pattern,
+                "the music changes to the section's pattern (E) on the next bar line"
+            );
 
             // And it stays: the arrangement would leave E after two bars.
             int cuedInBar = music.Bar;
             bool leftThePattern = false;
-            yield return UntilRealTime(() => { leftThePattern |= music.Pattern != PatternE; return music.Bar >= cuedInBar + BarsToHold; }, (BarsToHold + 1) * barSeconds);
+            yield return UntilRealTime(
+                () =>
+                {
+                    leftThePattern |= music.Pattern != PatternE;
+                    return music.Bar >= cuedInBar + BarsToHold;
+                },
+                (BarsToHold + 1) * barSeconds
+            );
             Assert.GreaterOrEqual(music.Bar, cuedInBar + BarsToHold, "the song played on");
             Assert.IsFalse(leftThePattern, $"and stayed on the section's pattern for {BarsToHold} more bars");
         }
@@ -171,14 +220,24 @@ namespace SfxShowcase.Tests
                 int first = own.Pattern;
                 bool left = false;
                 float until = Time.realtimeSinceStartup + 3.5f * barSeconds;
-                yield return UntilRealTime(() => { left |= own.Pattern != first; return Time.realtimeSinceStartup >= until; }, 4f * barSeconds);
+                yield return UntilRealTime(
+                    () =>
+                    {
+                        left |= own.Pattern != first;
+                        return Time.realtimeSinceStartup >= until;
+                    },
+                    4f * barSeconds
+                );
                 Assert.IsFalse(left, "with loopPattern the song stays on its pattern for more than three bars");
 
                 own.loopPattern = false;
                 yield return UntilRealTime(() => own.Pattern != first, 2.5f * barSeconds);
                 Assert.AreNotEqual(first, own.Pattern, "and without it the arrangement goes on");
             }
-            finally { UnityEngine.Object.Destroy(go); }
+            finally
+            {
+                UnityEngine.Object.Destroy(go);
+            }
         }
 
         [UnityTest]
@@ -192,7 +251,11 @@ namespace SfxShowcase.Tests
 
             input.MoveX = 1f;
             yield return UntilRealTime(() => director.Intensity > atRest + 0.15f, 4f);
-            Assert.Greater(director.Intensity, atRest + 0.15f, "running brings more of the band in: the intensity rises with speed");
+            Assert.Greater(
+                director.Intensity,
+                atRest + 0.15f,
+                "running brings more of the band in: the intensity rises with speed"
+            );
 
             input.Release();
             player.AddChimes(3);
@@ -209,8 +272,12 @@ namespace SfxShowcase.Tests
             for (int channel = 0; channel < 2; channel++)
             {
                 source.GetOutputData(samples, channel);
-                foreach (float sample in samples) loudest = Mathf.Max(loudest, Mathf.Abs(sample));
+                foreach (float sample in samples)
+                {
+                    loudest = Mathf.Max(loudest, Mathf.Abs(sample));
+                }
             }
+
             return loudest;
         }
     }

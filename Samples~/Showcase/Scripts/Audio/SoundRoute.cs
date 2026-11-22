@@ -11,11 +11,13 @@ namespace SfxShowcase.Audio
         /// AudioSource. The cheapest route; volume (and the AudioSource's pitch) can still vary per trigger.
         /// </summary>
         Baked,
+
         /// <summary>
         /// Synthesized as it plays by an <c>SfxPlayer</c> from the voice pool, so every trigger can have its own pitch
         /// and velocity (the Chime's rising combo).
         /// </summary>
         LiveOneShot,
+
         /// <summary>
         /// A sustained patch on an <c>SfxPlayer</c> of its own, held while the game says so and bent every frame with
         /// the player's live pitch / cutoff / timbre / level values (the roll hum, the wind, the Wind-Up rev).

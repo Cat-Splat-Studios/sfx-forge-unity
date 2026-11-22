@@ -13,7 +13,8 @@ namespace CatSplat.SfxForge.Editor
     /// </summary>
     public class SfxForgeWindow : EditorWindow
     {
-        const string FolderPref = "SfxForge.Folder", AutoSavePref = "SfxForge.AutoSave";
+        const string FolderPref = "SfxForge.Folder";
+        const string AutoSavePref = "SfxForge.AutoSave";
 
         readonly SfxForgeModel model = new SfxForgeModel();
         SfxForgeView view;
@@ -23,7 +24,10 @@ namespace CatSplat.SfxForge.Editor
         [MenuItem("Window/SFX Forge")]
         static void ShowWindow() => GetWindow<SfxForgeWindow>("SFX Forge").minSize = new Vector2(340, 420);
 
-        /// <summary>The whole window as one element: what CreateGUI shows, and what a test or a picture can build from any model.</summary>
+        /// <summary>
+        /// The whole window as one element: what CreateGUI shows, and what a test or a picture can
+        /// build from any model.
+        /// </summary>
         public static VisualElement Build(SfxForgeModel model) => new SfxForgeView(model);
 
         void OnEnable()
@@ -42,29 +46,77 @@ namespace CatSplat.SfxForge.Editor
             model.folder = EditorPrefs.GetString(FolderPref, SfxForgeModel.DefaultFolder);
             model.inputPort = SfxForgeEditorLink.InputPort;
             model.outputPort = SfxForgeEditorLink.OutputPort;
-            model.connect = () => { SfxForgeEditorLink.Connect(); Sync(); };
-            model.disconnect = () => { SfxForgeEditorLink.Disconnect(); Sync(); };
+            model.connect = () =>
+            {
+                SfxForgeEditorLink.Connect();
+                Sync();
+            };
+            model.disconnect = () =>
+            {
+                SfxForgeEditorLink.Disconnect();
+                Sync();
+            };
             model.refreshPorts = RefreshPorts;
-            model.pickInput = name => { SfxForgeEditorLink.InputPort = model.inputPort = name; changed = true; };
-            model.pickOutput = name => { SfxForgeEditorLink.OutputPort = model.outputPort = name; changed = true; };
+            model.pickInput = name =>
+            {
+                model.inputPort = name;
+                SfxForgeEditorLink.InputPort = name;
+                changed = true;
+            };
+            model.pickOutput = name =>
+            {
+                model.outputPort = name;
+                SfxForgeEditorLink.OutputPort = name;
+                changed = true;
+            };
             model.playPad = pad => link.PlayPad(pad);
             model.releasePad = pad => link.ReleasePad(pad);
             model.fetchPad = pad => link.RequestPatch(pad);
             model.sendText = text => link.SendText(text);
-            model.setAutoSave = on => { EditorPrefs.SetBool(AutoSavePref, model.autoSave = on); changed = true; };
-            model.setFolder = folder => { EditorPrefs.SetString(FolderPref, model.folder = folder); changed = true; };
+            model.setAutoSave = on =>
+            {
+                EditorPrefs.SetBool(AutoSavePref, model.autoSave = on);
+                changed = true;
+            };
+            model.setFolder = folder =>
+            {
+                EditorPrefs.SetString(FolderPref, model.folder = folder);
+                changed = true;
+            };
             model.play = p => SfxForgeEditorLink.Preview(p.patch);
-            model.save = p => { p.saved = Save(p); changed = true; };
-            model.show = p => { if (p.saved != null) EditorGUIUtility.PingObject(p.saved); };
+            model.save = p =>
+            {
+                p.saved = Save(p);
+                changed = true;
+            };
+            model.show = p =>
+            {
+                if (p.saved != null)
+                {
+                    EditorGUIUtility.PingObject(p.saved);
+                }
+            };
             model.fetchSong = () => link.RequestSong();
-            model.showSong = () => { if (lastSong != null) EditorGUIUtility.PingObject(lastSong); };
+            model.showSong = () =>
+            {
+                if (lastSong != null)
+                {
+                    EditorGUIUtility.PingObject(lastSong);
+                }
+            };
             RefreshPorts();
         }
 
         void OnDisable()
         {
             var link = SfxLink.Shared;
-            if (view != null) view.LetGo();                 // (a pad held with the mouse must not stay held on the device)
+
+            // (a pad held with the mouse must not stay held on the device)
+            if (view != null)
+            {
+                view.LetGo();
+            }
+
             link.NewerReceived -= OnNewer;
             link.PadUp -= OnPadUp;
             link.PadDown -= OnPadDown;
@@ -77,18 +129,25 @@ namespace CatSplat.SfxForge.Editor
         void CreateGUI()
         {
             var scroll = new ScrollView(ScrollViewMode.Vertical);
-            scroll.contentContainer.style.paddingLeft = 6; scroll.contentContainer.style.paddingRight = 6;
+            scroll.contentContainer.style.paddingLeft = 6;
+            scroll.contentContainer.style.paddingRight = 6;
             view = (SfxForgeView)Build(model);
             scroll.Add(view);
             rootVisualElement.Add(scroll);
-            // the link is polled by SfxForgeEditorLink; here only what it is now is looked at, and what changed is shown
+
+            // the link is polled by SfxForgeEditorLink; here only what it
+            // is now is looked at, and what changed is shown
             rootVisualElement.schedule.Execute(Tick).Every(100);
         }
 
         void Tick()
         {
             Sync();
-            if (!changed || view == null) return;
+            if (!changed || view == null)
+            {
+                return;
+            }
+
             changed = false;
             view.Refresh();
         }
@@ -98,14 +157,41 @@ namespace CatSplat.SfxForge.Editor
         {
             var link = SfxLink.Shared;
             bool song = lastSong != null;
+
             // what the device said it is; or, a second after it was asked, that it did not say
             var device = link.Device;
-            string identity = device.HasValue ? device.Value.ToString() : link.IdentityUnanswered ? SfxForgeModel.NoIdentity : null;
-            if (model.identity != identity) { model.identity = identity; model.identityKnown = device.HasValue; changed = true; }
-            if (model.isOpen == link.IsOpen && model.hasOutput == link.HasOutput && model.inputName == link.InputName && model.outputName == link.OutputName && model.hasSong == song) return;
-            if (model.isOpen && !link.IsOpen) { model.ForgetKnobs(); Array.Clear(model.padDown, 0, model.padDown.Length); }
-            model.isOpen = link.IsOpen; model.hasOutput = link.HasOutput;
-            model.inputName = link.InputName; model.outputName = link.OutputName;
+            string identity =
+                device.HasValue ? device.Value.ToString()
+                : link.IdentityUnanswered ? SfxForgeModel.NoIdentity
+                : null;
+            if (model.identity != identity)
+            {
+                model.identity = identity;
+                model.identityKnown = device.HasValue;
+                changed = true;
+            }
+
+            if (
+                model.isOpen == link.IsOpen
+                && model.hasOutput == link.HasOutput
+                && model.inputName == link.InputName
+                && model.outputName == link.OutputName
+                && model.hasSong == song
+            )
+            {
+                return;
+            }
+
+            if (model.isOpen && !link.IsOpen)
+            {
+                model.ForgetKnobs();
+                Array.Clear(model.padDown, 0, model.padDown.Length);
+            }
+
+            model.isOpen = link.IsOpen;
+            model.hasOutput = link.HasOutput;
+            model.inputName = link.InputName;
+            model.outputName = link.OutputName;
             model.hasSong = song;
             changed = true;
         }
@@ -120,7 +206,11 @@ namespace CatSplat.SfxForge.Editor
         void OnPatch(int slot, SfxPatch patch)
         {
             var p = model.TakePatch(slot, patch, DateTime.Now.ToString("HH:mm:ss"));
-            if (model.autoSave) p.saved = Save(p);
+            if (model.autoSave)
+            {
+                p.saved = Save(p);
+            }
+
             changed = true;
         }
 
@@ -138,13 +228,35 @@ namespace CatSplat.SfxForge.Editor
             changed = true;
         }
 
-        void OnKnob(int index, float value) { model.TakeKnob(index, value); changed = true; }
-        void OnPadDown(int pad, float velocity) { model.TakePad(pad, true); changed = true; }
-        void OnPadUp(int pad) { model.TakePad(pad, false); changed = true; }
+        void OnKnob(int index, float value)
+        {
+            model.TakeKnob(index, value);
+            changed = true;
+        }
+
+        void OnPadDown(int pad, float velocity)
+        {
+            model.TakePad(pad, true);
+            changed = true;
+        }
+
+        void OnPadUp(int pad)
+        {
+            model.TakePad(pad, false);
+            changed = true;
+        }
 
         void OnSong(byte[] song, SfxPatch[] sounds)
         {
-            if (sounds == null) { Debug.LogWarning("SFX Forge: a song arrived without its 16 sounds – use FETCH SONG or SEND on the device's SONG page."); return; }
+            if (sounds == null)
+            {
+                Debug.LogWarning(
+                    "SFX Forge: a song arrived without its 16 sounds – use FETCH SONG or SEND on the device's SONG "
+                        + "page."
+                );
+                return;
+            }
+
             lastSong = SfxForgeEditorLink.CreateSong(sounds, song, model.folder, "Song");
             EditorGUIUtility.PingObject(lastSong);
             changed = true;

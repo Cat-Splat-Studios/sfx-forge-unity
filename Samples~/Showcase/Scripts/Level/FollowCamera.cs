@@ -13,21 +13,36 @@ namespace SfxShowcase.Level
     public sealed class FollowCamera : MonoBehaviour
     {
         [Tooltip("The player to follow.")]
-        [SerializeField] PlayerBase target;
+        [SerializeField]
+        PlayerBase target;
+
         [Tooltip("The level, for the bounds the view stays inside.")]
-        [SerializeField] LevelDescriptor level;
+        [SerializeField]
+        LevelDescriptor level;
+
         [Tooltip("The camera this component moves.")]
-        [SerializeField] Camera viewCamera;
+        [SerializeField]
+        Camera viewCamera;
+
         [Tooltip("Half the height of the view, metres.")]
-        [SerializeField] float halfHeight = 9f;
+        [SerializeField]
+        float halfHeight = 9f;
+
         [Tooltip("How far ahead of the player the view is centred at top speed, metres.")]
-        [SerializeField] float maxLookAhead = 6f;
+        [SerializeField]
+        float maxLookAhead = 6f;
+
         [Tooltip("Seconds the look-ahead takes to follow a change of speed or direction.")]
-        [SerializeField] float lookAheadSmoothTime = 0.5f;
+        [SerializeField]
+        float lookAheadSmoothTime = 0.5f;
+
         [Tooltip("Seconds the view takes to follow the player up and down.")]
-        [SerializeField] float verticalSmoothTime = 0.25f;
+        [SerializeField]
+        float verticalSmoothTime = 0.25f;
+
         [Tooltip("How far above the player the view is centred, metres: the ground is below, the interest above.")]
-        [SerializeField] float verticalOffset = 1.5f;
+        [SerializeField]
+        float verticalOffset = 1.5f;
 
         float lookAhead;
         float lookAheadVelocity;
@@ -47,7 +62,9 @@ namespace SfxShowcase.Level
             viewCamera.orthographicSize = halfHeight;
         }
 
-        /// <summary>Where the view is centred for a player standing still at a position, inside the level's bounds.</summary>
+        /// <summary>
+        /// Where the view is centred for a player standing still at a position, inside the level's bounds.
+        /// </summary>
         public Vector2 RestingViewCentre(Vector2 playerPosition)
         {
             return ClampToBounds(new Vector2(playerPosition.x, playerPosition.y + verticalOffset));
@@ -84,6 +101,7 @@ namespace SfxShowcase.Level
                 lookAhead = Mathf.SmoothDamp(lookAhead, wantedLookAhead, ref lookAheadVelocity, lookAheadSmoothTime);
                 y = Mathf.SmoothDamp(transform.position.y, wantedY, ref verticalVelocity, verticalSmoothTime);
             }
+
             Vector2 centre = ClampToBounds(new Vector2(position.x + lookAhead, y));
             transform.position = new Vector3(centre.x, centre.y, transform.position.z);
         }
@@ -96,13 +114,16 @@ namespace SfxShowcase.Level
         {
             Rect bounds = level.Bounds;
             float halfWidth = halfHeight * viewCamera.aspect;
+
             // A level narrower or lower than the view is centred instead of clamped.
-            float x = bounds.width > 2f * halfWidth
-                ? Mathf.Clamp(centre.x, bounds.xMin + halfWidth, bounds.xMax - halfWidth)
-                : bounds.center.x;
-            float y = bounds.height > 2f * halfHeight
-                ? Mathf.Clamp(centre.y, bounds.yMin + halfHeight, bounds.yMax - halfHeight)
-                : bounds.center.y;
+            float x =
+                bounds.width > 2f * halfWidth
+                    ? Mathf.Clamp(centre.x, bounds.xMin + halfWidth, bounds.xMax - halfWidth)
+                    : bounds.center.x;
+            float y =
+                bounds.height > 2f * halfHeight
+                    ? Mathf.Clamp(centre.y, bounds.yMin + halfHeight, bounds.yMax - halfHeight)
+                    : bounds.center.y;
             return new Vector2(x, y);
         }
     }

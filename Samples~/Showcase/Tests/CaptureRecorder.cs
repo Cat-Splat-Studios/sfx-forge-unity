@@ -36,8 +36,10 @@ namespace SfxShowcase.Tests
     {
         /// <summary>Width of every picture, pixels.</summary>
         public const int Width = 1920;
+
         /// <summary>Height of every picture, pixels.</summary>
         public const int Height = 1080;
+
         /// <summary>Pictures a second of game time.</summary>
         public const int FramesPerSecond = 30;
 
@@ -50,11 +52,14 @@ namespace SfxShowcase.Tests
         /// </summary>
         public const float ListenerVolume = 0.5f;
 
-        /// <summary>The most the game's mix may reach at full volume, of full scale (1 would be the edge of clipping).</summary>
+        /// <summary>
+        /// The most the game's mix may reach at full volume, of full scale (1 would be the edge of clipping).
+        /// </summary>
         public const float MixCeiling = 0.95f;
 
         /// <summary>Samples of multisampling of the render target: the art is flat shapes with inked edges.</summary>
         const int Antialiasing = 4;
+
         /// <summary>Pictures waiting to be compressed before the game is made to wait for the disk.</summary>
         const int MostPicturesWaiting = 48;
         const int BytesPerPixel = 3;
@@ -66,37 +71,61 @@ namespace SfxShowcase.Tests
         {
             /// <summary>The take's name.</summary>
             public readonly string Take;
+
             /// <summary>Pictures written.</summary>
             public readonly int Frames;
+
             /// <summary>Stereo sample frames written to the wav.</summary>
             public readonly long AudioFrames;
+
             /// <summary>The wav's sample rate, Hz.</summary>
             public readonly int SampleRate;
+
             /// <summary>The largest sample, 0..1 (above 1 the wav was clipped).</summary>
             public readonly float Peak;
+
             /// <summary>The root mean square of all samples, 0..1.</summary>
             public readonly float Rms;
+
             /// <summary>Samples that had to be clipped to fit 16 bits.</summary>
             public readonly long ClippedSamples;
 
             /// <summary>Creates a summary.</summary>
-            public Summary(string take, int frames, long audioFrames, int sampleRate, float peak, float rms, long clippedSamples)
+            public Summary(
+                string take,
+                int frames,
+                long audioFrames,
+                int sampleRate,
+                float peak,
+                float rms,
+                long clippedSamples
+            )
             {
-                Take = take; Frames = frames; AudioFrames = audioFrames; SampleRate = sampleRate;
-                Peak = peak; Rms = rms; ClippedSamples = clippedSamples;
+                Take = take;
+                Frames = frames;
+                AudioFrames = audioFrames;
+                SampleRate = sampleRate;
+                Peak = peak;
+                Rms = rms;
+                ClippedSamples = clippedSamples;
             }
 
             /// <summary>The length of the pictures, seconds.</summary>
             public float PictureSeconds => Frames / (float)FramesPerSecond;
+
             /// <summary>The length of the wav, seconds.</summary>
             public float AudioSeconds => SampleRate > 0 ? AudioFrames / (float)SampleRate : 0f;
         }
 
         Camera viewCamera;
-        string take, takeFolder, stillsFolder;
+        string take;
+        string takeFolder;
+        string stillsFolder;
         RenderTexture target;
         Texture2D readback;
-        bool rigged, recording, cameraWasEnabled;
+        bool rigged;
+        bool recording;
+        bool cameraWasEnabled;
         float listenerVolumeBefore;
         CaptureTelemetry telemetry;
 
@@ -109,25 +138,31 @@ namespace SfxShowcase.Tests
 
         FileStream wavFile;
         BinaryWriter wav;
-        int sampleRate, outputChannels;
-        long audioFrames, clippedSamples;
+        int sampleRate;
+        int outputChannels;
+        long audioFrames;
+        long clippedSamples;
         float peak;
         double sumOfSquares;
         byte[] wavBlock = new byte[0];
 
         /// <summary>Pictures written so far: the index of the frame being played now.</summary>
         public int FrameCount => frameCount;
+
         /// <summary>The folder the take's files go to.</summary>
         public string TakeFolder => takeFolder;
+
         /// <summary>The wav's sample rate, Hz.</summary>
         public int SampleRate => sampleRate;
+
         /// <summary>Samples per channel in one frame's sound, on average.</summary>
         public int SamplesPerFrame => sampleRate / FramesPerSecond;
 
         /// <summary>
         /// Puts the rig on a camera: from now until <see cref="Finish"/> the clock is fixed at 30 frames a second and
         /// the camera looks into a 1920×1080 texture, so its aspect is 16:9 whatever the screen is, and the sound is
-        /// rendered frame by frame instead of in real time, at <see cref="ListenerVolume"/>. Nothing is written yet. <paramref name="captureFolder"/> is the folder all takes share (out/unity-video).
+        /// rendered frame by frame instead of in real time, at <see cref="ListenerVolume"/>. Nothing is written yet.
+        /// <paramref name="captureFolder"/> is the folder all takes share (out/unity-video).
         /// </summary>
         public static CaptureRecorder Create(Camera camera, string captureFolder, string takeName)
         {
@@ -149,7 +184,11 @@ namespace SfxShowcase.Tests
             Time.captureDeltaTime = 0f;
             Time.captureFramerate = FramesPerSecond;
 
-            target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = Antialiasing, name = "Capture Target" };
+            target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = Antialiasing,
+                name = "Capture Target",
+            };
             target.Create();
             readback = new Texture2D(Width, Height, TextureFormat.RGB24, false);
 
@@ -162,29 +201,52 @@ namespace SfxShowcase.Tests
 
             sampleRate = AudioSettings.outputSampleRate;
             outputChannels = ChannelsOf(AudioSettings.speakerMode);
-            if (sampleRate % FramesPerSecond != 0) Debug.LogWarning($"CAPTURE: {sampleRate} Hz is not a whole number of samples per frame; AudioRenderer spreads the remainder.");
+            if (sampleRate % FramesPerSecond != 0)
+            {
+                Debug.LogWarning(
+                    $"CAPTURE: {sampleRate} Hz is not a whole number of samples per frame; AudioRenderer spreads the remainder."
+                );
+            }
+
             listenerVolumeBefore = AudioListener.volume;
             AudioListener.volume = ListenerVolume;
-            if (!AudioRenderer.Start()) throw new InvalidOperationException("AudioRenderer.Start failed: the sound cannot be rendered offline here.");
+            if (!AudioRenderer.Start())
+            {
+                throw new InvalidOperationException(
+                    "AudioRenderer.Start failed: the sound cannot be rendered offline here."
+                );
+            }
+
             rigged = true;
         }
 
         /// <summary>
         /// Starts writing: from the frame this is called in, every frame becomes a picture and one frame of sound, and
-        /// <paramref name="frameTelemetry"/> (may be null) is asked to note the frame. Old files of the take are removed.
+        /// <paramref name="frameTelemetry"/> (may be null) is asked to note the frame. Old files of the
+        /// take are removed.
         /// </summary>
         public void BeginRecording(CaptureTelemetry frameTelemetry)
         {
-            if (!rigged || recording) throw new InvalidOperationException("BeginRecording needs a rigged recorder that is not recording yet.");
+            if (!rigged || recording)
+            {
+                throw new InvalidOperationException(
+                    "BeginRecording needs a rigged recorder that is not recording yet."
+                );
+            }
+
             // also the old telemetry: a take that fails part-way must not leave new pictures beside old telemetry
-            foreach (string old in Directory.GetFiles(takeFolder, "f*.png")) File.Delete(old);
+            foreach (string old in Directory.GetFiles(takeFolder, "f*.png"))
+            {
+                File.Delete(old);
+            }
+
             File.Delete(Path.Combine(takeFolder, "telemetry.json"));
 
             telemetry = frameTelemetry;
             waiting = new SemaphoreSlim(MostPicturesWaiting, MostPicturesWaiting);
             wavFile = new FileStream(Path.Combine(takeFolder, "audio.wav"), FileMode.Create, FileAccess.Write);
             wav = new BinaryWriter(wavFile);
-            wav.Write(new byte[WavHeaderBytes]);                       // filled in by Finish, when the length is known
+            wav.Write(new byte[WavHeaderBytes]); // filled in by Finish, when the length is known
             frameCount = 0;
             recording = true;
         }
@@ -195,28 +257,49 @@ namespace SfxShowcase.Tests
         /// </summary>
         public void RequestStill(string name)
         {
-            if (!rigged) throw new InvalidOperationException("RequestStill needs a rigged recorder.");
+            if (!rigged)
+            {
+                throw new InvalidOperationException("RequestStill needs a rigged recorder.");
+            }
+
             stillsWanted.Add(name);
         }
 
         void LateUpdate()
         {
-            if (!rigged) return;
+            if (!rigged)
+            {
+                return;
+            }
+
             bool wantsPicture = recording || stillsWanted.Count > 0;
-            if (wantsPicture) TakePicture();
+            if (wantsPicture)
+            {
+                TakePicture();
+            }
 
             foreach (string still in stillsWanted)
+            {
                 File.WriteAllBytes(Path.Combine(stillsFolder, still + ".png"), readback.EncodeToPNG());
+            }
+
             stillsWanted.Clear();
 
             // The sound is rendered in every frame from the moment the rig is on, and only written while recording:
             // what happens before a take rolls (a cut, waiting for a bar line) is then on the frame clock as well.
             RenderSound();
-            if (!recording) return;
+            if (!recording)
+            {
+                return;
+            }
+
             WritePicture(frameCount);
             telemetry?.NoteFrame(frameCount, audioFrames);
             frameCount++;
-            if (writeError != null) throw new IOException("A picture could not be written.", writeError);
+            if (writeError != null)
+            {
+                throw new IOException("A picture could not be written.", writeError);
+            }
         }
 
         /// <summary>Renders the camera into the target and reads the pixels back.</summary>
@@ -229,41 +312,74 @@ namespace SfxShowcase.Tests
             RenderTexture.active = before;
         }
 
-        /// <summary>Hands the pixels to a worker thread, which compresses and writes them; waits if too many are queued.</summary>
+        /// <summary>
+        /// Hands the pixels to a worker thread, which compresses and writes them; waits if too many are queued.
+        /// </summary>
         void WritePicture(int index)
         {
-            if (!spareBuffers.TryTake(out byte[] pixels)) pixels = new byte[Width * Height * BytesPerPixel];
+            if (!spareBuffers.TryTake(out byte[] pixels))
+            {
+                pixels = new byte[Width * Height * BytesPerPixel];
+            }
+
             readback.GetRawTextureData<byte>().CopyTo(pixels);
-            string path = Path.Combine(takeFolder, "f" + index.ToString("00000", CultureInfo.InvariantCulture) + ".png");
+            string path = Path.Combine(
+                takeFolder,
+                "f" + index.ToString("00000", CultureInfo.InvariantCulture) + ".png"
+            );
 
             waiting.Wait();
             SemaphoreSlim gate = waiting;
-            writes.Add(Task.Run(() =>
-            {
-                try
+            writes.Add(
+                Task.Run(() =>
                 {
-                    byte[] png = ImageConversion.EncodeArrayToPNG(pixels, GraphicsFormat.R8G8B8_UNorm, Width, Height);
-                    File.WriteAllBytes(path, png);
-                }
-                catch (Exception problem) { writeError = problem; }
-                finally
-                {
-                    spareBuffers.Add(pixels);
-                    gate.Release();
-                }
-            }));
+                    try
+                    {
+                        byte[] png = ImageConversion.EncodeArrayToPNG(
+                            pixels,
+                            GraphicsFormat.R8G8B8_UNorm,
+                            Width,
+                            Height
+                        );
+                        File.WriteAllBytes(path, png);
+                    }
+                    catch (Exception problem)
+                    {
+                        writeError = problem;
+                    }
+                    finally
+                    {
+                        spareBuffers.Add(pixels);
+                        gate.Release();
+                    }
+                })
+            );
         }
 
-        /// <summary>Renders the sound this frame is due (whole audio blocks) and appends it to the wav as 16-bit stereo.</summary>
+        /// <summary>
+        /// Renders the sound this frame is due (whole audio blocks) and appends it to the wav as 16-bit stereo.
+        /// </summary>
         void RenderSound()
         {
             int frames = AudioRenderer.GetSampleCountForCaptureFrame();
             var samples = new NativeArray<float>(frames * outputChannels, Allocator.Temp);
             try
             {
-                if (!AudioRenderer.Render(samples)) throw new InvalidOperationException("AudioRenderer.Render failed.");
-                if (!recording) return;
-                if (wavBlock.Length < frames * WavChannels * 2) wavBlock = new byte[frames * WavChannels * 2];
+                if (!AudioRenderer.Render(samples))
+                {
+                    throw new InvalidOperationException("AudioRenderer.Render failed.");
+                }
+
+                if (!recording)
+                {
+                    return;
+                }
+
+                if (wavBlock.Length < frames * WavChannels * 2)
+                {
+                    wavBlock = new byte[frames * WavChannels * 2];
+                }
+
                 int at = 0;
                 for (int frame = 0; frame < frames; frame++)
                 {
@@ -272,18 +388,31 @@ namespace SfxShowcase.Tests
                     at = Put(left, at);
                     at = Put(right, at);
                 }
+
                 wav.Write(wavBlock, 0, at);
                 audioFrames += frames;
             }
-            finally { samples.Dispose(); }
+            finally
+            {
+                samples.Dispose();
+            }
         }
 
         int Put(float sample, int at)
         {
             float size = Mathf.Abs(sample);
-            if (size > peak) peak = size;
+            if (size > peak)
+            {
+                peak = size;
+            }
+
             sumOfSquares += (double)sample * sample;
-            if (size > 1f) { clippedSamples++; sample = Mathf.Sign(sample); }
+            if (size > 1f)
+            {
+                clippedSamples++;
+                sample = Mathf.Sign(sample);
+            }
+
             short value = (short)Mathf.RoundToInt(sample * short.MaxValue);
             wavBlock[at] = (byte)(value & 0xFF);
             wavBlock[at + 1] = (byte)((value >> 8) & 0xFF);
@@ -301,10 +430,30 @@ namespace SfxShowcase.Tests
             float rms = audioFrames > 0 ? (float)Math.Sqrt(sumOfSquares / (audioFrames * WavChannels)) : 0f;
             var summary = new Summary(take, frameCount, audioFrames, sampleRate, peak, rms, clippedSamples);
             if (wasRecording)
-                Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                    "CAPTURE take={0} frames={1} seconds={2:0.000} wavSeconds={3:0.000} sampleRate={4} peak={5:0.0000} rms={6:0.0000} clipped={7} folder={8}",
-                    take, summary.Frames, summary.PictureSeconds, summary.AudioSeconds, sampleRate, peak, rms, clippedSamples, takeFolder));
-            if (writeError != null) throw new IOException("A picture could not be written.", writeError);
+            {
+                Debug.Log(
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "CAPTURE take={0} frames={1} seconds={2:0.000} wavSeconds={3:0.000} sampleRate={4} "
+                            + "peak={5:0.0000} rms={6:0.0000} clipped={7} folder={8}",
+                        take,
+                        summary.Frames,
+                        summary.PictureSeconds,
+                        summary.AudioSeconds,
+                        sampleRate,
+                        peak,
+                        rms,
+                        clippedSamples,
+                        takeFolder
+                    )
+                );
+            }
+
+            if (writeError != null)
+            {
+                throw new IOException("A picture could not be written.", writeError);
+            }
+
             Destroy(gameObject);
             return summary;
         }
@@ -314,7 +463,11 @@ namespace SfxShowcase.Tests
         /// <summary>Everything Finish undoes, safe to call twice (a failed take is cleaned up by OnDestroy).</summary>
         void Unrig()
         {
-            if (!rigged) return;
+            if (!rigged)
+            {
+                return;
+            }
+
             rigged = false;
             AudioRenderer.Stop();
             AudioListener.volume = listenerVolumeBefore;
@@ -335,8 +488,17 @@ namespace SfxShowcase.Tests
                 viewCamera.targetTexture = null;
                 viewCamera.enabled = cameraWasEnabled;
             }
-            if (target != null) { target.Release(); Destroy(target); }
-            if (readback != null) Destroy(readback);
+
+            if (target != null)
+            {
+                target.Release();
+                Destroy(target);
+            }
+
+            if (readback != null)
+            {
+                Destroy(readback);
+            }
         }
 
         void WriteWavHeader()
@@ -348,8 +510,8 @@ namespace SfxShowcase.Tests
             wav.Write(new[] { (byte)'R', (byte)'I', (byte)'F', (byte)'F' });
             wav.Write(WavHeaderBytes - 8 + dataBytes);
             wav.Write(new[] { (byte)'W', (byte)'A', (byte)'V', (byte)'E', (byte)'f', (byte)'m', (byte)'t', (byte)' ' });
-            wav.Write(16);                                             // the size of the format block
-            wav.Write((short)1);                                       // PCM
+            wav.Write(16); // the size of the format block
+            wav.Write((short)1); // PCM
             wav.Write((short)WavChannels);
             wav.Write(sampleRate);
             wav.Write(sampleRate * WavChannels * (bitsPerSample / 8));
@@ -364,12 +526,18 @@ namespace SfxShowcase.Tests
         {
             switch (mode)
             {
-                case AudioSpeakerMode.Mono: return 1;
-                case AudioSpeakerMode.Quad: return 4;
-                case AudioSpeakerMode.Surround: return 5;
-                case AudioSpeakerMode.Mode5point1: return 6;
-                case AudioSpeakerMode.Mode7point1: return 8;
-                default: return 2;
+                case AudioSpeakerMode.Mono:
+                    return 1;
+                case AudioSpeakerMode.Quad:
+                    return 4;
+                case AudioSpeakerMode.Surround:
+                    return 5;
+                case AudioSpeakerMode.Mode5point1:
+                    return 6;
+                case AudioSpeakerMode.Mode7point1:
+                    return 8;
+                default:
+                    return 2;
             }
         }
     }

@@ -5,8 +5,8 @@ namespace SfxShowcase.Art
 {
     /// <summary>
     /// Fills terrain bodies: Ground Teal with level Ground Deep strata bands. The bands are fixed in WORLD space – band
-    /// k lies between y = k × <see cref="ArtStyle.StrataSpacing"/> and that plus <see cref="ArtStyle.StrataThickness"/> –
-    /// so they stay level under a slope and line up from one piece of terrain to the next.
+    /// k lies between y = k × <see cref="ArtStyle.StrataSpacing"/> and that plus <see cref="ArtStyle.StrataThickness"/>
+    /// – so they stay level under a slope and line up from one piece of terrain to the next.
     /// </summary>
     public sealed class StrataFill
     {
@@ -31,14 +31,18 @@ namespace SfxShowcase.Art
         public void AddBody(IReadOnlyList<Vector2> convexPolygon)
         {
             builder.AddPolygon(convexPolygon, Palette.GroundTeal);
-            float lowest = float.MaxValue, highest = float.MinValue;
+            float lowest = float.MaxValue;
+            float highest = float.MinValue;
             for (int i = 0; i < convexPolygon.Count; i++)
             {
                 lowest = Mathf.Min(lowest, convexPolygon[i].y);
                 highest = Mathf.Max(highest, convexPolygon[i].y);
             }
+
             for (int band = FirstBandAbove(lowest); BandBottom(band) < highest; band++)
+            {
                 AddBandInside(convexPolygon, band);
+            }
         }
 
         /// <summary>The part of band k that lies inside a convex polygon, in Ground Deep.</summary>
@@ -46,7 +50,11 @@ namespace SfxShowcase.Art
         {
             float bottom = BandBottom(band);
             clipInput.Clear();
-            for (int i = 0; i < convexPolygon.Count; i++) clipInput.Add(convexPolygon[i]);
+            for (int i = 0; i < convexPolygon.Count; i++)
+            {
+                clipInput.Add(convexPolygon[i]);
+            }
+
             ClipAtHeight(clipInput, clipOutput, bottom, keepAbove: true);
             ClipAtHeight(clipOutput, clipInput, bottom + ArtStyle.StrataThickness, keepAbove: false);
             builder.AddPolygon(clipInput, Palette.GroundDeep);
@@ -62,9 +70,15 @@ namespace SfxShowcase.Art
                 Vector2 next = input[(i + 1) % input.Count];
                 bool currentInside = keepAbove ? current.y >= y : current.y <= y;
                 bool nextInside = keepAbove ? next.y >= y : next.y <= y;
-                if (currentInside) output.Add(current);
+                if (currentInside)
+                {
+                    output.Add(current);
+                }
+
                 if (currentInside != nextInside)
+                {
                     output.Add(Vector2.Lerp(current, next, (y - current.y) / (next.y - current.y)));
+                }
             }
         }
     }

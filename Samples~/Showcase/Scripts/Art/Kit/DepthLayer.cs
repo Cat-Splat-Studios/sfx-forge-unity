@@ -9,24 +9,34 @@ namespace SfxShowcase.Art
     {
         /// <summary>The sky gradient and the sun.</summary>
         Sky = -100,
+
         /// <summary>The farthest background wave.</summary>
         FarWave = -90,
+
         /// <summary>The middle background wave.</summary>
         MidWave = -80,
+
         /// <summary>The nearest background wave.</summary>
         NearWave = -70,
+
         /// <summary>Ground and platforms.</summary>
         Terrain = 0,
+
         /// <summary>The half of a loop the player runs up first: behind the player.</summary>
         LoopBack = 5,
+
         /// <summary>Chimes, Woofers, Static, Clippers, Tuning Forks, the Resonator.</summary>
         Props = 10,
+
         /// <summary>Brio.</summary>
         Character = 30,
+
         /// <summary>The half of a loop the player comes down: in front of the player.</summary>
         LoopFront = 40,
+
         /// <summary>Rings, shards, puffs, dust.</summary>
         Effects = 50,
+
         /// <summary>HUD panels; text and meters sit a few steps above.</summary>
         Hud = 100,
     }

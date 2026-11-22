@@ -18,7 +18,13 @@ namespace SfxShowcase.Art
         {
             var woofer = new GameObject("Woofer");
             kit.CreatePart("Base", kit.SharedMesh("Woofer Base", BaseMesh), DepthLayer.Props, 0, woofer.transform);
-            GameObject cone = kit.CreatePart("Cone", kit.SharedMesh("Woofer Cone", ConeMesh), DepthLayer.Props, 1, woofer.transform);
+            GameObject cone = kit.CreatePart(
+                "Cone",
+                kit.SharedMesh("Woofer Cone", ConeMesh),
+                DepthLayer.Props,
+                1,
+                woofer.transform
+            );
             cone.transform.localPosition = new Vector3(0f, ConeHeight, 0f);
             var visual = woofer.AddComponent<WooferVisual>();
             visual.Configure(cone.transform);
@@ -27,11 +33,17 @@ namespace SfxShowcase.Art
 
         static Mesh BaseMesh()
         {
-            var body = Shapes.RoundedRect(new Vector2(-BaseHalfWidth, 0f), new Vector2(BaseHalfWidth, BaseHeight), 0.15f);
+            var body = Shapes.RoundedRect(
+                new Vector2(-BaseHalfWidth, 0f),
+                new Vector2(BaseHalfWidth, BaseHeight),
+                0.15f
+            );
             return new InkedShape().Add(body, Palette.WooferViolet).ToMesh("Woofer Base");
         }
 
-        /// <summary>The cone seen from slightly above: rim, dark throat, centre cap. Its origin is its centre.</summary>
+        /// <summary>
+        /// The cone seen from slightly above: rim, dark throat, centre cap. Its origin is its centre.
+        /// </summary>
         static Mesh ConeMesh()
         {
             return new InkedShape()

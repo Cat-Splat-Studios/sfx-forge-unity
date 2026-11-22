@@ -18,8 +18,13 @@ namespace SfxShowcase.Art
         const float TitleText = 1.1f;
         const int ContentOrder = 1;
         const int TextOrder = 2;
-        const float Left = 0f, Middle = 0.5f, Right = 1f;
-        /// <summary>The bottom edge of the title card and the results panel, in HUD units above the middle of the view.</summary>
+        const float Left = 0f;
+        const float Middle = 0.5f;
+        const float Right = 1f;
+
+        /// <summary>
+        /// The bottom edge of the title card and the results panel, in HUD units above the middle of the view.
+        /// </summary>
         const float CardBottom = 1f;
 
         /// <summary>The HUD, the title card and the results panel, drawn in front of the camera.</summary>
@@ -36,7 +41,15 @@ namespace SfxShowcase.Art
             Transform bottomLeft = Group("Bottom Left", playHud);
             Transform titleCard = Group("Title Card", hud.transform);
             Transform resultsPanel = Group("Results Panel", hud.transform);
-            view.ConfigureLayout(topLeft, topCenter, topRight, bottomLeft, playHud.gameObject, titleCard.gameObject, resultsPanel.gameObject);
+            view.ConfigureLayout(
+                topLeft,
+                topCenter,
+                topRight,
+                bottomLeft,
+                playHud.gameObject,
+                titleCard.gameObject,
+                resultsPanel.gameObject
+            );
 
             BuildPlayHud(kit, view, topLeft, topCenter, topRight, bottomLeft);
             BuildTitleCard(kit, titleCard);
@@ -47,11 +60,24 @@ namespace SfxShowcase.Art
             return hud;
         }
 
-        static void BuildPlayHud(ArtKit kit, HudView view, Transform topLeft, Transform topCenter, Transform topRight, Transform bottomLeft)
+        static void BuildPlayHud(
+            ArtKit kit,
+            HudView view,
+            Transform topLeft,
+            Transform topCenter,
+            Transform topRight,
+            Transform bottomLeft
+        )
         {
             // Top-left: a Chime and how many are carried.
             Panel(kit, topLeft, new Rect(Margin, -1.8f, 3.9f, 1.3f));
-            Transform icon = kit.CreatePart("Chime Icon", kit.SharedMesh("Chime", ChimeArt.DiamondMesh), DepthLayer.Hud, ContentOrder, topLeft).transform;
+            Transform icon = kit.CreatePart(
+                "Chime Icon",
+                kit.SharedMesh("Chime", ChimeArt.DiamondMesh),
+                DepthLayer.Hud,
+                ContentOrder,
+                topLeft
+            ).transform;
             icon.localPosition = new Vector3(1.25f, -1.15f, 0f);
             icon.localScale = Vector3.one * 1.6f;
             HudLabel chimes = Label(kit, "Chime Count", topLeft, new Vector2(2f, -1.5f), NormalText, Left);
@@ -66,7 +92,14 @@ namespace SfxShowcase.Art
             HudLabel section = Label(kit, "Section Name", topRight, new Vector2(-Margin - 0.2f, -1.45f), 0.6f, Right);
 
             // Bottom-left: the speed meter.
-            Transform meterPart = kit.CreatePart("Speed Meter", null, DepthLayer.Hud, ContentOrder, bottomLeft, transparent: true).transform;
+            Transform meterPart = kit.CreatePart(
+                "Speed Meter",
+                null,
+                DepthLayer.Hud,
+                ContentOrder,
+                bottomLeft,
+                transparent: true
+            ).transform;
             var meter = meterPart.gameObject.AddComponent<SpeedMeter>();
             Panel(kit, bottomLeft, new Rect(Margin, Margin, meter.Width + 0.6f, 1.5f));
             meterPart.localPosition = new Vector3(Margin + 0.3f, Margin + 0.28f, 0f);
@@ -83,7 +116,8 @@ namespace SfxShowcase.Art
         static void BuildTitleCard(ArtKit kit, Transform titleCard)
         {
             Panel(kit, titleCard, new Rect(-11f, CardBottom, 22f, 4.6f));
-            Label(kit, "Title", titleCard, new Vector2(0f, CardBottom + 2.5f), TitleText, Middle).Show("BRIO: FIRST HARMONIC");
+            Label(kit, "Title", titleCard, new Vector2(0f, CardBottom + 2.5f), TitleText, Middle)
+                .Show("BRIO: FIRST HARMONIC");
             Label(kit, "Prompt", titleCard, new Vector2(0f, CardBottom + 0.8f), NormalText, Middle).Show("PRESS JUMP");
         }
 
@@ -91,10 +125,32 @@ namespace SfxShowcase.Art
         {
             // In the upper half like the title card, so the brake and the stop at the Resonator stay in view.
             Panel(kit, resultsPanel, new Rect(-8.5f, CardBottom, 17f, 6.4f));
-            HudLabel chimes = Label(kit, "Result Chimes", resultsPanel, new Vector2(0f, CardBottom + 4.9f), NormalText, Middle);
-            HudLabel time = Label(kit, "Result Time", resultsPanel, new Vector2(0f, CardBottom + 3.6f), NormalText, Middle);
-            HudLabel topSpeed = Label(kit, "Result Top Speed", resultsPanel, new Vector2(0f, CardBottom + 2.3f), NormalText, Middle);
-            Label(kit, "Prompt", resultsPanel, new Vector2(0f, CardBottom + 0.7f), SmallText, Middle).Show("PRESS JUMP TO PLAY AGAIN");
+            HudLabel chimes = Label(
+                kit,
+                "Result Chimes",
+                resultsPanel,
+                new Vector2(0f, CardBottom + 4.9f),
+                NormalText,
+                Middle
+            );
+            HudLabel time = Label(
+                kit,
+                "Result Time",
+                resultsPanel,
+                new Vector2(0f, CardBottom + 3.6f),
+                NormalText,
+                Middle
+            );
+            HudLabel topSpeed = Label(
+                kit,
+                "Result Top Speed",
+                resultsPanel,
+                new Vector2(0f, CardBottom + 2.3f),
+                NormalText,
+                Middle
+            );
+            Label(kit, "Prompt", resultsPanel, new Vector2(0f, CardBottom + 0.7f), SmallText, Middle)
+                .Show("PRESS JUMP TO PLAY AGAIN");
             view.ConfigureResults(chimes, time, topSpeed);
         }
 
@@ -114,7 +170,14 @@ namespace SfxShowcase.Art
             kit.CreatePart("Panel", builder.ToMesh("HUD Panel"), DepthLayer.Hud, 0, parent, transparent: true);
         }
 
-        static HudLabel Label(ArtKit kit, string name, Transform parent, Vector2 position, float capHeight, float anchor)
+        static HudLabel Label(
+            ArtKit kit,
+            string name,
+            Transform parent,
+            Vector2 position,
+            float capHeight,
+            float anchor
+        )
         {
             GameObject part = kit.CreatePart(name, null, DepthLayer.Hud, TextOrder, parent, transparent: true);
             part.transform.localPosition = position;

@@ -1,22 +1,26 @@
-using UnityEngine;
 using SfxShowcase.Core;
+using UnityEngine;
 
 namespace SfxShowcase.Gameplay
 {
     /// <summary>
     /// The run: title card, playing, finished. It keeps what a run is scored by (Chimes carried, time, top speed),
     /// counts the Chime combo, and turns Jump on the title card and on the results panel into "start" and "play again".
-    /// A restart happens in place: the player goes back to the start and <see cref="GameEvents.GameStarted"/> is raised,
-    /// which is the level pieces' cue to put themselves back.
+    /// A restart happens in place: the player goes back to the start and <see cref="GameEvents.GameStarted"/> is
+    /// raised, which is the level pieces' cue to put themselves back.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class GameSession : GameSessionBase
     {
         [Tooltip("The player whose run this is.")]
-        [SerializeField] PlayerController player;
+        [SerializeField]
+        PlayerController player;
 
-        [Tooltip("Seconds the results panel stays before Jump is accepted, so the Jump held while arriving does not skip it.")]
-        [SerializeField] float resultsHoldSeconds = 1f;
+        [Tooltip(
+            "Seconds the results panel stays before Jump is accepted, so the Jump held while arriving does not skip it."
+        )]
+        [SerializeField]
+        float resultsHoldSeconds = 1f;
 
         GamePhase phase = GamePhase.Title;
         int chimeCount;
@@ -29,16 +33,22 @@ namespace SfxShowcase.Gameplay
 
         /// <inheritdoc/>
         public override GamePhase Phase => phase;
+
         /// <inheritdoc/>
         public override int ChimeCount => chimeCount;
+
         /// <inheritdoc/>
         public override float ElapsedSeconds => elapsedSeconds;
+
         /// <inheritdoc/>
         public override float TopSpeedReached => topSpeedReached;
+
         /// <inheritdoc/>
         public override SectionId CurrentSection => Sections.At(player.Position.x);
 
-        /// <summary>Connects the session to its player; called once by <see cref="GameplayInstaller"/> while the scene is built.</summary>
+        /// <summary>
+        /// Connects the session to its player; called once by <see cref="GameplayInstaller"/> while the scene is built.
+        /// </summary>
         public void Wire(PlayerController sessionPlayer)
         {
             player = sessionPlayer;
@@ -47,7 +57,11 @@ namespace SfxShowcase.Gameplay
         /// <inheritdoc/>
         public override void StartGame()
         {
-            if (phase != GamePhase.Title) return;
+            if (phase != GamePhase.Title)
+            {
+                return;
+            }
+
             BeginRun();
         }
 
@@ -83,10 +97,16 @@ namespace SfxShowcase.Gameplay
             return dropped;
         }
 
-        /// <summary>The goal was reached: the timer stops and the results are shown. Called by the player from Finish.</summary>
+        /// <summary>
+        /// The goal was reached: the timer stops and the results are shown. Called by the player from Finish.
+        /// </summary>
         public void EndRun()
         {
-            if (phase != GamePhase.Playing) return;
+            if (phase != GamePhase.Playing)
+            {
+                return;
+            }
+
             phase = GamePhase.Finished;
             finishedSeconds = 0f;
         }
@@ -100,7 +120,11 @@ namespace SfxShowcase.Gameplay
             switch (phase)
             {
                 case GamePhase.Title:
-                    if (jumpPressed) Confirm();
+                    if (jumpPressed)
+                    {
+                        Confirm();
+                    }
+
                     break;
                 case GamePhase.Playing:
                     elapsedSeconds += Time.deltaTime;
@@ -108,7 +132,11 @@ namespace SfxShowcase.Gameplay
                     break;
                 case GamePhase.Finished:
                     finishedSeconds += Time.deltaTime;
-                    if (jumpPressed && finishedSeconds >= resultsHoldSeconds) Confirm();
+                    if (jumpPressed && finishedSeconds >= resultsHoldSeconds)
+                    {
+                        Confirm();
+                    }
+
                     break;
             }
         }
@@ -117,8 +145,14 @@ namespace SfxShowcase.Gameplay
         void Confirm()
         {
             GameEvents.RaiseUiConfirmed();
-            if (phase == GamePhase.Title) StartGame();
-            else Restart();
+            if (phase == GamePhase.Title)
+            {
+                StartGame();
+            }
+            else
+            {
+                Restart();
+            }
         }
 
         void BeginRun()

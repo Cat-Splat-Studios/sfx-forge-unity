@@ -13,27 +13,56 @@ namespace CatSplat.SfxForge
     [AddComponentMenu("SFX Forge/SFX Encoder Binding")]
     public class SfxEncoderBinding : MonoBehaviour
     {
-        public enum Encoder { Encoder1, Encoder2, Encoder3, Encoder4, A, B }
+        /// <summary>The device's six encoders, as the LINK page numbers them.</summary>
+        public enum Encoder
+        {
+            Encoder1,
+            Encoder2,
+            Encoder3,
+            Encoder4,
+            A,
+            B,
+        }
 
+        /// <summary>Which encoder this follows.</summary>
         public Encoder encoder = Encoder.Encoder1;
+
         [Tooltip("Optional: a mixer and the name of one of its exposed parameters.")]
         public AudioMixer mixer;
-        public string exposedParameter = "";
-        [Tooltip("The parameter's value with the encoder at 0 and at 127 (a volume: -80 and 0 dB).")]
-        public float min = -80f, max = 0f;
 
-        [Serializable] public class ValueEvent : UnityEvent<float> { }
+        /// <summary>The name of the mixer's exposed parameter the encoder moves.</summary>
+        public string exposedParameter = "";
+
+        [Tooltip("The parameter's value with the encoder at 0 and at 127 (a volume: -80 and 0 dB).")]
+        public float min = -80f;
+
+        [Tooltip("The parameter's value with the encoder at 0 and at 127 (a volume: -80 and 0 dB).")]
+        public float max = 0f;
+
+        /// <summary>The event of an encoder: its value between min and max.</summary>
+        [Serializable]
+        public class ValueEvent : UnityEvent<float> { }
+
         [Tooltip("The value between Min and Max, whenever the encoder turns.")]
         public ValueEvent onValue = new ValueEvent();
 
         void OnEnable() => SfxLink.Shared.EncoderChanged += OnEncoder;
+
         void OnDisable() => SfxLink.Shared.EncoderChanged -= OnEncoder;
 
         void OnEncoder(int index, float value01)
         {
-            if (index != (int)encoder) return;
+            if (index != (int)encoder)
+            {
+                return;
+            }
+
             float v = Mathf.Lerp(min, max, value01);
-            if (mixer != null && !string.IsNullOrEmpty(exposedParameter)) mixer.SetFloat(exposedParameter, v);
+            if (mixer != null && !string.IsNullOrEmpty(exposedParameter))
+            {
+                mixer.SetFloat(exposedParameter, v);
+            }
+
             onValue.Invoke(v);
         }
     }

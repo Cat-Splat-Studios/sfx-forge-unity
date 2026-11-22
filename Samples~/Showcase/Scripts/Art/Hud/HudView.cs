@@ -18,30 +18,62 @@ namespace SfxShowcase.Art
         [Header("Wiring (set by HudArt)")]
         [SerializeField, Tooltip("The game camera the HUD is drawn in front of.")]
         Camera viewCamera;
+
         [SerializeField, Tooltip("The player, for the speed meter.")]
         PlayerBase player;
+
         [SerializeField, Tooltip("The run, for the phase, Chimes, time and section.")]
         GameSessionBase session;
-        [SerializeField] Transform topLeft;
-        [SerializeField] Transform topCenter;
-        [SerializeField] Transform topRight;
-        [SerializeField] Transform bottomLeft;
-        [SerializeField] GameObject playHud;
-        [SerializeField] GameObject titleCard;
-        [SerializeField] GameObject resultsPanel;
-        [SerializeField] HudLabel chimeLabel;
-        [SerializeField] HudLabel timeLabel;
-        [SerializeField] HudLabel sectionLabel;
-        [SerializeField] SpeedMeter speedMeter;
-        [SerializeField] HudLabel resultChimes;
-        [SerializeField] HudLabel resultTime;
-        [SerializeField] HudLabel resultTopSpeed;
+
+        [SerializeField]
+        Transform topLeft;
+
+        [SerializeField]
+        Transform topCenter;
+
+        [SerializeField]
+        Transform topRight;
+
+        [SerializeField]
+        Transform bottomLeft;
+
+        [SerializeField]
+        GameObject playHud;
+
+        [SerializeField]
+        GameObject titleCard;
+
+        [SerializeField]
+        GameObject resultsPanel;
+
+        [SerializeField]
+        HudLabel chimeLabel;
+
+        [SerializeField]
+        HudLabel timeLabel;
+
+        [SerializeField]
+        HudLabel sectionLabel;
+
+        [SerializeField]
+        SpeedMeter speedMeter;
+
+        [SerializeField]
+        HudLabel resultChimes;
+
+        [SerializeField]
+        HudLabel resultTime;
+
+        [SerializeField]
+        HudLabel resultTopSpeed;
 
         [Header("Behaviour")]
         [SerializeField, Tooltip("Distance in front of the camera's near plane, metres.")]
         float distanceFromNearPlane = 1f;
+
         [SerializeField, Tooltip("Seconds a section's name stays on screen after entering the section.")]
         float sectionNameSeconds = 3f;
+
         [SerializeField, Tooltip("Seconds the section's name takes to fade out after that.")]
         float sectionFadeSeconds = 0.5f;
 
@@ -59,8 +91,15 @@ namespace SfxShowcase.Art
         }
 
         /// <summary>Wires the four corner anchors and the three screens. Called by <see cref="HudArt"/>.</summary>
-        public void ConfigureLayout(Transform topLeftAnchor, Transform topCenterAnchor, Transform topRightAnchor, Transform bottomLeftAnchor,
-            GameObject playHudGroup, GameObject titleCardGroup, GameObject resultsPanelGroup)
+        public void ConfigureLayout(
+            Transform topLeftAnchor,
+            Transform topCenterAnchor,
+            Transform topRightAnchor,
+            Transform bottomLeftAnchor,
+            GameObject playHudGroup,
+            GameObject titleCardGroup,
+            GameObject resultsPanelGroup
+        )
         {
             topLeft = topLeftAnchor;
             topCenter = topCenterAnchor;
@@ -95,7 +134,10 @@ namespace SfxShowcase.Art
         public void Arrange()
         {
             Transform view = viewCamera.transform;
-            transform.SetPositionAndRotation(view.position + view.forward * (viewCamera.nearClipPlane + distanceFromNearPlane), view.rotation);
+            transform.SetPositionAndRotation(
+                view.position + view.forward * (viewCamera.nearClipPlane + distanceFromNearPlane),
+                view.rotation
+            );
             transform.localScale = Vector3.one * (viewCamera.orthographicSize / ArtStyle.ViewHalfHeight);
 
             float halfHeight = ArtStyle.ViewHalfHeight;
@@ -129,10 +171,21 @@ namespace SfxShowcase.Art
             {
                 shownPhase = phase;
                 ShowPhase(phase);
-                if (phase == GamePhase.Playing) anySectionShown = false;
-                if (phase == GamePhase.Finished) FillResults();
+                if (phase == GamePhase.Playing)
+                {
+                    anySectionShown = false;
+                }
+
+                if (phase == GamePhase.Finished)
+                {
+                    FillResults();
+                }
             }
-            if (phase == GamePhase.Playing) UpdatePlayHud();
+
+            if (phase == GamePhase.Playing)
+            {
+                UpdatePlayHud();
+            }
         }
 
         void UpdatePlayHud()
@@ -148,6 +201,7 @@ namespace SfxShowcase.Art
                 shownSection = section;
                 sectionShownAt = Time.time;
             }
+
             float fade = (Time.time - sectionShownAt - sectionNameSeconds) / sectionFadeSeconds;
             sectionLabel.Show(Sections.Get(section).DisplayName, 1f - Mathf.Clamp01(fade));
         }
@@ -156,7 +210,9 @@ namespace SfxShowcase.Art
         {
             resultChimes.Show("CHIMES " + session.ChimeCount.ToString("000", CultureInfo.InvariantCulture));
             resultTime.Show("TIME " + FormatTime(session.ElapsedSeconds));
-            resultTopSpeed.Show("TOP SPEED " + session.TopSpeedReached.ToString("0.0", CultureInfo.InvariantCulture) + " M/S");
+            resultTopSpeed.Show(
+                "TOP SPEED " + session.TopSpeedReached.ToString("0.0", CultureInfo.InvariantCulture) + " M/S"
+            );
         }
 
         /// <summary>Seconds as m:ss.cc (minutes, seconds, hundredths).</summary>
@@ -165,7 +221,13 @@ namespace SfxShowcase.Art
             int hundredths = Mathf.FloorToInt(Mathf.Max(0f, seconds) * 100f);
             int minutes = hundredths / 6000;
             int wholeSeconds = hundredths / 100 % 60;
-            return string.Format(CultureInfo.InvariantCulture, "{0}:{1:00}.{2:00}", minutes, wholeSeconds, hundredths % 100);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}:{1:00}.{2:00}",
+                minutes,
+                wholeSeconds,
+                hundredths % 100
+            );
         }
     }
 }

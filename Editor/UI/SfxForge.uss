@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT
-   The look of the SFX FORGE display (sfx-forge/sfx-forge.c: BG, PANEL, LINE, DIM, TEXT and its drawing code), for the
+   The look of the SFX FORGE display (sfx-forge/fw_draw_parts.h: BG, PANEL, LINE, DIM, TEXT and its drawing code), for the
    inspectors and the window. The same colours are in SfxColors (C#) for what is drawn with a painter. */
 .sfx-root {
     --sfx-bg: #180F0B;

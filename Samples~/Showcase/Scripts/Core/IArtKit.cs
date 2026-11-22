@@ -25,33 +25,45 @@ namespace SfxShowcase.Core
         GameObject CreatePlatform(IReadOnlyList<Vector2> surface, float thickness);
 
         /// <summary>
-        /// A loop: a ring whose inner face (the surface the player runs on) has the given radius around the centre, both
-        /// in world space, with a wall of the given thickness outside it. The right half (plane A, ridden first) draws
-        /// behind the player, the left half (plane B) in front.
+        /// A loop: a ring whose inner face (the surface the player runs on) has the given radius around the centre,
+        /// both in world space, with a wall of the given thickness outside it. The right half (plane A, ridden first)
+        /// draws behind the player, the left half (plane B) in front.
         /// </summary>
         GameObject CreateLoop(Vector2 center, float radius, float thickness);
 
         /// <summary>A Chime, 0.5 m tall, spinning by itself. Origin: its centre.</summary>
         GameObject CreateChime();
 
-        /// <summary>A Woofer firing along its local +y. Origin: the centre of its base on the ground. Activate = the cone punches out and wobbles back.</summary>
+        /// <summary>
+        /// A Woofer firing along its local +y. Origin: the centre of its base on the ground. Activate = the cone
+        /// punches out and wobbles back.
+        /// </summary>
         PropVisual CreateWoofer();
 
-        /// <summary>A Static burr, 2 m wide and 1 m tall; the seed picks its spikes. Origin: the centre of its base.</summary>
+        /// <summary>
+        /// A Static burr, 2 m wide and 1 m tall; the seed picks its spikes. Origin: the centre of its base.
+        /// </summary>
         GameObject CreateStatic(int seed);
 
-        /// <summary>A Clipper, 1.2 m wide, facing local +x, walking on the spot by itself. Origin: between its feet on the ground.</summary>
+        /// <summary>
+        /// A Clipper, 1.2 m wide, facing local +x, walking on the spot by itself. Origin: between its
+        /// feet on the ground.
+        /// </summary>
         GameObject CreateClipper();
 
-        /// <summary>A Tuning Fork, 3 m tall, unlit. Origin: the foot of its stem. Activate = lit, and it stays lit.</summary>
+        /// <summary>
+        /// A Tuning Fork, 3 m tall, unlit. Origin: the foot of its stem. Activate = lit, and it stays lit.
+        /// </summary>
         PropVisual CreateTuningFork();
 
-        /// <summary>The Resonator arch, 12 m tall. Origin: the ground between its prongs. Activate = it rings.</summary>
+        /// <summary>
+        /// The Resonator arch, 12 m tall. Origin: the ground between its prongs. Activate = it rings.
+        /// </summary>
         PropVisual CreateResonator();
 
         /// <summary>
-        /// The player's character, animated from the player's state (crest lean, feet, tuck, wind-up spin, blink, trail).
-        /// Origin: the player's centre – the caller parents it to the player at the local origin.
+        /// The player's character, animated from the player's state (crest lean, feet, tuck, wind-up spin, blink,
+        /// trail). Origin: the player's centre – the caller parents it to the player at the local origin.
         /// </summary>
         GameObject CreateCharacter(PlayerBase player);
 
@@ -67,7 +79,9 @@ namespace SfxShowcase.Core
         /// </summary>
         GameObject CreateHud(Camera camera, PlayerBase player, GameSessionBase session);
 
-        /// <summary>Spawns a short burst at a world position; it removes itself when it has played. Runtime only.</summary>
+        /// <summary>
+        /// Spawns a short burst at a world position; it removes itself when it has played. Runtime only.
+        /// </summary>
         void SpawnEffect(EffectKind kind, Vector2 position);
     }
 }

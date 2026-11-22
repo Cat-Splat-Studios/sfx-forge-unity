@@ -10,12 +10,16 @@ namespace SfxShowcase.Core
     {
         /// <summary>The art kit asset. Set by the builder before any step runs.</summary>
         public ArtKitBase Art { get; set; }
+
         /// <summary>The built level. Set by the level step.</summary>
         public LevelDescriptor Level { get; set; }
+
         /// <summary>The player. Set by the gameplay step.</summary>
         public PlayerBase Player { get; set; }
+
         /// <summary>The run. Set by the gameplay step.</summary>
         public GameSessionBase Session { get; set; }
+
         /// <summary>The game camera. Set by the camera step.</summary>
         public Camera Camera { get; set; }
     }

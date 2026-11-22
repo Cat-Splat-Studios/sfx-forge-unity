@@ -31,7 +31,9 @@ namespace SfxShowcase.Tests
         /// <summary>A take may write three thousand pictures: far longer than a test's usual three minutes.</summary>
         const int TakeTimeoutMilliseconds = 30 * 60 * 1000;
 
-        /// <summary>Set this environment variable to record somewhere else than the usual folder (<see cref="CaptureFolder"/>).</summary>
+        /// <summary>
+        /// Set this environment variable to record somewhere else than the usual folder (<see cref="CaptureFolder"/>).
+        /// </summary>
         const string FolderVariable = "SFXFORGE_CAPTURE_DIR";
 
         /// <summary>How far above the ground a cut puts the player's centre: a hair more than standing.</summary>
@@ -45,7 +47,8 @@ namespace SfxShowcase.Tests
 
         /// <summary>
         /// The folder all takes share: out/unity-video at the repository's root when the project is the repository's
-        /// unity/Demo, and Captures in the project's folder anywhere else (<see cref="ShowcaseFolders.CaptureFolder"/>).
+        /// unity/Demo, and Captures in the project's folder anywhere else
+        /// (<see cref="ShowcaseFolders.CaptureFolder"/>).
         /// </summary>
         static string CaptureFolder => ShowcaseFolders.CaptureFolder(FolderVariable);
 
@@ -55,13 +58,19 @@ namespace SfxShowcase.Tests
         {
             telemetry?.Dispose();
             telemetry = null;
-            if (recorder != null) UnityEngine.Object.Destroy(recorder.gameObject);
+            if (recorder != null)
+            {
+                UnityEngine.Object.Destroy(recorder.gameObject);
+            }
+
             recorder = null;
         }
 
-        // ---- the rig ----------------------------------------------------------------------------------------------------
+        // ---- the rig ------------------------------------------------------------------------------------------------
 
-        /// <summary>Puts the recorder on the game camera (16:9, 30 frames a second) and lets the view lay itself out.</summary>
+        /// <summary>
+        /// Puts the recorder on the game camera (16:9, 30 frames a second) and lets the view lay itself out.
+        /// </summary>
         IEnumerator Rig(string take)
         {
             follow = UnityEngine.Object.FindFirstObjectByType<FollowCamera>();
@@ -79,7 +88,10 @@ namespace SfxShowcase.Tests
             recorder.BeginRecording(telemetry);
         }
 
-        /// <summary>Stops the take, writes telemetry.json and checks the take has sound, as much sound as picture, and a mix that stays under <see cref="CaptureRecorder.MixCeiling"/> at full volume.</summary>
+        /// <summary>
+        /// Stops the take, writes telemetry.json and checks the take has sound, as much sound as picture, and a mix
+        /// that stays under <see cref="CaptureRecorder.MixCeiling"/> at full volume.
+        /// </summary>
         CaptureRecorder.Summary Wrap()
         {
             string folder = recorder.TakeFolder;
@@ -90,15 +102,30 @@ namespace SfxShowcase.Tests
             telemetry = null;
 
             Assert.Greater(summary.Frames, 0, "the take has pictures");
-            Assert.AreEqual(summary.PictureSeconds, summary.AudioSeconds, 0.03f, "the wav is as long as the pictures, to within one audio block");
-            if (SfxNative.Available) Assert.Greater(summary.Peak, 0.01f, "the wav is not silent");
-            Assert.Less(summary.Peak / CaptureRecorder.ListenerVolume, CaptureRecorder.MixCeiling, "the game's mix, at full volume, stays under full scale");
+            Assert.AreEqual(
+                summary.PictureSeconds,
+                summary.AudioSeconds,
+                0.03f,
+                "the wav is as long as the pictures, to within one audio block"
+            );
+            if (SfxNative.Available)
+            {
+                Assert.Greater(summary.Peak, 0.01f, "the wav is not silent");
+            }
+
+            Assert.Less(
+                summary.Peak / CaptureRecorder.ListenerVolume,
+                CaptureRecorder.MixCeiling,
+                "the game's mix, at full volume, stays under full scale"
+            );
             return summary;
         }
 
         static IEnumerator Seconds(float seconds) => UntilGameTime(() => false, seconds);
 
-        /// <summary>A cut: the player stands at x on the ground, and the camera is there at once instead of gliding over.</summary>
+        /// <summary>
+        /// A cut: the player stands at x on the ground, and the camera is there at once instead of gliding over.
+        /// </summary>
         IEnumerator CutTo(float x) => CutTo(x, GroundAt(x));
 
         /// <summary>A cut to ground of a given height: for a place with a platform above it.</summary>
@@ -111,10 +138,15 @@ namespace SfxShowcase.Tests
             Assert.IsTrue(player.IsGrounded, $"after the cut the player stands on the ground at x = {x}");
         }
 
-        /// <summary>The follow camera glides; a cut must not. It has a flag for that, set here the way a respawn sets it.</summary>
+        /// <summary>
+        /// The follow camera glides; a cut must not. It has a flag for that, set here the way a respawn sets it.
+        /// </summary>
         void SnapCamera()
         {
-            FieldInfo snap = typeof(FollowCamera).GetField("snapNextFrame", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo snap = typeof(FollowCamera).GetField(
+                "snapNextFrame",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
             Assert.IsNotNull(snap, "FollowCamera has its snapNextFrame (without it a cut would glide)");
             Assert.IsNotNull(follow, "the take has its camera");
             snap.SetValue(follow, true);
@@ -123,10 +155,17 @@ namespace SfxShowcase.Tests
         /// <summary>The height of the highest ground at x.</summary>
         static float GroundAt(float x)
         {
-            const float probeTop = 100f, probeLength = 300f;
+            const float probeTop = 100f;
+            const float probeLength = 300f;
             float highest = float.NegativeInfinity;
             foreach (RaycastHit2D hit in Physics2D.RaycastAll(new Vector2(x, probeTop), Vector2.down, probeLength))
-                if (hit.collider.GetComponent<GroundSurface>() != null) highest = Mathf.Max(highest, hit.point.y);
+            {
+                if (hit.collider.GetComponent<GroundSurface>() != null)
+                {
+                    highest = Mathf.Max(highest, hit.point.y);
+                }
+            }
+
             Assert.IsFalse(float.IsNegativeInfinity(highest), $"there is ground at x = {x}");
             return highest;
         }
@@ -139,7 +178,8 @@ namespace SfxShowcase.Tests
         {
             var driver = new GameObject("Capture Pilot").AddComponent<CapturePilot>();
             driver.Pilot = new RunPilot(player, input, Route("JumpStretches"), Route("TuckStretches"));
-            float end = Time.time + seconds, nextReport = Time.time;
+            float end = Time.time + seconds;
+            float nextReport = Time.time;
             while (Time.time < end && !until())
             {
                 eachFrame?.Invoke();
@@ -147,16 +187,23 @@ namespace SfxShowcase.Tests
                 {
                     nextReport += 1f;
                     Vector2 at = player.Position;
-                    Debug.Log($"CAPTURE RUN  t={session.ElapsedSeconds,6:0.0}  x={at.x,7:0.0}  y={at.y,6:0.0}  speed={player.Speed,5:0.0}  {(player.IsGrounded ? "ground" : "air   ")}  {(player.IsRolling ? "tucked" : "      ")}  chimes {session.ChimeCount}  hurts {events.Hurts}  respawns {events.Respawns}");
+                    Debug.Log(
+                        $"CAPTURE RUN  t={session.ElapsedSeconds, 6:0.0}  x={at.x, 7:0.0}  y={at.y, 6:0.0}  speed={player.Speed, 5:0.0}  {(player.IsGrounded ? "ground" : "air   ")}  {(player.IsRolling ? "tucked" : "      ")}  chimes {session.ChimeCount}  hurts {events.Hurts}  respawns {events.Respawns}"
+                    );
                 }
+
                 yield return null;
             }
+
             driver.Pilot = null;
             UnityEngine.Object.Destroy(driver.gameObject);
             input.Release();
         }
 
-        /// <summary>The pilot's route through the level: the tables the tests' own pilot uses, which the base class keeps to itself.</summary>
+        /// <summary>
+        /// The pilot's route through the level: the tables the tests' own pilot uses, which the base class
+        /// keeps to itself.
+        /// </summary>
         static RunPilot.Stretch[] Route(string table)
         {
             FieldInfo field = typeof(ShowcaseTestBase).GetField(table, BindingFlags.Static | BindingFlags.NonPublic);
@@ -185,9 +232,11 @@ namespace SfxShowcase.Tests
             }
         }
 
-        // ---- the whole level ------------------------------------------------------------------------------------------
+        // ---- the whole level ----------------------------------------------------------------------------------------
 
-        /// <summary>The title card for three seconds, the whole level from start to goal, the results for six.</summary>
+        /// <summary>
+        /// The title card for three seconds, the whole level from start to goal, the results for six.
+        /// </summary>
         [UnityTest, Explicit, Timeout(TakeTimeoutMilliseconds)]
         public IEnumerator FullRun()
         {
@@ -195,7 +244,7 @@ namespace SfxShowcase.Tests
             Roll();
             yield return Seconds(3f);
 
-            input.JumpHeld = true;                                   // Jump on the title card, as a player starts it
+            input.JumpHeld = true; // Jump on the title card, as a player starts it
             yield return UntilGameTime(() => session.Phase == GamePhase.Playing, 0.5f);
             Assert.AreEqual(GamePhase.Playing, session.Phase, "Jump leaves the title card");
 
@@ -205,9 +254,11 @@ namespace SfxShowcase.Tests
             Wrap();
         }
 
-        // ---- one technique each ---------------------------------------------------------------------------------------
+        // ---- one technique each -------------------------------------------------------------------------------------
 
-        /// <summary>One-shots: a jump and its landing, a hop, two rows of Chimes with the rising combo, a Woofer.</summary>
+        /// <summary>
+        /// One-shots: a jump and its landing, a hop, two rows of Chimes with the rising combo, a Woofer.
+        /// </summary>
         [UnityTest, Explicit, Timeout(TakeTimeoutMilliseconds)]
         public IEnumerator OneShots()
         {
@@ -227,11 +278,14 @@ namespace SfxShowcase.Tests
 
             // the first row of Chimes, the Chime arc over the low step, the second row
             yield return PilotInStep(() => player.Position.x > 48.6f, 12f);
-            yield return UntilGameTime(() =>
-            {
-                input.MoveX = player.Velocity.x > 0.5f ? -1f : 0f;   // brake hard: the skid is a one-shot too
-                return player.Speed < 0.1f && player.IsGrounded;
-            }, 3f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    input.MoveX = player.Velocity.x > 0.5f ? -1f : 0f; // brake hard: the skid is a one-shot too
+                    return player.Speed < 0.1f && player.IsGrounded;
+                },
+                3f
+            );
             input.Release();
             Assert.GreaterOrEqual(events.HighestCombo, 5, "a row of Chimes collected in one go: the combo climbs");
             yield return Seconds(0.6f);
@@ -250,7 +304,10 @@ namespace SfxShowcase.Tests
             Wrap();
         }
 
-        /// <summary>Held sounds: the Wind-Up rev climbing over six taps, the Burst, the roll hum on the flat, then a Tuck down the run-up and round the loop.</summary>
+        /// <summary>
+        /// Held sounds: the Wind-Up rev climbing over six taps, the Burst, the roll hum on the flat, then a Tuck down
+        /// the run-up and round the loop.
+        /// </summary>
         [UnityTest, Explicit, Timeout(TakeTimeoutMilliseconds)]
         public IEnumerator HeldSounds()
         {
@@ -277,26 +334,38 @@ namespace SfxShowcase.Tests
             yield return CutTo(207f);
             yield return Seconds(0.6f);
             bool rolledDown = false;
-            yield return PilotInStep(() => player.Position.x > 296f, 15f, () => rolledDown |= player.IsRolling && player.IsGrounded);
+            yield return PilotInStep(
+                () => player.Position.x > 296f,
+                15f,
+                () => rolledDown |= player.IsRolling && player.IsGrounded
+            );
             Assert.Greater(player.Position.x, 296f, "down the run-up and round the loop");
             Assert.IsTrue(rolledDown, "tucked on the way down");
 
             // brake the roll on the rise: the hum sinks with the speed and is let go
-            yield return UntilGameTime(() =>
-            {
-                input.MoveX = player.Velocity.x > 0.5f ? -1f : 0f;
-                return player.Speed < 0.1f && player.IsGrounded;
-            }, 5f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    input.MoveX = player.Velocity.x > 0.5f ? -1f : 0f;
+                    return player.Speed < 0.1f && player.IsGrounded;
+                },
+                5f
+            );
             input.Release();
             yield return Seconds(1.2f);
             Wrap();
         }
 
-        /// <summary>Adaptive music: stand (the rhythm section), walk, run, stop, then a Burst flat out (the whole band) and the layers falling away afterwards; the song walks through its own arrangement all the while.</summary>
+        /// <summary>
+        /// Adaptive music: stand (the rhythm section), walk, run, stop, then a Burst flat out (the whole band) and the
+        /// layers falling away afterwards; the song walks through its own arrangement all the while.
+        /// </summary>
         [UnityTest, Explicit, Timeout(TakeTimeoutMilliseconds)]
         public IEnumerator AdaptiveMusic()
         {
-            const float walkSpeed = 4f;                              // Soft Start's floor 0.42 becomes about 0.53: the strings are in (0.47), the keys (0.57, at 5.6 m/s) wait for the run
+            // Soft Start's floor 0.42 becomes about 0.53: the strings are in
+            // (0.47), the keys (0.57, at 5.6 m/s) wait for the run
+            const float walkSpeed = 4f;
             var director = UnityEngine.Object.FindFirstObjectByType<MusicDirector>();
             Assert.IsNotNull(director, "the scene has its music director");
 
@@ -314,11 +383,16 @@ namespace SfxShowcase.Tests
                 input.MoveX = player.Speed < walkSpeed ? 1f : 0f;
                 yield return null;
             }
+
             float walking = director.Intensity;
 
             // run at cruise speed, over the low step
             float running = 0f;
-            yield return PilotInStep(() => player.Position.x > 40f, 8f, () => running = Mathf.Max(running, director.Intensity));
+            yield return PilotInStep(
+                () => player.Position.x > 40f,
+                8f,
+                () => running = Mathf.Max(running, director.Intensity)
+            );
             yield return UntilGameTime(() => player.Speed < 0.1f && player.IsGrounded, 5f);
 
             // turn round, wind up, Burst: back along the flat at nearly top speed
@@ -331,7 +405,14 @@ namespace SfxShowcase.Tests
             yield return WindUp(6, 0.05f);
             input.Down = false;
             float flatOut = 0f;
-            yield return UntilGameTime(() => { flatOut = Mathf.Max(flatOut, director.Intensity); return events.Bursts > 0 && player.Speed < 0.1f; }, 8f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    flatOut = Mathf.Max(flatOut, director.Intensity);
+                    return events.Bursts > 0 && player.Speed < 0.1f;
+                },
+                8f
+            );
             yield return Seconds(4.5f);
             float afterwards = director.Intensity;
 
@@ -342,7 +423,10 @@ namespace SfxShowcase.Tests
             Wrap();
         }
 
-        /// <summary>Sections and cues: from Woofer Steps into Static Field (the song leaves its own order for the breakdown, pattern E, on the bar line), past its Tuning Fork (three bells answer).</summary>
+        /// <summary>
+        /// Sections and cues: from Woofer Steps into Static Field (the song leaves its own order for the breakdown,
+        /// pattern E, on the bar line), past its Tuning Fork (three bells answer).
+        /// </summary>
         [UnityTest, Explicit, Timeout(TakeTimeoutMilliseconds)]
         public IEnumerator SectionsAndCues()
         {
@@ -350,31 +434,44 @@ namespace SfxShowcase.Tests
             Assert.IsNotNull(music, "the scene has its music player");
             SectionInfo staticField = Sections.Get(SectionId.StaticField);
 
-            // in the dip at the end of Woofer Steps, where the song plays in its own order; the take begins on a bar line
+            // in the dip at the end of Woofer Steps, where the song plays
+            // in its own order; the take begins on a bar line
             yield return Rig("sections-and-cues");
             yield return StartRun();
             yield return CutTo(staticField.StartX - 12.5f);
             int barOfTheCut = music.Bar;
             yield return UntilGameTime(() => music.Bar != barOfTheCut, 6f);
-            if (SfxNative.Available) Assert.AreNotEqual(PatternE, music.Pattern, "the song is not in its breakdown yet");
+            if (SfxNative.Available)
+            {
+                Assert.AreNotEqual(PatternE, music.Pattern, "the song is not in its breakdown yet");
+            }
+
             Roll();
             yield return Seconds(3f);
 
-            // up the slope, over the boundary, past the fork; let go there and brake only if the first ridge comes close
+            // up the slope, over the boundary, past the fork; let go
+            // there and brake only if the first ridge comes close
             input.MoveX = 1f;
             float forkX = level.Checkpoints[1].x;
             yield return UntilGameTime(() => player.Position.x > forkX + 0.5f, 6f);
             Assert.Contains(SectionId.StaticField, events.Sections, "the boundary was crossed");
             Assert.Contains(1, events.Checkpoints, "and the Tuning Fork lit");
             float crossedAt = Time.time;
-            yield return UntilGameTime(() =>
-            {
-                input.MoveX = player.Position.x > forkX + 11f && player.Speed > 0.5f ? -1f : 0f;
-                return player.Speed < 0.1f && player.IsGrounded;
-            }, 5f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    input.MoveX = player.Position.x > forkX + 11f && player.Speed > 0.5f ? -1f : 0f;
+                    return player.Speed < 0.1f && player.IsGrounded;
+                },
+                5f
+            );
             input.Release();
             yield return UntilGameTime(() => Time.time > crossedAt + 7f, 8f);
-            if (SfxNative.Available) Assert.AreEqual(PatternE, music.Pattern, "Static Field plays pattern E");
+            if (SfxNative.Available)
+            {
+                Assert.AreEqual(PatternE, music.Pattern, "Static Field plays pattern E");
+            }
+
             Assert.AreEqual(0, events.Hurts, "nobody was hurt in this take");
             Wrap();
         }
@@ -387,9 +484,14 @@ namespace SfxShowcase.Tests
         public IEnumerator HurtAndGoal()
         {
             const int carried = 12;
-            const float terraceStartX = 726f, terraceY = 1.5f;       // LevelLayout.SplitSignal: the low terrace, under a platform
+
+            // LevelLayout.SplitSignal: the low terrace, under a platform
+            const float terraceStartX = 726f;
+            const float terraceY = 1.5f;
             const float staticX = 736f;
-            const float splitSignalFloor = 0.55f;                    // MusicDirector.sectionCues: the intensity there at a standstill
+
+            // MusicDirector.sectionCues: the intensity there at a standstill
+            const float splitSignalFloor = 0.55f;
             var music = UnityEngine.Object.FindFirstObjectByType<SfxMusicPlayer>();
             var director = UnityEngine.Object.FindFirstObjectByType<MusicDirector>();
             Assert.IsNotNull(music, "the scene has its music player");
@@ -398,23 +500,48 @@ namespace SfxShowcase.Tests
             yield return StartRun();
             yield return Rig("hurt-and-goal");
             yield return CutTo(terraceStartX + 0.8f, terraceY);
-            Assert.AreEqual(terraceY + DesignTargets.StandingRadius, player.Position.y, 0.2f, "the player stands on the low terrace");
+            Assert.AreEqual(
+                terraceY + DesignTargets.StandingRadius,
+                player.Position.y,
+                0.2f,
+                "the player stands on the low terrace"
+            );
             player.AddChimes(carried);
-            yield return Seconds(2f);                                // their ping has rung out before the take begins
+            yield return Seconds(2f); // their ping has rung out before the take begins
             int barOfTheCut = music.Bar;
-            yield return UntilGameTime(() => music.Bar != barOfTheCut, 6f);          // the take begins on a bar line
+            yield return UntilGameTime(() => music.Bar != barOfTheCut, 6f); // the take begins on a bar line
             Roll();
             yield return Seconds(2.2f);
 
-            // along the terrace into the Static, at a run: the band is well above Split Signal's floor, so its drop to the kick is seen
+            // along the terrace into the Static, at a run: the band is well above
+            // Split Signal's floor, so its drop to the kick is seen
             input.MoveX = 1f;
             float before = 0f;
-            yield return UntilGameTime(() => { if (events.Hurts == 0) before = director.Intensity; return events.Hurts > 0; }, 8f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    if (events.Hurts == 0)
+                    {
+                        before = director.Intensity;
+                    }
+
+                    return events.Hurts > 0;
+                },
+                8f
+            );
             input.Release();
             Assert.AreEqual(1, events.Hurts, "the Static hurt");
             Assert.Less(Mathf.Abs(player.Position.x - staticX), 4f, "and it was the Static of the low terrace");
-            Assert.GreaterOrEqual(before, splitSignalFloor + 0.1f, "the band was well above Split Signal's floor before the hit, so the drop is the hit's");
-            Assert.GreaterOrEqual(events.LastScatterCount, carried, "and the carried Chimes scattered (with any picked up on the way)");
+            Assert.GreaterOrEqual(
+                before,
+                splitSignalFloor + 0.1f,
+                "the band was well above Split Signal's floor before the hit, so the drop is the hit's"
+            );
+            Assert.GreaterOrEqual(
+                events.LastScatterCount,
+                carried,
+                "and the carried Chimes scattered (with any picked up on the way)"
+            );
             yield return Seconds(0.25f);
             recorder.RequestStill("hurt-scatter");
             yield return Seconds(4.5f);
@@ -431,12 +558,12 @@ namespace SfxShowcase.Tests
             Wrap();
         }
 
-        // ---- the sync measurement ---------------------------------------------------------------------------------------
+        // ---- the sync measurement -----------------------------------------------------------------------------------
 
         /// <summary>
-        /// For measuring, not for showing: the song is stopped, then three jumps (a baked clip) and three Chimes (a live
-        /// voice) are played a second apart into silence. <c>docs/video/check_unity_capture.py</c> compares the frame of
-        /// each event in telemetry.json with where its sound starts in the wav.
+        /// For measuring, not for showing: the song is stopped, then three jumps (a baked clip) and three Chimes (a
+        /// live voice) are played a second apart into silence. <c>docs/video/check_unity_capture.py</c> compares the
+        /// frame of each event in telemetry.json with where its sound starts in the wav.
         /// </summary>
         [UnityTest, Explicit, Timeout(TakeTimeoutMilliseconds)]
         public IEnumerator SyncCheck()
@@ -449,23 +576,25 @@ namespace SfxShowcase.Tests
 
             yield return Rig("sync-check");
             Roll();
-            yield return Seconds(4f);                                // the song's echoes die away inside the take
+            yield return Seconds(4f); // the song's echoes die away inside the take
             for (int jump = 0; jump < 3; jump++)
             {
                 yield return FullJump();
                 yield return Seconds(2.5f);
             }
+
             for (int chime = 0; chime < 3; chime++)
             {
                 player.AddChimes(1);
                 yield return Seconds(2.5f);
             }
+
             Assert.AreEqual(3, events.Jumps);
             Assert.AreEqual(3, events.ChimesCollected);
             Wrap();
         }
 
-        // ---- stills for the manual --------------------------------------------------------------------------------------
+        // ---- stills for the manual ----------------------------------------------------------------------------------
 
         /// <summary>
         /// Twelve pictures of one run into <c>out/unity-video/stills/</c>: the title card, a moment of every section,
@@ -485,14 +614,19 @@ namespace SfxShowcase.Tests
             Assert.AreEqual(GamePhase.Playing, session.Phase, "Jump leaves the title card");
 
             LevelLayout.GetLoop(0, out Vector2 loopCentre, out float loopRadius);
-            float wooferAt = float.PositiveInfinity, launchAt = float.PositiveInfinity;
+            float wooferAt = float.PositiveInfinity;
+            float launchAt = float.PositiveInfinity;
             Func<float, Func<bool>> pastX = x => () => player.Position.x >= x;
             var moments = new List<KeyValuePair<string, Func<bool>>>
             {
                 new KeyValuePair<string, Func<bool>>("02-soft-start", pastX(17f)),
                 new KeyValuePair<string, Func<bool>>("03-rolling-sines", pastX(121f)),
                 new KeyValuePair<string, Func<bool>>("04-full-cycle-run-up", pastX(244f)),
-                new KeyValuePair<string, Func<bool>>("05-loop", () => Mathf.Abs(player.Position.x - loopCentre.x) < loopRadius && player.IsGrounded && Mathf.Abs(player.GroundAngle) > 150f),
+                new KeyValuePair<string, Func<bool>>("05-loop", () =>
+                    Mathf.Abs(player.Position.x - loopCentre.x) < loopRadius
+                    && player.IsGrounded
+                    && Mathf.Abs(player.GroundAngle) > 150f
+                ),
                 new KeyValuePair<string, Func<bool>>("06-woofer-throw", () => Time.time > wooferAt + 0.35f),
                 new KeyValuePair<string, Func<bool>>("07-static-field", pastX(521f)),
                 new KeyValuePair<string, Func<bool>>("08-split-signal", pastX(686f)),
@@ -503,8 +637,16 @@ namespace SfxShowcase.Tests
             int next = 0;
             Action watch = () =>
             {
-                if (events.WooferBounces > 0 && float.IsPositiveInfinity(wooferAt)) wooferAt = Time.time;
-                if (events.FinalLaunches > 0 && float.IsPositiveInfinity(launchAt)) launchAt = Time.time;
+                if (events.WooferBounces > 0 && float.IsPositiveInfinity(wooferAt))
+                {
+                    wooferAt = Time.time;
+                }
+
+                if (events.FinalLaunches > 0 && float.IsPositiveInfinity(launchAt))
+                {
+                    launchAt = Time.time;
+                }
+
                 if (next < moments.Count && moments[next].Value())
                 {
                     recorder.RequestStill(moments[next].Key);

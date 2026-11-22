@@ -1,5 +1,5 @@
-using UnityEngine;
 using SfxShowcase.Core;
+using UnityEngine;
 
 namespace SfxShowcase.Gameplay
 {
@@ -23,7 +23,13 @@ namespace SfxShowcase.Gameplay
         /// Throws <paramref name="count"/> Chimes out of a point in a fan centred on straight up, alternating a faster
         /// and a slower ring so the spill reads as a burst and not as a line.
         /// </summary>
-        public static void SpawnFan(ArtKitBase art, PlayerController player, Vector2 origin, int count, TerrainPlane plane)
+        public static void SpawnFan(
+            ArtKitBase art,
+            PlayerController player,
+            Vector2 origin,
+            int count,
+            TerrainPlane plane
+        )
         {
             PlayerTuning tuning = player.Tuning;
             var sharedSensor = new GroundSensor();
@@ -62,10 +68,15 @@ namespace SfxShowcase.Gameplay
 
             Fly(deltaTime);
             Blink();
-            if (age >= tuning.scatterPickupDelay && IsTouchingPlayer()) Collect();
+            if (age >= tuning.scatterPickupDelay && IsTouchingPlayer())
+            {
+                Collect();
+            }
         }
 
-        /// <summary>Falls under the player's gravity and bounces off whatever ground lies in the way of this frame's move.</summary>
+        /// <summary>
+        /// Falls under the player's gravity and bounces off whatever ground lies in the way of this frame's move.
+        /// </summary>
         void Fly(float deltaTime)
         {
             velocity.y -= tuning.gravity * deltaTime;
@@ -73,8 +84,9 @@ namespace SfxShowcase.Gameplay
             Vector2 position = transform.position;
             Vector2 move = velocity * deltaTime;
             float reach = move.magnitude + tuning.scatterChimeRadius;
-            bool blocked = sensor.CastSolid(position, move.normalized, reach, plane, out SensorHit ground)
-                           && Vector2.Dot(velocity, ground.Normal) < 0f;
+            bool blocked =
+                sensor.CastSolid(position, move.normalized, reach, plane, out SensorHit ground)
+                && Vector2.Dot(velocity, ground.Normal) < 0f;
             if (blocked)
             {
                 velocity = Vector2.Reflect(velocity, ground.Normal) * tuning.scatterBounce;
@@ -90,12 +102,19 @@ namespace SfxShowcase.Gameplay
         {
             bool blinking = age >= tuning.scatterLifetime - tuning.scatterBlinkSeconds;
             bool shown = !blinking || Mathf.Repeat(age, tuning.scatterBlinkPeriod) < tuning.scatterBlinkPeriod * 0.5f;
-            if (visual.activeSelf != shown) visual.SetActive(shown);
+            if (visual.activeSelf != shown)
+            {
+                visual.SetActive(shown);
+            }
         }
 
         bool IsTouchingPlayer()
         {
-            if (!player.HasControl) return false;
+            if (!player.HasControl)
+            {
+                return false;
+            }
+
             float touchDistance = tuning.standingRadius + tuning.scatterChimeRadius;
             Vector2 toPlayer = player.Position - (Vector2)transform.position;
             return toPlayer.sqrMagnitude <= touchDistance * touchDistance;

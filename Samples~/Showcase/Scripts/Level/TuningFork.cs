@@ -11,11 +11,16 @@ namespace SfxShowcase.Level
     public sealed class TuningFork : MonoBehaviour
     {
         [Tooltip("Which fork this is: 0 = the first in the level.")]
-        [SerializeField] int index;
+        [SerializeField]
+        int index;
+
         [Tooltip("Where the player's centre reappears, world space.")]
-        [SerializeField] Vector2 respawnPoint;
+        [SerializeField]
+        Vector2 respawnPoint;
+
         [Tooltip("The fork's visual, lit when passed.")]
-        [SerializeField] PropVisual visual;
+        [SerializeField]
+        PropVisual visual;
 
         bool lit;
 
@@ -36,7 +41,11 @@ namespace SfxShowcase.Level
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (lit || !other.TryGetComponent(out PlayerBase player)) return;
+            if (lit || !other.TryGetComponent(out PlayerBase player))
+            {
+                return;
+            }
+
             lit = true;
             player.SetCheckpoint(index, respawnPoint);
             visual.Activate();

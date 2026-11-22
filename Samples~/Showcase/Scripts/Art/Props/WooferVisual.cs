@@ -11,14 +11,19 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("The cone, a child that moves along local +y.")]
         Transform cone;
+
         [SerializeField, Tooltip("How far the cone punches out, metres.")]
         float punchDistance = 0.35f;
+
         [SerializeField, Tooltip("Wobbles per second while it settles.")]
         float wobbleFrequency = 5f;
+
         [SerializeField, Tooltip("How fast the wobble dies away, per second.")]
         float damping = 6f;
+
         [SerializeField, Tooltip("How much the cone stretches along the axis per metre it is pushed out.")]
         float stretchPerMetre = 1.5f;
+
         [SerializeField, Tooltip("Seconds after which the cone is considered at rest again.")]
         float settleSeconds = 1f;
 
@@ -27,7 +32,9 @@ namespace SfxShowcase.Art
 
         float sinceFired;
 
-        /// <summary>Sets the part to animate; where it is now becomes its rest position. Called by <see cref="WooferArt"/>.</summary>
+        /// <summary>
+        /// Sets the part to animate; where it is now becomes its rest position. Called by <see cref="WooferArt"/>.
+        /// </summary>
         public void Configure(Transform conePart)
         {
             cone = conePart;
@@ -61,7 +68,12 @@ namespace SfxShowcase.Art
                 ResetVisual();
                 return;
             }
-            Pose(punchDistance * Mathf.Exp(-damping * sinceFired) * Mathf.Cos(2f * Mathf.PI * wobbleFrequency * sinceFired));
+
+            Pose(
+                punchDistance
+                    * Mathf.Exp(-damping * sinceFired)
+                    * Mathf.Cos(2f * Mathf.PI * wobbleFrequency * sinceFired)
+            );
         }
 
         void Pose(float pushedOut)

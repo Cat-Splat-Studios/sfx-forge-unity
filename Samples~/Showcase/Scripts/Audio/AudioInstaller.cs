@@ -43,19 +43,34 @@ namespace SfxShowcase.Audio
         /// </summary>
         public static void Install(PlayerBase player, GameSessionBase session, SfxSong song, PresetFactory presets)
         {
-            if (player == null) throw new ArgumentNullException(nameof(player));
-            if (session == null) throw new ArgumentNullException(nameof(session));
-            if (presets == null) presets = CreatePresetInMemory;
+            if (player == null)
+            {
+                throw new ArgumentNullException(nameof(player));
+            }
+
+            if (session == null)
+            {
+                throw new ArgumentNullException(nameof(session));
+            }
+
+            if (presets == null)
+            {
+                presets = CreatePresetInMemory;
+            }
 
             // every sound of the library becomes an SfxPreset: the patch as an asset the Inspector can show and edit
             var bindings = new SoundBinding[SoundLibrary.All.Count];
             for (int i = 0; i < bindings.Length; i++)
             {
                 SoundDefinition definition = SoundLibrary.All[i];
-                bindings[i] = new SoundBinding(definition, presets(definition.Name, definition.Patch, definition.HoldSeconds));
+                bindings[i] = new SoundBinding(
+                    definition,
+                    presets(definition.Name, definition.Patch, definition.HoldSeconds)
+                );
             }
 
-            // built inactive and switched on when everything is wired, so that at runtime no component wakes up half set up
+            // built inactive and switched on when everything is wired, so
+            // that at runtime no component wakes up half set up
             var audio = new GameObject("Audio");
             audio.SetActive(false);
             InstallMusic(audio.transform, player, session, song);
@@ -68,15 +83,17 @@ namespace SfxShowcase.Audio
         static void InstallMusic(Transform root, PlayerBase player, GameSessionBase session, SfxSong song)
         {
             GameObject music = CreateChild(root, "Music");
-            var musicPlayer = music.AddComponent<SfxMusicPlayer>();        // (adds the AudioSource it needs)
+            var musicPlayer = music.AddComponent<SfxMusicPlayer>(); // (adds the AudioSource it needs)
             Prepare(music.GetComponent<AudioSource>());
             musicPlayer.song = song;
-            musicPlayer.playOnEnable = true;                                // the song plays under the title card
+            musicPlayer.playOnEnable = true; // the song plays under the title card
             musicPlayer.startPattern = 0;
             music.AddComponent<MusicDirector>().Wire(musicPlayer, player, session);
         }
 
-        /// <summary>Use 1: two AudioSources for the baked clips and a pool of SfxPlayers for the live one-shots.</summary>
+        /// <summary>
+        /// Use 1: two AudioSources for the baked clips and a pool of SfxPlayers for the live one-shots.
+        /// </summary>
         static void InstallEffects(Transform root, SoundBinding[] bindings)
         {
             GameObject effects = CreateChild(root, "Effects");
@@ -85,7 +102,10 @@ namespace SfxShowcase.Audio
 
             var voices = new SfxPlayer[LiveVoiceCount];
             for (int i = 0; i < voices.Length; i++)
+            {
                 voices[i] = CreateLivePlayer(effects.transform, $"Live Voice {i + 1}", null, LiveVoiceVolume);
+            }
+
             var pool = effects.AddComponent<LiveVoicePool>();
             pool.Configure(voices);
 
@@ -107,23 +127,27 @@ namespace SfxShowcase.Audio
             var sounds = continuous.AddComponent<ContinuousSounds>();
             sounds.Wire(player);
             sounds.WireVoices(
-                CreateHeldPlayer(continuous.transform, "Roll Hum", rollHum), rollHum.MidiNote,
-                CreateHeldPlayer(continuous.transform, "Wind", wind), wind.MidiNote,
-                CreateHeldPlayer(continuous.transform, "Wind-Up Rev", windUp), windUp.MidiNote);
+                CreateHeldPlayer(continuous.transform, "Roll Hum", rollHum),
+                rollHum.MidiNote,
+                CreateHeldPlayer(continuous.transform, "Wind", wind),
+                wind.MidiNote,
+                CreateHeldPlayer(continuous.transform, "Wind-Up Rev", windUp),
+                windUp.MidiNote
+            );
         }
 
-        static SfxPlayer CreateHeldPlayer(Transform parent, string name, SoundBinding binding)
-            => CreateLivePlayer(parent, name, binding.Preset, binding.Volume);
+        static SfxPlayer CreateHeldPlayer(Transform parent, string name, SoundBinding binding) =>
+            CreateLivePlayer(parent, name, binding.Preset, binding.Volume);
 
         /// <summary>An SfxPlayer on its own object: it synthesizes its preset into the AudioSource beside it.</summary>
         static SfxPlayer CreateLivePlayer(Transform parent, string name, SfxPreset preset, float volume)
         {
             GameObject voice = CreateChild(parent, name);
-            var sfxPlayer = voice.AddComponent<SfxPlayer>();                // (adds the AudioSource it needs)
+            var sfxPlayer = voice.AddComponent<SfxPlayer>(); // (adds the AudioSource it needs)
             Prepare(voice.GetComponent<AudioSource>());
             sfxPlayer.preset = preset;
             sfxPlayer.volume = volume;
-            sfxPlayer.playOnEnable = false;                                 // the game starts it, not the scene
+            sfxPlayer.playOnEnable = false; // the game starts it, not the scene
             return sfxPlayer;
         }
 
@@ -146,7 +170,13 @@ namespace SfxShowcase.Audio
         static SoundBinding Find(SoundBinding[] bindings, GameSound sound)
         {
             foreach (SoundBinding binding in bindings)
-                if (binding.Sound == sound) return binding;
+            {
+                if (binding.Sound == sound)
+                {
+                    return binding;
+                }
+            }
+
             throw new ArgumentException($"The sound library has no entry for {sound}.", nameof(sound));
         }
 

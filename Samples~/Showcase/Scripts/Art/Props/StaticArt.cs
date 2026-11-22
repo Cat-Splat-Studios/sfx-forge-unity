@@ -32,14 +32,21 @@ namespace SfxShowcase.Art
             float slot = 2f * HalfWidth / spikes;
 
             var shape = new InkedShape();
-            shape.Add(Shapes.Rect(new Vector2(-HalfWidth, 0f), new Vector2(HalfWidth, BaseStripHeight)), Palette.StaticRed);
+            shape.Add(
+                Shapes.Rect(new Vector2(-HalfWidth, 0f), new Vector2(HalfWidth, BaseStripHeight)),
+                Palette.StaticRed
+            );
             for (int i = 0; i < spikes; i++)
             {
                 float left = -HalfWidth + i * slot;
                 float tipX = left + slot * Mathf.Lerp(0.2f, 0.8f, (float)random.NextDouble());
                 float tipY = i == tallest ? Height : Mathf.Lerp(LowestSpike, Height, (float)random.NextDouble());
-                shape.Add(new[] { new Vector2(left, 0f), new Vector2(left + slot, 0f), new Vector2(tipX, tipY) }, Palette.StaticRed);
+                shape.Add(
+                    new[] { new Vector2(left, 0f), new Vector2(left + slot, 0f), new Vector2(tipX, tipY) },
+                    Palette.StaticRed
+                );
             }
+
             return shape.ToMesh("Static");
         }
     }

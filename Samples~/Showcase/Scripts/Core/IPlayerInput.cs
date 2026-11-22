@@ -8,8 +8,10 @@ namespace SfxShowcase.Core
     {
         /// <summary>Left/right, -1..1.</summary>
         float MoveX { get; }
+
         /// <summary>Down is held (tuck, crouch, Wind-Up).</summary>
         bool Down { get; }
+
         /// <summary>The Jump button is held; the player detects the press itself.</summary>
         bool JumpHeld { get; }
     }

@@ -17,28 +17,47 @@ namespace SfxShowcase.Art
         {
             [Tooltip("The silhouette to move.")]
             public Transform Silhouette;
-            [Tooltip("How much of the camera's movement the layer appears to make: 0 = fixed to the view, 1 = moves with the world.")]
+
+            [Tooltip(
+                "How much of the camera's movement the layer appears to make: 0 = fixed to the view, 1 = moves "
+                    + "with the world."
+            )]
             public float ParallaxFactor;
-            [Tooltip("Height of the wave's zero line relative to the middle of the view, in ninths of the view's half-height.")]
+
+            [Tooltip(
+                "Height of the wave's zero line relative to the middle of the view, in ninths of the view's "
+                    + "half-height."
+            )]
             public float Baseline;
         }
 
         [SerializeField, Tooltip("The game camera the backdrop stays behind.")]
         Camera viewCamera;
+
         [SerializeField, Tooltip("The gradient quad, stretched to fill the view.")]
         Transform sky;
+
         [SerializeField, Tooltip("The sun disc, low on the right.")]
         Transform sun;
+
         [SerializeField, Tooltip("The silhouettes, back to front.")]
         List<Layer> layers = new List<Layer>();
-        [SerializeField, Tooltip("World height of the middle of the level: the layers rise and sink a little round it.")]
+
+        [
+            SerializeField,
+            Tooltip("World height of the middle of the level: the layers rise and sink a little round it.")
+        ]
         float levelMiddleY;
+
         [SerializeField, Tooltip("How much of its horizontal parallax a layer also shows vertically.")]
         float verticalParallax = 0.3f;
+
         [SerializeField, Tooltip("The most a layer rises or sinks, in ninths of the view's half-height.")]
         float largestVerticalShift = 3f;
+
         [SerializeField, Tooltip("Where the sun sits, as a fraction of the view's half-size from its centre.")]
         Vector2 sunPosition = new Vector2(0.55f, -0.3f);
+
         [SerializeField, Tooltip("The sun's radius as a fraction of the view's half-height.")]
         float sunRadius = 0.3f;
 
@@ -54,7 +73,14 @@ namespace SfxShowcase.Art
         /// <summary>Adds a silhouette layer. Called by <see cref="BackgroundArt"/>, back to front.</summary>
         public void AddLayer(Transform layer, float parallaxFactor, float baseline)
         {
-            layers.Add(new Layer { Silhouette = layer, ParallaxFactor = parallaxFactor, Baseline = baseline });
+            layers.Add(
+                new Layer
+                {
+                    Silhouette = layer,
+                    ParallaxFactor = parallaxFactor,
+                    Baseline = baseline,
+                }
+            );
         }
 
         void LateUpdate()
@@ -62,7 +88,10 @@ namespace SfxShowcase.Art
             Arrange();
         }
 
-        /// <summary>Places everything for where the camera is now. Also called once when the scene is built, so the backdrop is in place before the first frame.</summary>
+        /// <summary>
+        /// Places everything for where the camera is now. Also called once when the scene is built, so the backdrop is
+        /// in place before the first frame.
+        /// </summary>
         public void Arrange()
         {
             Vector2 view = viewCamera.transform.position;
@@ -77,9 +106,16 @@ namespace SfxShowcase.Art
 
             foreach (Layer layer in layers)
             {
-                float shift = Mathf.Clamp(-(view.y - levelMiddleY) * layer.ParallaxFactor * verticalParallax,
-                    -largestVerticalShift * unit, largestVerticalShift * unit);
-                layer.Silhouette.position = new Vector3(view.x * (1f - layer.ParallaxFactor), view.y + layer.Baseline * unit + shift, 0f);
+                float shift = Mathf.Clamp(
+                    -(view.y - levelMiddleY) * layer.ParallaxFactor * verticalParallax,
+                    -largestVerticalShift * unit,
+                    largestVerticalShift * unit
+                );
+                layer.Silhouette.position = new Vector3(
+                    view.x * (1f - layer.ParallaxFactor),
+                    view.y + layer.Baseline * unit + shift,
+                    0f
+                );
             }
         }
     }

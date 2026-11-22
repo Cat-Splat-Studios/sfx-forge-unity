@@ -3,8 +3,8 @@ using System.Collections.Generic;
 namespace SfxShowcase.Core
 {
     /// <summary>
-    /// The level's sections as data, in order (DESIGN.md section 3). The level builds its section triggers from this, the
-    /// HUD takes the names from it, and the audio keeps its own table of what the music does in each
+    /// The level's sections as data, in order (DESIGN.md section 3). The level builds its section triggers from this,
+    /// the HUD takes the names from it, and the audio keeps its own table of what the music does in each
     /// <see cref="SectionId"/>.
     /// </summary>
     public static class Sections
@@ -33,11 +33,19 @@ namespace SfxShowcase.Core
         /// <summary>The description of one section.</summary>
         public static SectionInfo Get(SectionId id) => Table[(int)id];
 
-        /// <summary>The section a world x lies in; positions outside the level give the first or the last section.</summary>
+        /// <summary>
+        /// The section a world x lies in; positions outside the level give the first or the last section.
+        /// </summary>
         public static SectionId At(float x)
         {
             for (int i = Table.Length - 1; i > 0; i--)
-                if (x >= Table[i].StartX) return Table[i].Id;
+            {
+                if (x >= Table[i].StartX)
+                {
+                    return Table[i].Id;
+                }
+            }
+
             return Table[0].Id;
         }
     }

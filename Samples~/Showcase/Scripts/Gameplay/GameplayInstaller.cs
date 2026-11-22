@@ -1,12 +1,12 @@
-using UnityEngine;
 using SfxShowcase.Core;
+using UnityEngine;
 
 namespace SfxShowcase.Gameplay
 {
     /// <summary>
-    /// Assembles the gameplay objects: the player and the run. Plain runtime code (no editor calls), so it also shows how
-    /// to put the same objects together by hand: a GameObject with a kinematic Rigidbody2D, a trigger CircleCollider2D
-    /// and a <see cref="PlayerController"/>, and a second GameObject with a <see cref="GameSession"/>.
+    /// Assembles the gameplay objects: the player and the run. Plain runtime code (no editor calls), so it also shows
+    /// how to put the same objects together by hand: a GameObject with a kinematic Rigidbody2D, a trigger
+    /// CircleCollider2D and a <see cref="PlayerController"/>, and a second GameObject with a <see cref="GameSession"/>.
     /// </summary>
     public static class GameplayInstaller
     {
@@ -22,8 +22,8 @@ namespace SfxShowcase.Gameplay
             var playerObject = new GameObject(PlayerObjectName);
             playerObject.transform.position = context.Level.SpawnPoint;
 
-            // The movement is hand-written; the body is kinematic and only there so the level's triggers see the player.
-            // Interpolation shows the fixed-step movement smoothly at any frame rate.
+            // The movement is hand-written; the body is kinematic and only there so the level's triggers see the
+            // player. Interpolation shows the fixed-step movement smoothly at any frame rate.
             var body = playerObject.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Kinematic;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;

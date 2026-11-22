@@ -9,7 +9,10 @@ namespace CatSplat.SfxForge.Editor
     [CanEditMultipleObjects]
     public class SfxPresetEditor : UnityEditor.Editor
     {
-        /// <summary>The whole Inspector as one element: what CreateInspectorGUI returns, and what a test or a picture can build too.</summary>
+        /// <summary>
+        /// The whole Inspector as one element: what CreateInspectorGUI returns, and what a test or a
+        /// picture can build too.
+        /// </summary>
         public static VisualElement Build(SerializedObject serializedObject) => new SfxPresetPanel(serializedObject);
 
         public override VisualElement CreateInspectorGUI() => Build(serializedObject);

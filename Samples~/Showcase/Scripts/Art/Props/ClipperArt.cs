@@ -21,10 +21,22 @@ namespace SfxShowcase.Art
             var clipper = new GameObject("Clipper");
             Mesh legMesh = kit.SharedMesh("Clipper Leg", LegMesh);
             Transform backLeg = kit.CreatePart("Back Leg", legMesh, DepthLayer.Props, -1, clipper.transform).transform;
-            Transform frontLeg = kit.CreatePart("Front Leg", legMesh, DepthLayer.Props, -1, clipper.transform).transform;
+            Transform frontLeg = kit.CreatePart(
+                "Front Leg",
+                legMesh,
+                DepthLayer.Props,
+                -1,
+                clipper.transform
+            ).transform;
             backLeg.localPosition = new Vector3(-LegOffset, 0f, 0f);
             frontLeg.localPosition = new Vector3(LegOffset, 0f, 0f);
-            Transform body = kit.CreatePart("Body", kit.SharedMesh("Clipper Body", BodyMesh), DepthLayer.Props, 0, clipper.transform).transform;
+            Transform body = kit.CreatePart(
+                "Body",
+                kit.SharedMesh("Clipper Body", BodyMesh),
+                DepthLayer.Props,
+                0,
+                clipper.transform
+            ).transform;
             clipper.AddComponent<ClipperWalk>().Configure(body, backLeg, frontLeg);
             return clipper;
         }
@@ -32,7 +44,10 @@ namespace SfxShowcase.Art
         static Mesh BodyMesh()
         {
             return new InkedShape()
-                .Add(Shapes.Rect(new Vector2(-HalfWidth, BodyBottom), new Vector2(HalfWidth, BodyTop)), Palette.StaticRed)
+                .Add(
+                    Shapes.Rect(new Vector2(-HalfWidth, BodyBottom), new Vector2(HalfWidth, BodyTop)),
+                    Palette.StaticRed
+                )
                 .AddDetail(Shapes.Rect(new Vector2(0.05f, 0.78f), new Vector2(0.25f, 0.98f)), Palette.SignalCream)
                 .AddDetail(Shapes.Rect(new Vector2(0.33f, 0.78f), new Vector2(0.53f, 0.98f)), Palette.SignalCream)
                 .AddDetail(Shapes.Rect(new Vector2(0.05f, 0.5f), new Vector2(0.53f, 0.57f)), Palette.Ink)
@@ -42,7 +57,10 @@ namespace SfxShowcase.Art
         static Mesh LegMesh()
         {
             return new InkedShape()
-                .Add(Shapes.Rect(new Vector2(-LegHalfWidth, 0f), new Vector2(LegHalfWidth, LegHeight)), Palette.StaticRed)
+                .Add(
+                    Shapes.Rect(new Vector2(-LegHalfWidth, 0f), new Vector2(LegHalfWidth, LegHeight)),
+                    Palette.StaticRed
+                )
                 .ToMesh("Clipper Leg");
         }
     }

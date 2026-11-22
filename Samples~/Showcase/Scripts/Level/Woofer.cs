@@ -11,9 +11,12 @@ namespace SfxShowcase.Level
     public sealed class Woofer : MonoBehaviour
     {
         [Tooltip("The velocity the player leaves with, m/s in world space.")]
-        [SerializeField] Vector2 launchVelocity = new Vector2(0f, 21f);
+        [SerializeField]
+        Vector2 launchVelocity = new Vector2(0f, 21f);
+
         [Tooltip("The cone that punches out when the Woofer fires.")]
-        [SerializeField] PropVisual visual;
+        [SerializeField]
+        PropVisual visual;
 
         /// <summary>The velocity the player leaves with, m/s in world space.</summary>
         public Vector2 LaunchVelocity => launchVelocity;
@@ -27,7 +30,11 @@ namespace SfxShowcase.Level
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (!other.TryGetComponent(out PlayerBase player)) return;
+            if (!other.TryGetComponent(out PlayerBase player))
+            {
+                return;
+            }
+
             player.Bounce(launchVelocity);
             visual.Activate();
             GameEvents.RaiseWooferBounced();

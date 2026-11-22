@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+//
+// The base of the UI kit every inspector and window of the package is built from (README.md in this folder).
+//   SfxColors  the display's colours
+//   SfxUI      small helpers: the panel, the stylesheet, texts, shapes for a painter
+//   SfxHeader  the display's top line
+//   SfxBanner  a notice across the panel
+//   SfxFooter  two lines under a column of values
+// The look itself is in SfxForge.uss.
 using System;
 using UnityEditor;
 using UnityEngine;
@@ -6,32 +14,61 @@ using UnityEngine.UIElements;
 
 namespace CatSplat.SfxForge.Editor
 {
-    /// <summary>The display's colours (sfx-forge/sfx-forge.c). SfxForge.uss has the same ones as variables.</summary>
+    /// <summary>
+    /// The display's colours (sfx-forge/fw_draw_parts.h). SfxForge.uss has the same ones as variables.
+    /// </summary>
     public static class SfxColors
     {
-        public static readonly Color Bg = Hex(0x180F0B), Panel = Hex(0x2B1C15), Line = Hex(0x4A3026), Dim = Hex(0x907A6F), Text = Hex(0xF4ECE8);
-        public static readonly Color Key = Hex(0x36241C), Off = Hex(0x6A5248), Ember = Hex(0xFF5A36), Linked = Hex(0x6EE7A8), Unlinked = Hex(0x48332A);
-        public static readonly Color Pattern = Hex(0x36C5FF), Warn = Hex(0xFF8A3C), Game = Hex(0xFFD23F), White = Color.white;
+        public static readonly Color Bg = Hex(0x180F0B);
+        public static readonly Color Panel = Hex(0x2B1C15);
+        public static readonly Color Line = Hex(0x4A3026);
+        public static readonly Color Dim = Hex(0x907A6F);
+        public static readonly Color Text = Hex(0xF4ECE8);
+        public static readonly Color Key = Hex(0x36241C);
+        public static readonly Color Off = Hex(0x6A5248);
+        public static readonly Color Ember = Hex(0xFF5A36);
+        public static readonly Color Linked = Hex(0x6EE7A8);
+        public static readonly Color Unlinked = Hex(0x48332A);
+        public static readonly Color Pattern = Hex(0x36C5FF);
+        public static readonly Color Warn = Hex(0xFF8A3C);
+        public static readonly Color Game = Hex(0xFFD23F);
+        public static readonly Color White = Color.white;
+
         /// <summary>Impact, UI Blip, Sci-Fi FM, Foley, Wavetable.</summary>
-        public static readonly Color[] Engines = { Hex(0xFF5A36), Hex(0xFFD23F), Hex(0x36C5FF), Hex(0x7BE07B), Hex(0xC48BFF) };
+        public static readonly Color[] Engines =
+        {
+            Hex(0xFF5A36),
+            Hex(0xFFD23F),
+            Hex(0x36C5FF),
+            Hex(0x7BE07B),
+            Hex(0xC48BFF),
+        };
 
         public static Color Engine(SfxEngine e) => Engines[(int)e % Engines.Length];
+
         public static Color Hex(uint rgb) => new Color32((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb, 255);
+
         /// <summary>From a to b, t of the way (the firmware's vg_mix).</summary>
-        public static Color Mix(Color a, Color b, float t) => new Color(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t, 1f);
+        public static Color Mix(Color a, Color b, float t) =>
+            new Color(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t, 1f);
     }
 
     /// <summary>The kit's small helpers: the panel everything sits in, its stylesheet, texts, painter shapes.</summary>
     public static class SfxUI
     {
-        const string SheetGuid = "5f0e6a1c9b7d4e3a8c2f1b6d7a9e4c10";          // (SfxForge.uss.meta: found wherever the package lies, whatever it is called)
+        // (SfxForge.uss.meta: found wherever the package lies, whatever it is called)
+        const string SheetGuid = "5f0e6a1c9b7d4e3a8c2f1b6d7a9e4c10";
+
         /// <summary>Narrower than this, a panel has the class sfx-narrow.</summary>
         public const float NarrowBelow = 400f;
         static StyleSheet sheet;
         static bool sheetMissed;
 
-        /// <summary>For the package's tests and pictures: show what a platform without the native library shows.</summary>
+        /// <summary>
+        /// For the package's tests and pictures: show what a platform without the native library shows.
+        /// </summary>
         internal static bool PretendNativeMissing;
+
         /// <summary>The device's engine is here (SfxNative): there is a picture, a preview, a WAV.</summary>
         public static bool NativeThere => SfxNative.Available && !PretendNativeMissing;
 
@@ -42,24 +79,41 @@ namespace CatSplat.SfxForge.Editor
                 if (sheet == null)
                 {
                     string path = AssetDatabase.GUIDToAssetPath(SheetGuid);
-                    if (!string.IsNullOrEmpty(path)) sheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        sheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+                    }
+
                     if (sheet == null && !sheetMissed)
                     {
-                        sheetMissed = true;                     // (said once, not at every panel)
-                        Debug.LogWarning("SFX Forge: SfxForge.uss not found – its inspectors and its window show without their look. Reimport the package.");
+                        sheetMissed = true; // (said once, not at every panel)
+                        Debug.LogWarning(
+                            "SFX Forge: SfxForge.uss not found – its inspectors and its window show without their "
+                                + "look. Reimport the package."
+                        );
                     }
                 }
+
                 return sheet;
             }
         }
 
-        /// <summary>The device's dark panel with rounded corners: the root of an inspector or of the window. It carries the stylesheet.</summary>
+        /// <summary>
+        /// The device's dark panel with rounded corners: the root of an inspector or of the window. It
+        /// carries the stylesheet.
+        /// </summary>
         public static VisualElement Panel()
         {
             var root = new VisualElement();
             root.AddToClassList("sfx-root");
-            if (Sheet != null) root.styleSheets.Add(Sheet);
-            root.RegisterCallback<GeometryChangedEvent>(e => root.EnableInClassList("sfx-narrow", e.newRect.width < NarrowBelow));
+            if (Sheet != null)
+            {
+                root.styleSheets.Add(Sheet);
+            }
+
+            root.RegisterCallback<GeometryChangedEvent>(e =>
+                root.EnableInClassList("sfx-narrow", e.newRect.width < NarrowBelow)
+            );
             return root;
         }
 
@@ -81,24 +135,47 @@ namespace CatSplat.SfxForge.Editor
         /// <summary>A filled rectangle with round corners, in an element's generateVisualContent.</summary>
         public static void RoundRect(Painter2D p, float x, float y, float w, float h, float r, Color fill)
         {
-            if (w <= 0f || h <= 0f) return;
+            if (w <= 0f || h <= 0f)
+            {
+                return;
+            }
+
             r = Mathf.Min(r, Mathf.Min(w, h) * 0.5f);
             p.fillColor = fill;
             p.BeginPath();
             p.MoveTo(new Vector2(x + r, y));
             p.LineTo(new Vector2(x + w - r, y));
-            if (r > 0f) p.ArcTo(new Vector2(x + w, y), new Vector2(x + w, y + r), r);
+            if (r > 0f)
+            {
+                p.ArcTo(new Vector2(x + w, y), new Vector2(x + w, y + r), r);
+            }
+
             p.LineTo(new Vector2(x + w, y + h - r));
-            if (r > 0f) p.ArcTo(new Vector2(x + w, y + h), new Vector2(x + w - r, y + h), r);
+            if (r > 0f)
+            {
+                p.ArcTo(new Vector2(x + w, y + h), new Vector2(x + w - r, y + h), r);
+            }
+
             p.LineTo(new Vector2(x + r, y + h));
-            if (r > 0f) p.ArcTo(new Vector2(x, y + h), new Vector2(x, y + h - r), r);
+            if (r > 0f)
+            {
+                p.ArcTo(new Vector2(x, y + h), new Vector2(x, y + h - r), r);
+            }
+
             p.LineTo(new Vector2(x, y + r));
-            if (r > 0f) p.ArcTo(new Vector2(x, y), new Vector2(x + r, y), r);
+            if (r > 0f)
+            {
+                p.ArcTo(new Vector2(x, y), new Vector2(x + r, y), r);
+            }
+
             p.ClosePath();
             p.Fill();
         }
 
-        /// <summary>A menu of names under an element; ticked: the one that is chosen now (-1: none). picked tells which was taken.</summary>
+        /// <summary>
+        /// A menu of names under an element; ticked: the one that is chosen now (-1: none). picked tells
+        /// which was taken.
+        /// </summary>
         public static void Menu(VisualElement under, string[] names, int ticked, Action<int> picked)
         {
             var menu = new GenericDropdownMenu();
@@ -107,25 +184,33 @@ namespace CatSplat.SfxForge.Editor
                 int pick = i;
                 menu.AddItem(names[i], i == ticked, () => picked?.Invoke(pick));
             }
-#pragma warning disable CS0618                              // (the newer overload is not in every Unity this package supports)
+
+            // (the newer overload is not in every Unity this package supports)
+#pragma warning disable CS0618
             menu.DropDown(under.worldBound, under, false);
 #pragma warning restore CS0618
         }
 
-        public static void Rect(Painter2D p, float x, float y, float w, float h, Color fill) => RoundRect(p, x, y, w, h, 0f, fill);
+        public static void Rect(Painter2D p, float x, float y, float w, float h, Color fill) =>
+            RoundRect(p, x, y, w, h, 0f, fill);
     }
 
     /// <summary>
-    /// The display's top line: a coloured number tile, the NAME, the ENGINE in its colour – and, right, a dot that is green
-    /// while the link is open. The number tile can be clicked (numberClicked).
+    /// The display's top line: a coloured number tile, the NAME, the ENGINE in its colour – and, right, a dot that is
+    /// green while the link is open. The number tile can be clicked (numberClicked).
     /// </summary>
     public class SfxHeader : VisualElement
     {
-        readonly TextElement number, title, sub, linkText;
+        readonly TextElement number;
+        readonly TextElement title;
+        readonly TextElement sub;
+        readonly TextElement linkText;
         readonly VisualElement dot;
         public event Action numberClicked;
+
         /// <summary>The number tile: give it a tooltip, or read its place for a menu.</summary>
         public VisualElement NumberTile => number;
+
         /// <summary>Where more can go, right of the names and left of the link.</summary>
         public VisualElement Slot { get; }
 
@@ -141,12 +226,19 @@ namespace CatSplat.SfxForge.Editor
             Slot.AddToClassList("sfx-row");
             dot = SfxUI.Box("sfx-link-dot");
             linkText = SfxUI.Text("LINK", "sfx-link-text");
-            Add(number); Add(title); Add(sub); Add(Slot); Add(dot); Add(linkText);
+            Add(number);
+            Add(title);
+            Add(sub);
+            Add(Slot);
+            Add(dot);
+            Add(linkText);
         }
 
         public void Set(string numberText, string nameText, string subText, Color accent)
         {
-            number.text = numberText; title.text = nameText; sub.text = subText;
+            number.text = numberText;
+            title.text = nameText;
+            sub.text = subText;
             number.style.backgroundColor = accent;
             sub.style.color = accent;
         }
@@ -159,7 +251,11 @@ namespace CatSplat.SfxForge.Editor
         }
 
         /// <summary>No dot: a header of something the link has nothing to do with.</summary>
-        public void HideLink() { dot.style.display = DisplayStyle.None; linkText.style.display = DisplayStyle.None; }
+        public void HideLink()
+        {
+            dot.style.display = DisplayStyle.None;
+            linkText.style.display = DisplayStyle.None;
+        }
     }
 
     /// <summary>
@@ -168,14 +264,16 @@ namespace CatSplat.SfxForge.Editor
     /// </summary>
     public class SfxBanner : VisualElement
     {
-        readonly TextElement a, b;
+        readonly TextElement a;
+        readonly TextElement b;
 
         public SfxBanner()
         {
             AddToClassList("sfx-banner");
             a = SfxUI.Text("", "sfx-banner__a");
             b = SfxUI.Text("", "sfx-banner__b");
-            Add(a); Add(b);
+            Add(a);
+            Add(b);
             style.display = DisplayStyle.None;
         }
 
@@ -187,7 +285,8 @@ namespace CatSplat.SfxForge.Editor
         /// <summary>bold null or "": the banner is gone.</summary>
         public void Set(string bold, string small = null)
         {
-            a.text = bold ?? ""; b.text = small ?? "";
+            a.text = bold ?? "";
+            b.text = small ?? "";
             b.style.display = string.IsNullOrEmpty(small) ? DisplayStyle.None : DisplayStyle.Flex;
             style.display = string.IsNullOrEmpty(bold) ? DisplayStyle.None : DisplayStyle.Flex;
         }
@@ -196,14 +295,16 @@ namespace CatSplat.SfxForge.Editor
     /// <summary>Two lines, as under the display's column of values: one bold and coloured, one small and dim.</summary>
     public class SfxFooter : VisualElement
     {
-        readonly TextElement a, b;
+        readonly TextElement a;
+        readonly TextElement b;
 
         public SfxFooter()
         {
             AddToClassList("sfx-footer");
             a = SfxUI.Text("", "sfx-footer__a");
             b = SfxUI.Text("", "sfx-footer__b");
-            Add(a); Add(b);
+            Add(a);
+            Add(b);
         }
 
         /// <summary>What its two lines say now.</summary>
@@ -212,7 +313,9 @@ namespace CatSplat.SfxForge.Editor
 
         public void Set(string bold, Color colour, string small)
         {
-            a.text = bold; a.style.color = colour; b.text = small;
+            a.text = bold;
+            a.style.color = colour;
+            b.text = small;
             a.style.display = string.IsNullOrEmpty(bold) ? DisplayStyle.None : DisplayStyle.Flex;
             b.style.display = string.IsNullOrEmpty(small) ? DisplayStyle.None : DisplayStyle.Flex;
         }

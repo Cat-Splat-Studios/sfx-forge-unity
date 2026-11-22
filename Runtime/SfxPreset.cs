@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+//
+// SfxPreset: one sound as an asset. SfxAssetFormat: the number every SFX Forge asset keeps of the asset format
+// that wrote it, and what is said when an asset comes from a newer version.
 using UnityEngine;
 
 namespace CatSplat.SfxForge
@@ -10,23 +13,34 @@ namespace CatSplat.SfxForge
         /// <summary>The asset format this version of SFX Forge writes.</summary>
         public const int CurrentFormat = SfxAssetFormat.Current;
 
-        // Which asset format wrote this file. A file without the line (every asset from before the number was kept) is format 1.
-        [SerializeField, HideInInspector] int format = CurrentFormat;
+        // Which asset format wrote this file. A file without the line
+        // (every asset from before the number was kept) is format 1.
+        [SerializeField, HideInInspector]
+        int format = CurrentFormat;
 
         // Which asset format saved this file last: always this version's number when this version writes the file.
         // A newer SFX Forge that finds its own "format" with a lower number here knows the file went through an older
         // version, which wrote back only what it knew. (Nothing reads it in this version.)
-        [SerializeField, HideInInspector] int savedBy = CurrentFormat;
-        void ISerializationCallbackReceiver.OnBeforeSerialize() { savedBy = CurrentFormat; }
+        [SerializeField, HideInInspector]
+        int savedBy = CurrentFormat;
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+            savedBy = CurrentFormat;
+        }
+
         void ISerializationCallbackReceiver.OnAfterDeserialize() { }
 
+        /// <summary>The sound.</summary>
         public SfxPatch patch = SfxPatch.Default;
 
         [Tooltip("For a sustained sound: how long a baked clip holds it before letting go.")]
-        [Min(0.05f)] public float holdSeconds = 1.5f;
+        [Min(0.05f)]
+        public float holdSeconds = 1.5f;
 
         /// <summary>The asset format the file was written in: 1 today.</summary>
         public int Format => format;
+
         /// <summary>
         /// A newer SFX Forge made this asset: there may be more in its file than this version reads. What is read
         /// plays; saving the asset here writes only that, and what this version does not know is lost.
@@ -42,27 +56,41 @@ namespace CatSplat.SfxForge
         public AudioClip Bake(int sampleRate = 48000, float semitones = 0f, float velocity = 1f, int midiNote = 0)
         {
             float[] samples = SfxNative.BakeInterleaved(patch, sampleRate, velocity, midiNote, semitones, holdSeconds);
-            if (samples == null || samples.Length == 0) return null;
+            if (samples == null || samples.Length == 0)
+            {
+                return null;
+            }
+
             var clip = AudioClip.Create(name, samples.Length / 2, 2, sampleRate, false);
             clip.SetData(samples, 0);
             return clip;
         }
     }
 
-    /// <summary>The number SFX Forge's assets keep of the asset format that wrote them, and what is said of a higher one.</summary>
+    /// <summary>
+    /// The number SFX Forge's assets keep of the asset format that wrote them, and what is said of a higher one.
+    /// </summary>
     public static class SfxAssetFormat
     {
         /// <summary>What this version writes. An asset file without the number is this format too.</summary>
         public const int Current = 1;
 
-        static readonly System.Collections.Generic.HashSet<string> said = new System.Collections.Generic.HashSet<string>();
+        static readonly System.Collections.Generic.HashSet<string> said =
+            new System.Collections.Generic.HashSet<string>();
 
         /// <summary>What an Inspector's banner and the Console say of an asset from a newer version.</summary>
         public static string NewerText(int format) => NewerText(format, Current);
-        /// <summary>As NewerText, for an asset type that counts its own format (a song: SfxSong.CurrentFormat).</summary>
-        public static string NewerText(int format, int current)
-            => "made by a newer SFX Forge (asset format " + format + ", this version knows " + current + "): what this version reads of it plays, the rest is left out. "
-             + "Saving it here loses what this version does not know. Update the package to use all of it.";
+
+        /// <summary>
+        /// As NewerText, for an asset type that counts its own format (a song: SfxSong.CurrentFormat).
+        /// </summary>
+        public static string NewerText(int format, int current) =>
+            "made by a newer SFX Forge (asset format "
+            + format
+            + ", this version knows "
+            + current
+            + "): what this version reads of it plays, the rest is left out. "
+            + "Saving it here loses what this version does not know. Update the package to use all of it.";
 
         /// <summary>
         /// One warning for an asset from a newer version, when it is loaded. In the editor once in a session for each
@@ -70,17 +98,34 @@ namespace CatSplat.SfxForge
         /// in two folders are two assets. In a player, and for an object that is no file, once for each type and name.
         /// </summary>
         public static void WarnIfNewer(Object asset, int format) => WarnIfNewer(asset, format, Current);
-        /// <summary>As WarnIfNewer, for an asset type that counts its own format (a song: SfxSong.CurrentFormat).</summary>
+
+        /// <summary>
+        /// As WarnIfNewer, for an asset type that counts its own format (a song: SfxSong.CurrentFormat).
+        /// </summary>
         public static void WarnIfNewer(Object asset, int format, int current)
         {
-            if (format <= current || asset == null) return;
+            if (format <= current || asset == null)
+            {
+                return;
+            }
+
             string key = "SfxForge.Newer." + asset.GetType().Name + "." + asset.name;
 #if UNITY_EDITOR
-            if (UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset, out string guid, out long local)) key = "SfxForge.Newer." + guid + "." + local;
+            if (UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset, out string guid, out long local))
+            {
+                key = "SfxForge.Newer." + guid + "." + local;
+            }
 #endif
-            if (!said.Add(key)) return;
+            if (!said.Add(key))
+            {
+                return;
+            }
 #if UNITY_EDITOR
-            if (UnityEditor.SessionState.GetBool(key, false)) return;
+            if (UnityEditor.SessionState.GetBool(key, false))
+            {
+                return;
+            }
+
             UnityEditor.SessionState.SetBool(key, true);
 #endif
             Debug.LogWarning("SFX Forge: '" + asset.name + "' was " + NewerText(format, current), asset);

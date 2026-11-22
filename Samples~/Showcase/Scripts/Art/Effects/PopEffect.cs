@@ -11,8 +11,10 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("How long the pop lasts, seconds.")]
         float seconds = 0.2f;
+
         [SerializeField, Tooltip("Radius at the start and at the end, metres.")]
         Vector2 radius = new Vector2(0.25f, 0.9f);
+
         [SerializeField, Tooltip("Thickness of the line at the start, metres; it thins to nothing.")]
         float thickness = 0.14f;
 
@@ -43,6 +45,7 @@ namespace SfxShowcase.Art
                 Destroy(gameObject);
                 return;
             }
+
             Draw(age / seconds);
         }
 

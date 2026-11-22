@@ -10,7 +10,8 @@ namespace SfxShowcase.Level
     public sealed class Resonator : MonoBehaviour
     {
         [Tooltip("The arch's visual, which rings when the player passes.")]
-        [SerializeField] PropVisual visual;
+        [SerializeField]
+        PropVisual visual;
 
         bool reached;
 
@@ -26,7 +27,11 @@ namespace SfxShowcase.Level
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (reached || !other.TryGetComponent(out PlayerBase player)) return;
+            if (reached || !other.TryGetComponent(out PlayerBase player))
+            {
+                return;
+            }
+
             reached = true;
             player.Finish();
             visual.Activate();

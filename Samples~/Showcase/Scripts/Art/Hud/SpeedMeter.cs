@@ -17,8 +17,10 @@ namespace SfxShowcase.Art
 
         [SerializeField, Tooltip("Width of one bar, HUD units.")]
         float barWidth = 0.26f;
+
         [SerializeField, Tooltip("Gap between bars, HUD units.")]
         float barGap = 0.12f;
+
         [SerializeField, Tooltip("Height of the bars, HUD units.")]
         float barHeight = 1f;
 
@@ -33,7 +35,11 @@ namespace SfxShowcase.Art
         public void Show(float speed01)
         {
             int litBars = Mathf.RoundToInt(Mathf.Clamp01(speed01) * BarCount);
-            if (litBars == shownBars) return;
+            if (litBars == shownBars)
+            {
+                return;
+            }
+
             shownBars = litBars;
 
             if (mesh == null)
@@ -50,12 +56,17 @@ namespace SfxShowcase.Art
                 Color color = bar > litBars ? Palette.MeterEmpty : LitColor(bar);
                 builder.AddRect(new Vector2(left, 0f), new Vector2(left + barWidth, barHeight), color);
             }
+
             builder.ApplyTo(mesh);
         }
 
         static Color LitColor(int bar)
         {
-            if (bar <= LastGreenBar) return Palette.ForkGreen;
+            if (bar <= LastGreenBar)
+            {
+                return Palette.ForkGreen;
+            }
+
             return bar <= LastYellowBar ? Palette.BrioYellow : Palette.StaticRed;
         }
     }

@@ -193,7 +193,7 @@ SfxPatch coin = SfxPatch.Create(SfxEngine.UiBlip, 86, 64, 0, 26, 60, 0, 127, 0, 
 `SoundLibrary.cs` wraps that call in `Make(engine, frequency: …, decay: …)` so every number has a
 name, keeps one commented patch per effect, and ends in one table: sound, patch, route, the MIDI note
 it is tuned to, volume. The header comment explains each parameter; the device's manual (`Documentation~/MANUAL.md` in the package)
-has the full reference, and the firmware's factory presets (`sfx-forge/sfx-forge.c`, `PRESETS`) are
+has the full reference, and the firmware's factory presets (`sfx-forge/fw_sounds.h`, `PRESETS`) are
 good starting points. A bare `new SfxPatch()` has level 0 and is silent: always start from `Create`.
 
 To keep a sound as an asset you can click and tune, put the patch in an `SfxPreset`

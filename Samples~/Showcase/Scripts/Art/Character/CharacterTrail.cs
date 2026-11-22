@@ -14,18 +14,25 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("The player the trail follows.")]
         PlayerBase player;
+
         [SerializeField, Tooltip("The trail appears above this fraction of top speed.")]
         float appearsAboveSpeed01 = 0.7f;
+
         [SerializeField, Tooltip("Length of the trail at full strength, metres.")]
         float length = 2f;
+
         [SerializeField, Tooltip("Width of the ribbon at Brio and at its tail, metres.")]
         Vector2 width = new Vector2(0.7f, 0.1f);
+
         [SerializeField, Tooltip("Opacity of the ribbon at Brio; it fades to 0 at the tail.")]
         float headAlpha = 0.7f;
+
         [SerializeField, Tooltip("How fast the trail grows in and shrinks away, per second.")]
         float fadeRate = 3f;
+
         [SerializeField, Tooltip("Distance between remembered positions, metres.")]
         float pointSpacing = 0.15f;
+
         [SerializeField, Tooltip("A jump in position longer than this (a respawn) starts a fresh trail, metres.")]
         float teleportDistance = 3f;
 
@@ -64,15 +71,21 @@ namespace SfxShowcase.Art
                     points.Clear();
                     mesh.Clear();
                 }
+
                 return;
             }
+
             Remember(player.Position);
             Rebuild();
         }
 
         void Remember(Vector2 position)
         {
-            if (points.Count > 0 && (position - points[0]).magnitude > teleportDistance) points.Clear();
+            if (points.Count > 0 && (position - points[0]).magnitude > teleportDistance)
+            {
+                points.Clear();
+            }
+
             if (points.Count < 2)
             {
                 points.Clear();
@@ -80,33 +93,59 @@ namespace SfxShowcase.Art
                 points.Add(position);
                 return;
             }
+
             points[0] = position;
-            if ((points[0] - points[1]).magnitude >= pointSpacing) points.Insert(0, position);
+            if ((points[0] - points[1]).magnitude >= pointSpacing)
+            {
+                points.Insert(0, position);
+            }
         }
 
-        /// <summary>Draws the ribbon through the remembered points, thinner and fainter towards the tail, and forgets what lies beyond its length.</summary>
+        /// <summary>
+        /// Draws the ribbon through the remembered points, thinner and fainter towards the tail, and forgets what lies
+        /// beyond its length.
+        /// </summary>
         void Rebuild()
         {
             float visibleLength = length * strength;
             builder.Clear();
             float travelled = 0f;
-            Vector2 previousLeft = Vector2.zero, previousRight = Vector2.zero;
+            Vector2 previousLeft = Vector2.zero;
+            Vector2 previousRight = Vector2.zero;
             Color previousColor = default;
             int kept = points.Count;
             for (int i = 0; i < points.Count; i++)
             {
-                if (i > 0) travelled += (points[i] - points[i - 1]).magnitude;
+                if (i > 0)
+                {
+                    travelled += (points[i] - points[i - 1]).magnitude;
+                }
+
                 float along = Mathf.Clamp01(travelled / visibleLength);
                 Vector2 newer = points[Mathf.Max(i - 1, 0)];
                 Vector2 older = points[Mathf.Min(i + 1, points.Count - 1)];
                 Vector2 direction = newer - older;
                 direction = direction.sqrMagnitude > 1e-8f ? direction.normalized : Vector2.right;
                 Vector2 side = new Vector2(-direction.y, direction.x) * (Mathf.Lerp(width.x, width.y, along) * 0.5f);
+
                 // The points are world positions; the mesh lives in this object's space, which travels with Brio.
                 Vector2 left = transform.InverseTransformPoint(points[i] + side);
                 Vector2 right = transform.InverseTransformPoint(points[i] - side);
                 Color color = Palette.WithAlpha(Palette.BrioYellow, headAlpha * (1f - along));
-                if (i > 0) builder.AddQuad(previousLeft, previousRight, right, left, previousColor, previousColor, color, color);
+                if (i > 0)
+                {
+                    builder.AddQuad(
+                        previousLeft,
+                        previousRight,
+                        right,
+                        left,
+                        previousColor,
+                        previousColor,
+                        color,
+                        color
+                    );
+                }
+
                 previousLeft = left;
                 previousRight = right;
                 previousColor = color;
@@ -116,7 +155,12 @@ namespace SfxShowcase.Art
                     break;
                 }
             }
-            if (kept < points.Count) points.RemoveRange(kept, points.Count - kept);
+
+            if (kept < points.Count)
+            {
+                points.RemoveRange(kept, points.Count - kept);
+            }
+
             builder.ApplyTo(mesh);
         }
     }

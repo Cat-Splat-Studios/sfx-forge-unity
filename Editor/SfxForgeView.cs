@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+//
+// Window > SFX Forge, without the window: what it shows and what it looks like.
+//   SfxForgeModel  what the window shows and what it is asked to do, as plain data and callbacks
+//   SfxForgeView   the picture of it, built from the UI kit (Editor/UI)
+// SfxForgeWindow.cs fills the model from SfxLink and answers the actions. Read the model first.
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,13 +12,16 @@ using UnityEngine.UIElements;
 namespace CatSplat.SfxForge.Editor
 {
     /// <summary>
-    /// What Window > SFX Forge shows, and what it is asked to do – apart from the link itself, so the view can be built,
-    /// shown and tested without a MIDI port. The window fills it from SfxLink and answers the actions; a test or a
-    /// picture fills it with anything.
+    /// What Window > SFX Forge shows, and what it is asked to do – apart from the link itself, so the view can be
+    /// built, shown and tested without a MIDI port. The window fills it from SfxLink and answers the actions; a test or
+    /// a picture fills it with anything.
     /// </summary>
     public sealed class SfxForgeModel
     {
-        public const int MaxPatches = 32, MaxMessages = 6, Knobs = SfxProtocol.EncoderCount, Pads = SfxProtocol.Slots;
+        public const int MaxPatches = 32;
+        public const int MaxMessages = 6;
+        public const int Knobs = SfxProtocol.EncoderCount;
+        public const int Pads = SfxProtocol.Slots;
         public const string DefaultFolder = "Assets/SfxForge";
 
         /// <summary>A patch the device sent: which pad, when, and the preset it was saved as (null: not yet).</summary>
@@ -26,61 +34,108 @@ namespace CatSplat.SfxForge.Editor
         }
 
         // ---- the link ----
+
         /// <summary>False where MIDI is not implemented (anything but Windows).</summary>
         public bool midiSupported = true;
-        public bool isOpen, hasOutput;
+        public bool isOpen;
+        public bool hasOutput;
+
         /// <summary>The ports there are.</summary>
-        public string[] inputs = new string[0], outputs = new string[0];
+        public string[] inputs = new string[0];
+        public string[] outputs = new string[0];
+
         /// <summary>The ports chosen ("": none), and the ones that are open (null: none).</summary>
-        public string inputPort = "", outputPort = "", inputName, outputName;
+        public string inputPort = "";
+        public string outputPort = "";
+        public string inputName;
+        public string outputName;
+
         /// <summary>
         /// What the device said it is ("VIBE FM, firmware 1.4.0, profile 1"), or NoIdentity once a request went
         /// unanswered for a second. Null: nothing to say (not connected, or asked a moment ago).
         /// </summary>
         public string identity;
+
         /// <summary>True: identity is what a device said. False: it is that none answered.</summary>
         public bool identityKnown;
         public const string NoIdentity = "no identity: firmware before 1.4, or nothing answers";
 
         // ---- the device ----
+
         /// <summary>0: a pad plays. 1: a pad fetches its patch.</summary>
         public int padMode;
+
         /// <summary>The pad touched last, here or on the device (the number at the top left).</summary>
         public int lastPad;
+
         /// <summary>The text for the device's top line.</summary>
         public string text = "";
+
         /// <summary>What the device's knobs sent last on its LINK page (CC 20..25): 0..127, -1 = nothing yet.</summary>
         public readonly int[] knobs = new int[Knobs];
+
         /// <summary>The pads held now, here or on the device.</summary>
         public readonly bool[] padDown = new bool[Pads];
 
         // ---- what came ----
         public bool autoSave = true;
         public string folder = DefaultFolder;
+
         /// <summary>The patches the device sent, the newest first.</summary>
         public readonly List<Patch> received = new List<Patch>();
+
         /// <summary>The last messages in, the newest first, as text.</summary>
         public readonly List<string> messages = new List<string>();
+
         /// <summary>A song was fetched in this session (SHOW SONG has something to show).</summary>
         public bool hasSong;
 
         // ---- what the view asks for ----
-        public Action connect, disconnect, refreshPorts, fetchSong, showSong;
-        public Action<string> pickInput, pickOutput, sendText, setFolder;
+        public Action connect;
+        public Action disconnect;
+        public Action refreshPorts;
+        public Action fetchSong;
+        public Action showSong;
+        public Action<string> pickInput;
+        public Action<string> pickOutput;
+        public Action<string> sendText;
+        public Action<string> setFolder;
         public Action<bool> setAutoSave;
-        public Action<int> playPad, releasePad, fetchPad;
-        public Action<Patch> play, save, show;
+        public Action<int> playPad;
+        public Action<int> releasePad;
+        public Action<int> fetchPad;
+        public Action<Patch> play;
+        public Action<Patch> save;
+        public Action<Patch> show;
 
-        public SfxForgeModel() { ForgetKnobs(); }
+        public SfxForgeModel()
+        {
+            ForgetKnobs();
+        }
 
-        public void ForgetKnobs() { for (int i = 0; i < knobs.Length; i++) knobs[i] = -1; }
+        public void ForgetKnobs()
+        {
+            for (int i = 0; i < knobs.Length; i++)
+            {
+                knobs[i] = -1;
+            }
+        }
 
         /// <summary>A patch came: it goes to the top of the list (which keeps the last 32).</summary>
         public Patch TakePatch(int slot, SfxPatch patch, string time)
         {
-            var p = new Patch { slot = slot, patch = patch, time = time };
+            var p = new Patch
+            {
+                slot = slot,
+                patch = patch,
+                time = time,
+            };
             received.Insert(0, p);
-            if (received.Count > MaxPatches) received.RemoveAt(received.Count - 1);
+            if (received.Count > MaxPatches)
+            {
+                received.RemoveAt(received.Count - 1);
+            }
+
             lastPad = Mathf.Clamp(slot, 0, Pads - 1);
             return p;
         }
@@ -89,53 +144,92 @@ namespace CatSplat.SfxForge.Editor
         public void TakeMessage(string line)
         {
             messages.Insert(0, line);
-            if (messages.Count > MaxMessages) messages.RemoveAt(messages.Count - 1);
+            if (messages.Count > MaxMessages)
+            {
+                messages.RemoveAt(messages.Count - 1);
+            }
         }
 
         /// <summary>A knob of the device's LINK page turned: index 0..5, value 0..1.</summary>
         public void TakeKnob(int index, float value01)
         {
-            if (index >= 0 && index < knobs.Length) knobs[index] = Mathf.Clamp(Mathf.RoundToInt(value01 * 127f), 0, 127);
+            if (index >= 0 && index < knobs.Length)
+            {
+                knobs[index] = Mathf.Clamp(Mathf.RoundToInt(value01 * 127f), 0, 127);
+            }
         }
 
         public void TakePad(int pad, bool down)
         {
-            if (pad < 0 || pad >= Pads) return;
+            if (pad < 0 || pad >= Pads)
+            {
+                return;
+            }
+
             padDown[pad] = down;
-            if (down) lastPad = pad;
+            if (down)
+            {
+                lastPad = pad;
+            }
         }
 
         /// <summary>The newest patch that came from a pad, null if none did.</summary>
         public Patch PatchOfPad(int pad)
         {
-            foreach (var p in received) if (p.slot == pad) return p;
+            foreach (var p in received)
+            {
+                if (p.slot == pad)
+                {
+                    return p;
+                }
+            }
+
             return null;
         }
     }
 
     /// <summary>
-    /// Window > SFX Forge as the device's display: the top line, the link as its LINK page (left what the device's knobs
-    /// send, right the two ports and LINKED / NOT CONNECTED), the 16 pads as tiles, the patches that came as tiles in
-    /// their engine's colour, the last messages, and a row of soft keys. It shows a SfxForgeModel and tells it what the
-    /// mouse did; it never touches a MIDI port. Call Refresh() after the model changed.
+    /// Window > SFX Forge as the device's display: the top line, the link as its LINK page (left what the device's
+    /// knobs send, right the two ports and LINKED / NOT CONNECTED), the 16 pads as tiles, the patches that came as
+    /// tiles in their engine's colour, the last messages, and a row of soft keys. It shows a SfxForgeModel and tells it
+    /// what the mouse did; it never touches a MIDI port. Call Refresh() after the model changed.
     /// </summary>
     public sealed class SfxForgeView : VisualElement
     {
-        static readonly string[] KnobNames = { "KNOB 1   CC 20", "KNOB 2   CC 21", "KNOB 3   CC 22", "KNOB 4   CC 23", "KNOB A   CC 24", "KNOB B   CC 25" };
+        static readonly string[] KnobNames =
+        {
+            "KNOB 1   CC 20",
+            "KNOB 2   CC 21",
+            "KNOB 3   CC 22",
+            "KNOB 4   CC 23",
+            "KNOB A   CC 24",
+            "KNOB B   CC 25",
+        };
         const float PatchTileWidth = 150f;
 
         readonly SfxForgeModel model;
         readonly SfxHeader header = new SfxHeader();
         readonly LinkBars bars = new LinkBars("FROM THE DEVICE", KnobNames);
-        readonly PortTile inTile = new PortTile("IN"), outTile = new PortTile("OUT");
+        readonly PortTile inTile = new PortTile("IN");
+        readonly PortTile outTile = new PortTile("OUT");
         readonly SfxFooter status = new SfxFooter();
         readonly PageTabs padTabs = new PageTabs("PADS PLAY", "PADS FETCH THEIR PATCH");
         readonly PadGrid pads = new PadGrid();
-        readonly TextField textField = new TextField(), folderField = new TextField { isDelayed = true };
-        readonly VisualElement patchGrid = SfxUI.Box("sfx-patches"), log = SfxUI.Box("sfx-log");
-        readonly TextElement title, padCap, patchHint, logNone, identity;
+        readonly TextField textField = new TextField();
+        readonly TextField folderField = new TextField { isDelayed = true };
+        readonly VisualElement patchGrid = SfxUI.Box("sfx-patches");
+        readonly VisualElement log = SfxUI.Box("sfx-log");
+        readonly TextElement title;
+        readonly TextElement padCap;
+        readonly TextElement patchHint;
+        readonly TextElement logNone;
+        readonly TextElement identity;
         readonly TextElement[] logLines = new TextElement[SfxForgeModel.MaxMessages];
-        readonly SoftKey showTextKey, autoKey, connectKey, fetchKey, showSongKey;
+        readonly SoftKey showTextKey;
+        readonly SoftKey autoKey;
+        readonly SoftKey connectKey;
+        readonly SoftKey fetchKey;
+        readonly SoftKey showSongKey;
         readonly Dictionary<SfxForgeModel.Patch, PatchTile> tiles = new Dictionary<SfxForgeModel.Patch, PatchTile>();
         readonly List<SfxForgeModel.Patch> gone = new List<SfxForgeModel.Patch>();
         readonly bool[] mouseDown = new bool[SfxForgeModel.Pads];
@@ -163,14 +257,24 @@ namespace CatSplat.SfxForge.Editor
             inTile.clicked += () => Ports(inTile, model.inputs, model.inputPort, model.pickInput);
             outTile.clicked += () => Ports(outTile, model.outputs, model.outputPort, model.pickOutput);
             identity = SfxUI.Text("", "sfx-identity");
-            identity.pickingMode = PickingMode.Position;    // (for its tooltip)
-            identity.tooltip = "What the device answered when it was asked what it is (firmware 1.4.0 on): its hardware, its firmware, its profile. An older firmware does not answer; it works all the same.";
-            side.Add(inTile); side.Add(outTile); side.Add(status); side.Add(identity);
-            link.Add(box); link.Add(side);
+            identity.pickingMode = PickingMode.Position; // (for its tooltip)
+            identity.tooltip =
+                "What the device answered when it was asked what it is (firmware 1.4.0 on): its hardware, its "
+                + "firmware, its profile. An older firmware does not answer; it works all the same.";
+            side.Add(inTile);
+            side.Add(outTile);
+            side.Add(status);
+            side.Add(identity);
+            link.Add(box);
+            link.Add(side);
             root.Add(link);
 
             // the device: its pads, a text for its top line
-            padTabs.changed += i => { model.padMode = i; Refresh(); };
+            padTabs.changed += i =>
+            {
+                model.padMode = i;
+                Refresh();
+            };
             root.Add(padTabs);
             pads.pressed += PadPressed;
             pads.released += PadReleased;
@@ -181,21 +285,35 @@ namespace CatSplat.SfxForge.Editor
             Field(textField, "A text for the device's top line: a level's name, a state (24 characters).");
             textField.maxLength = 24;
             textField.RegisterValueChangedCallback(e => model.text = e.newValue);
-            textField.RegisterCallback<KeyDownEvent>(e => { if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) SendText(); });
+            textField.RegisterCallback<KeyDownEvent>(e =>
+            {
+                if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)
+                {
+                    SendText();
+                }
+            });
             showTextKey = new SoftKey("SHOW ON DEVICE", SendText, "Shows the text on the device's top line.");
             showTextKey.AddToClassList("sfx-field-key");
             showTextKey.style.marginLeft = 4;
-            textRow.Add(textField); textRow.Add(showTextKey);
+            textRow.Add(textField);
+            textRow.Add(showTextKey);
             root.Add(textRow);
 
             // what came: the patches
             root.Add(SfxUI.Text("PATCHES FROM THE DEVICE", "sfx-section"));
             var saveRow = SfxUI.Box("sfx-field-row");
-            autoKey = new SoftKey("SAVE AS THEY ARRIVE", () => model.setAutoSave?.Invoke(!model.autoSave), "On: a patch becomes a preset as soon as it arrives (EXPORT on the device). Off: SAVE on its tile does it.");
+            autoKey = new SoftKey(
+                "SAVE AS THEY ARRIVE",
+                () => model.setAutoSave?.Invoke(!model.autoSave),
+                "On: a patch becomes a preset as soon as it arrives (EXPORT on the device). Off: SAVE on its "
+                    + "tile does it."
+            );
             autoKey.AddToClassList("sfx-field-key");
             Field(folderField, "The folder the presets and songs are saved in (inside Assets).");
             folderField.RegisterValueChangedCallback(e => model.setFolder?.Invoke(e.newValue));
-            saveRow.Add(autoKey); saveRow.Add(SfxUI.Text("FOLDER", "sfx-field-label")); saveRow.Add(folderField);
+            saveRow.Add(autoKey);
+            saveRow.Add(SfxUI.Text("FOLDER", "sfx-field-label"));
+            saveRow.Add(folderField);
             root.Add(saveRow);
             patchHint = SfxUI.Text("Press EXPORT (F5) on the device, or fetch a pad above.", "sfx-song-cap");
             root.Add(patchHint);
@@ -209,17 +327,41 @@ namespace CatSplat.SfxForge.Editor
             for (int i = 0; i < logLines.Length; i++)
             {
                 logLines[i] = SfxUI.Text("", "sfx-log__line");
-                if (i == 0) logLines[i].AddToClassList("sfx-log__line--new");
+                if (i == 0)
+                {
+                    logLines[i].AddToClassList("sfx-log__line--new");
+                }
+
                 log.Add(logLines[i]);
             }
+
             root.Add(log);
 
             var keys = new SoftKeyRow();
             keys.AddToClassList("sfx-keys--four");
-            connectKey = keys.Add("CONNECT", () => { if (model.isOpen) model.disconnect?.Invoke(); else model.connect?.Invoke(); });
+            connectKey = keys.Add("CONNECT", () =>
+            {
+                if (model.isOpen)
+                {
+                    model.disconnect?.Invoke();
+                }
+                else
+                {
+                    model.connect?.Invoke();
+                }
+            });
             keys.Add("REFRESH PORTS", () => model.refreshPorts?.Invoke(), "Looks again for the MIDI ports there are.");
-            fetchKey = keys.Add("FETCH SONG", () => model.fetchSong?.Invoke(), "Asks the device for its 16 sounds and its song; they arrive as a Song asset. SEND on its SONG page does the same.");
-            showSongKey = keys.Add("SHOW SONG", () => model.showSong?.Invoke(), "Shows the song that was fetched last.");
+            fetchKey = keys.Add(
+                "FETCH SONG",
+                () => model.fetchSong?.Invoke(),
+                "Asks the device for its 16 sounds and its song; they arrive as a Song asset. SEND on its SONG "
+                    + "page does the same."
+            );
+            showSongKey = keys.Add(
+                "SHOW SONG",
+                () => model.showSong?.Invoke(),
+                "Shows the song that was fetched last."
+            );
             root.Add(keys);
 
             Refresh();
@@ -233,17 +375,26 @@ namespace CatSplat.SfxForge.Editor
         public PortTile OutputTile => outTile;
         public TextField TextField => textField;
         public TextField FolderField => folderField;
+
         /// <summary>The state under the ports: "LINKED | in: … out: …".</summary>
         public string StatusText => status.Bold + " | " + status.Small;
-        /// <summary>The line under the state: what the device said it is, or that it did not answer. "" while it is not shown.</summary>
+
+        /// <summary>
+        /// The line under the state: what the device said it is, or that it did not answer. "" while it is not shown.
+        /// </summary>
         public string IdentityText => identity.style.display == DisplayStyle.None ? "" : identity.text;
         public string HeaderNumber => ((TextElement)header.NumberTile).text;
+
         /// <summary>The tiles of the patches shown, the newest first.</summary>
         public int PatchCount => patchGrid.childCount;
+
         public PatchTile PatchTileAt(int i) => (PatchTile)patchGrid[i][0];
+
         public bool PatchHintShown => patchHint.style.display != DisplayStyle.None;
+
         /// <summary>Line i of the last messages, "" below the last one.</summary>
         public string MessageText(int i) => logLines[i].style.display == DisplayStyle.None ? "" : logLines[i].text;
+
         /// <summary>The soft key (or small key) with this word on it, null if there is none.</summary>
         public SoftKey Key(string word) => this.Query<SoftKey>().Where(k => k.text == word).First();
 
@@ -253,7 +404,8 @@ namespace CatSplat.SfxForge.Editor
             field.tooltip = tip;
         }
 
-        // ---- what the mouse did --------------------------------------------------------------------------------------------
+        // ---- what the mouse did -------------------------------------------------------------------------------------
+
         void Ports(PortTile under, string[] names, string current, Action<string> picked)
         {
             var options = new string[names.Length + 1];
@@ -265,27 +417,49 @@ namespace CatSplat.SfxForge.Editor
 
         void PadPressed(int pad)
         {
-            if (!model.hasOutput) return;
+            if (!model.hasOutput)
+            {
+                return;
+            }
+
             model.lastPad = pad;
-            if (model.padMode == 0) { mouseDown[pad] = true; model.playPad?.Invoke(pad); }
-            else model.fetchPad?.Invoke(pad);
+            if (model.padMode == 0)
+            {
+                mouseDown[pad] = true;
+                model.playPad?.Invoke(pad);
+            }
+            else
+            {
+                model.fetchPad?.Invoke(pad);
+            }
+
             Refresh();
         }
 
         void PadReleased(int pad)
         {
-            if (!mouseDown[pad]) return;
+            if (!mouseDown[pad])
+            {
+                return;
+            }
+
             mouseDown[pad] = false;
             model.releasePad?.Invoke(pad);
             Refresh();
         }
 
-        /// <summary>Lets go of every pad the mouse still holds (the window closes, or reloads, while one is down).</summary>
+        /// <summary>
+        /// Lets go of every pad the mouse still holds (the window closes, or reloads, while one is down).
+        /// </summary>
         public void LetGo()
         {
             for (int pad = 0; pad < mouseDown.Length; pad++)
             {
-                if (!mouseDown[pad]) continue;
+                if (!mouseDown[pad])
+                {
+                    continue;
+                }
+
                 mouseDown[pad] = false;
                 model.releasePad?.Invoke(pad);
             }
@@ -293,18 +467,29 @@ namespace CatSplat.SfxForge.Editor
 
         void SendText()
         {
-            if (model.hasOutput) model.sendText?.Invoke(model.text ?? "");
+            if (model.hasOutput)
+            {
+                model.sendText?.Invoke(model.text ?? "");
+            }
         }
 
         void SetColumns(float width)
         {
             int n = Mathf.Clamp((int)(width / PatchTileWidth), 1, 4);
-            if (n == columns) return;
+            if (n == columns)
+            {
+                return;
+            }
+
             columns = n;
-            foreach (var cell in patchGrid.Children()) cell.style.width = Length.Percent(100f / columns);
+            foreach (var cell in patchGrid.Children())
+            {
+                cell.style.width = Length.Percent(100f / columns);
+            }
         }
 
-        // ---- showing the model -----------------------------------------------------------------------------------------------
+        // ---- showing the model --------------------------------------------------------------------------------------
+
         /// <summary>Shows the model as it is now.</summary>
         public void Refresh()
         {
@@ -312,18 +497,55 @@ namespace CatSplat.SfxForge.Editor
             int last = Mathf.Clamp(m.lastPad, 0, SfxForgeModel.Pads - 1);
             var lastPatch = m.PatchOfPad(last);
             Color accent = lastPatch != null ? SfxColors.Engine(lastPatch.patch.engine) : SfxColors.Pattern;
-            header.Set((last + 1).ToString(), "SFX FORGE", lastPatch != null ? SfxUnits.EngineNames[(int)lastPatch.patch.engine % SfxUnits.EngineNames.Length] : "", accent);
+            header.Set(
+                (last + 1).ToString(),
+                "SFX FORGE",
+                lastPatch != null
+                    ? SfxUnits.EngineNames[(int)lastPatch.patch.engine % SfxUnits.EngineNames.Length]
+                    : "",
+                accent
+            );
             padTabs.Accent = accent;
             header.SetLink(m.isOpen, m.isOpen ? "Linked" : "Not connected");
 
-            for (int i = 0; i < bars.Count; i++) bars.SetValue(i, i < m.knobs.Length ? m.knobs[i] : -1);
+            for (int i = 0; i < bars.Count; i++)
+            {
+                bars.SetValue(i, i < m.knobs.Length ? m.knobs[i] : -1);
+            }
+
             ShowPort(inTile, "FROM DEVICE", m.inputs, m.inputPort, m.inputName);
             ShowPort(outTile, "TO DEVICE", m.outputs, m.outputPort, m.outputName);
-            if (m.isOpen) status.Set("LINKED", SfxColors.Linked, "in: " + (m.inputName ?? "–") + "   out: " + (m.outputName ?? "–"));
-            else if (!m.midiSupported) status.Set("NO MIDI HERE", SfxColors.Warn, "MIDI is implemented for Windows only so far. Presets, SfxPlayer and baking do not need it.");
+            if (m.isOpen)
+            {
+                status.Set(
+                    "LINKED",
+                    SfxColors.Linked,
+                    "in: " + (m.inputName ?? "–") + "   out: " + (m.outputName ?? "–")
+                );
+            }
+            else if (!m.midiSupported)
+            {
+                status.Set(
+                    "NO MIDI HERE",
+                    SfxColors.Warn,
+                    "MIDI is implemented for Windows only so far. Presets, SfxPlayer and baking do not need it."
+                );
+            }
             else if (m.inputs.Length + m.outputs.Length == 0)
-                status.Set("NO MIDI PORTS", SfxColors.Warn, "Without the hardware, SFX FORGE runs in the browser or the plugin: install a virtual MIDI cable (e.g. loopMIDI) with two ports, give one to the browser's MIDI out and the other to its MIDI in.");
-            else status.Set("NOT CONNECTED", SfxColors.Dim, "Choose the two ports, then CONNECT.");
+            {
+                status.Set(
+                    "NO MIDI PORTS",
+                    SfxColors.Warn,
+                    "Without the hardware, SFX FORGE runs in the browser or the plugin: install a virtual MIDI cable "
+                        + "(e.g. loopMIDI) with two ports, give one to the browser's MIDI out and the other to its "
+                        + "MIDI in."
+                );
+            }
+            else
+            {
+                status.Set("NOT CONNECTED", SfxColors.Dim, "Choose the two ports, then CONNECT.");
+            }
+
             bool says = m.isOpen && !string.IsNullOrEmpty(m.identity);
             identity.style.display = says ? DisplayStyle.Flex : DisplayStyle.None;
             identity.text = says ? m.identity : "";
@@ -336,16 +558,33 @@ namespace CatSplat.SfxForge.Editor
                 bool held = m.padDown[i] || mouseDown[i];
                 string name = p != null ? SfxUnits.EngineShort[(int)p.patch.engine % SfxUnits.EngineShort.Length] : "";
                 Color c = p != null ? SfxColors.Engine(p.patch.engine) : SfxColors.Dim;
-                pads.SetPad(i, name, c, !m.hasOutput && !held ? PadState.Empty : held ? PadState.Lit : i == last && p != null ? PadState.Selected : PadState.Dim);
+                pads.SetPad(
+                    i,
+                    name,
+                    c,
+                    !m.hasOutput && !held ? PadState.Empty
+                        : held ? PadState.Lit
+                        : i == last && p != null ? PadState.Selected
+                        : PadState.Dim
+                );
             }
-            padCap.text = !m.hasOutput ? "The pads need the port TO DEVICE: connect first."
+
+            padCap.text =
+                !m.hasOutput ? "The pads need the port TO DEVICE: connect first."
                 : m.padMode == 0 ? "A pad plays its sound on the device for as long as it is held."
                 : "A pad asks the device for its patch: it arrives below.";
             showTextKey.Off = !m.hasOutput;
-            if (textField.value != (m.text ?? "")) textField.SetValueWithoutNotify(m.text ?? "");
+            if (textField.value != (m.text ?? ""))
+            {
+                textField.SetValueWithoutNotify(m.text ?? "");
+            }
 
             autoKey.Lit = m.autoSave;
-            if (folderField.value != (m.folder ?? "")) folderField.SetValueWithoutNotify(m.folder ?? "");
+            if (folderField.value != (m.folder ?? ""))
+            {
+                folderField.SetValueWithoutNotify(m.folder ?? "");
+            }
+
             ShowPatches();
 
             int lines = Mathf.Min(m.messages.Count, logLines.Length);
@@ -353,7 +592,10 @@ namespace CatSplat.SfxForge.Editor
             for (int i = 0; i < logLines.Length; i++)
             {
                 logLines[i].style.display = i < lines ? DisplayStyle.Flex : DisplayStyle.None;
-                if (i < lines) logLines[i].text = m.messages[i];
+                if (i < lines)
+                {
+                    logLines[i].text = m.messages[i];
+                }
             }
 
             connectKey.text = m.isOpen ? "DISCONNECT" : "CONNECT";
@@ -367,10 +609,23 @@ namespace CatSplat.SfxForge.Editor
         {
             bool none = string.IsNullOrEmpty(chosen);
             int at = SfxLink.Find(names, chosen);
-            if (open != null) tile.Show(label, open, true, true);
-            else if (none) tile.Show(label, "(none)", false, false);
-            else if (at < 0) tile.Show(label + "  ·  NOT FOUND", chosen, false, false);
-            else tile.Show(label, names[at], false, true);
+            if (open != null)
+            {
+                tile.Show(label, open, true, true);
+            }
+            else if (none)
+            {
+                tile.Show(label, "(none)", false, false);
+            }
+            else if (at < 0)
+            {
+                tile.Show(label + "  ·  NOT FOUND", chosen, false, false);
+            }
+            else
+            {
+                tile.Show(label, names[at], false, true);
+            }
+
             tile.Locked = model.isOpen;
         }
 
@@ -380,12 +635,31 @@ namespace CatSplat.SfxForge.Editor
             var list = model.received;
             patchHint.style.display = list.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             gone.Clear();
-            foreach (var known in tiles.Keys) if (!list.Contains(known)) gone.Add(known);
-            foreach (var p in gone) tiles.Remove(p);
+            foreach (var known in tiles.Keys)
+            {
+                if (!list.Contains(known))
+                {
+                    gone.Add(known);
+                }
+            }
+
+            foreach (var p in gone)
+            {
+                tiles.Remove(p);
+            }
+
             bool native = SfxUI.NativeThere;
             bool same = patchGrid.childCount == list.Count;
-            for (int i = 0; same && i < list.Count; i++) same = tiles.TryGetValue(list[i], out var t) && patchGrid[i][0] == t;
-            if (!same) patchGrid.Clear();
+            for (int i = 0; same && i < list.Count; i++)
+            {
+                same = tiles.TryGetValue(list[i], out var t) && patchGrid[i][0] == t;
+            }
+
+            if (!same)
+            {
+                patchGrid.Clear();
+            }
+
             for (int i = 0; i < list.Count; i++)
             {
                 var p = list[i];
@@ -398,8 +672,13 @@ namespace CatSplat.SfxForge.Editor
                     tile.SetPicture(p.patch, native);
                     tiles[p] = tile;
                 }
+
                 tile.Set(p.slot, p.patch.engine, p.time, p.saved != null);
-                if (same) continue;
+                if (same)
+                {
+                    continue;
+                }
+
                 tile.RemoveFromHierarchy();
                 var cell = SfxUI.Box("sfx-patch-cell");
                 cell.style.width = Length.Percent(100f / columns);

@@ -22,7 +22,13 @@ namespace SfxShowcase.Art
         /// <param name="downwardGravity">Downward acceleration, m/s².</param>
         /// <param name="spinDegreesPerSecond">How fast each piece tumbles; alternate pieces turn the other way.</param>
         /// <param name="lifeSeconds">How long the burst lasts.</param>
-        public void Play(Transform[] flyingPieces, Vector2[] startVelocities, float downwardGravity, float spinDegreesPerSecond, float lifeSeconds)
+        public void Play(
+            Transform[] flyingPieces,
+            Vector2[] startVelocities,
+            float downwardGravity,
+            float spinDegreesPerSecond,
+            float lifeSeconds
+        )
         {
             pieces = flyingPieces;
             velocities = startVelocities;
@@ -40,6 +46,7 @@ namespace SfxShowcase.Art
                 Destroy(gameObject);
                 return;
             }
+
             float size = Mathf.Clamp01(2f * (1f - age / seconds));
             for (int i = 0; i < pieces.Length; i++)
             {

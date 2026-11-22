@@ -13,28 +13,41 @@ namespace SfxShowcase.Audio
     public sealed class SoundBinding
     {
         [Tooltip("Which sound effect this is.")]
-        [SerializeField] GameSound sound;
+        [SerializeField]
+        GameSound sound;
 
         [Tooltip("The SFX FORGE preset that is the sound. Edit its patch to retune the sound.")]
-        [SerializeField] SfxPreset preset;
+        [SerializeField]
+        SfxPreset preset;
 
-        [Tooltip("Baked: rendered to a clip at start. LiveOneShot: synthesized per trigger by the voice pool. LiveHeld: on an SfxPlayer of its own (see Continuous Sounds).")]
-        [SerializeField] SoundRoute route;
+        [Tooltip(
+            "Baked: rendered to a clip at start. LiveOneShot: synthesized per trigger by the voice pool. "
+                + "LiveHeld: on an SfxPlayer of its own (see Continuous Sounds)."
+        )]
+        [SerializeField]
+        SoundRoute route;
 
         [Tooltip("The MIDI note it is played as, so it is in tune with the song. 0 = at the patch's own frequency.")]
-        [SerializeField] int midiNote;
+        [SerializeField]
+        int midiNote;
 
         [Tooltip("Its place in the mix.")]
-        [Range(0f, 1f)] [SerializeField] float volume = 1f;
+        [Range(0f, 1f)]
+        [SerializeField]
+        float volume = 1f;
 
         /// <summary>Which sound effect this is.</summary>
         public GameSound Sound => sound;
+
         /// <summary>The SFX FORGE preset that is the sound.</summary>
         public SfxPreset Preset => preset;
+
         /// <summary>How it is played.</summary>
         public SoundRoute Route => route;
+
         /// <summary>The MIDI note it is played as; 0 = at the patch's own frequency.</summary>
         public int MidiNote => midiNote;
+
         /// <summary>Its place in the mix, 0..1.</summary>
         public float Volume => volume;
 

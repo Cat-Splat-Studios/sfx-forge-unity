@@ -10,14 +10,19 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("The block, which bobs with each step.")]
         Transform body;
+
         [SerializeField, Tooltip("The leg at the back.")]
         Transform backLeg;
+
         [SerializeField, Tooltip("The leg at the front.")]
         Transform frontLeg;
+
         [SerializeField, Tooltip("Steps per second.")]
         float stepsPerSecond = 5f;
+
         [SerializeField, Tooltip("How high a leg lifts, metres.")]
         float stepHeight = 0.1f;
+
         [SerializeField, Tooltip("How far the body drops on every other step, metres.")]
         float bodyBob = 0.05f;
 

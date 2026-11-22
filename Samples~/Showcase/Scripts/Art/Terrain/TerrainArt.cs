@@ -19,19 +19,32 @@ namespace SfxShowcase.Art
             var builder = new MeshBuilder();
             var fill = new StrataFill(builder);
             float highest = float.MinValue;
-            for (int i = 0; i < surface.Count; i++) highest = Mathf.Max(highest, surface[i].y);
+            for (int i = 0; i < surface.Count; i++)
+            {
+                highest = Mathf.Max(highest, surface[i].y);
+            }
 
             for (int i = 0; i < surface.Count - 1; i++)
+            {
                 if (IsColumn(surface[i], surface[i + 1]))
+                {
                     builder.AddPolygon(Column(surface[i], surface[i + 1], bottomY), Palette.GroundTeal);
+                }
+            }
+
             for (int band = StrataFill.FirstBandAbove(bottomY); StrataFill.BandBottom(band) < highest; band++)
+            {
                 AddGroundBand(builder, fill, surface, bottomY, band);
+            }
+
             AddSurfaceLine(builder, surface);
 
             return kit.CreatePart("Ground", builder.ToMesh("Ground"), DepthLayer.Terrain);
         }
 
-        /// <summary>A platform: the surface polyline (world space, left to right) with a body of the given thickness under it.</summary>
+        /// <summary>
+        /// A platform: the surface polyline (world space, left to right) with a body of the given thickness under it.
+        /// </summary>
         public static GameObject CreatePlatform(ArtKit kit, IReadOnlyList<Vector2> surface, float thickness)
         {
             var builder = new MeshBuilder();
@@ -39,9 +52,14 @@ namespace SfxShowcase.Art
             Vector2 down = Vector2.down * thickness;
             for (int i = 0; i < surface.Count - 1; i++)
             {
-                Vector2 left = surface[i], right = surface[i + 1];
-                if (IsColumn(left, right)) fill.AddBody(new[] { left + down, right + down, right, left });
+                Vector2 left = surface[i];
+                Vector2 right = surface[i + 1];
+                if (IsColumn(left, right))
+                {
+                    fill.AddBody(new[] { left + down, right + down, right, left });
+                }
             }
+
             AddSurfaceLine(builder, surface);
             return kit.CreatePart("Platform", builder.ToMesh("Platform"), DepthLayer.Terrain);
         }
@@ -60,7 +78,14 @@ namespace SfxShowcase.Art
             return loop;
         }
 
-        static Mesh LoopHalf(Vector2 center, float radius, float thickness, float startDegrees, float endDegrees, string name)
+        static Mesh LoopHalf(
+            Vector2 center,
+            float radius,
+            float thickness,
+            float startDegrees,
+            float endDegrees,
+            string name
+        )
         {
             var builder = new MeshBuilder();
             var fill = new StrataFill(builder);
@@ -68,14 +93,30 @@ namespace SfxShowcase.Art
             Vector2 previous = MeshBuilder.Direction(startDegrees);
             for (int i = 1; i <= LoopSegmentsPerHalf; i++)
             {
-                Vector2 next = MeshBuilder.Direction(Mathf.Lerp(startDegrees, endDegrees, i / (float)LoopSegmentsPerHalf));
-                fill.AddBody(new[]
-                {
-                    center + previous * radius, center + previous * outer, center + next * outer, center + next * radius,
-                });
+                Vector2 next = MeshBuilder.Direction(
+                    Mathf.Lerp(startDegrees, endDegrees, i / (float)LoopSegmentsPerHalf)
+                );
+                fill.AddBody(
+                    new[]
+                    {
+                        center + previous * radius,
+                        center + previous * outer,
+                        center + next * outer,
+                        center + next * radius,
+                    }
+                );
                 previous = next;
             }
-            builder.AddArc(center, radius, radius + ArtStyle.TopLineThickness, startDegrees, endDegrees, LoopSegmentsPerHalf, Palette.SignalCream);
+
+            builder.AddArc(
+                center,
+                radius,
+                radius + ArtStyle.TopLineThickness,
+                startDegrees,
+                endDegrees,
+                LoopSegmentsPerHalf,
+                Palette.SignalCream
+            );
             return builder.ToMesh(name);
         }
 
@@ -84,31 +125,65 @@ namespace SfxShowcase.Art
         /// rectangle (so a kilometre of ground stays a small mesh); only where the surface cuts through the band is
         /// it clipped column by column.
         /// </summary>
-        static void AddGroundBand(MeshBuilder builder, StrataFill fill, IReadOnlyList<Vector2> surface, float bottomY, int band)
+        static void AddGroundBand(
+            MeshBuilder builder,
+            StrataFill fill,
+            IReadOnlyList<Vector2> surface,
+            float bottomY,
+            int band
+        )
         {
             float bandBottom = Mathf.Max(StrataFill.BandBottom(band), bottomY);
             float bandTop = StrataFill.BandBottom(band) + ArtStyle.StrataThickness;
             bool inRun = false;
-            float runStart = 0f, runEnd = 0f;
+            float runStart = 0f;
+            float runEnd = 0f;
             for (int i = 0; i < surface.Count - 1; i++)
             {
-                Vector2 left = surface[i], right = surface[i + 1];
-                if (!IsColumn(left, right)) continue;
+                Vector2 left = surface[i];
+                Vector2 right = surface[i + 1];
+                if (!IsColumn(left, right))
+                {
+                    continue;
+                }
+
                 if (bandTop <= Mathf.Min(left.y, right.y))
                 {
-                    if (!inRun) runStart = left.x;
+                    if (!inRun)
+                    {
+                        runStart = left.x;
+                    }
+
                     inRun = true;
                     runEnd = right.x;
                     continue;
                 }
-                if (inRun) builder.AddRect(new Vector2(runStart, bandBottom), new Vector2(runEnd, bandTop), Palette.GroundDeep);
+
+                if (inRun)
+                {
+                    builder.AddRect(
+                        new Vector2(runStart, bandBottom),
+                        new Vector2(runEnd, bandTop),
+                        Palette.GroundDeep
+                    );
+                }
+
                 inRun = false;
-                if (bandBottom < Mathf.Max(left.y, right.y)) fill.AddBandInside(Column(left, right, bottomY), band);
+                if (bandBottom < Mathf.Max(left.y, right.y))
+                {
+                    fill.AddBandInside(Column(left, right, bottomY), band);
+                }
             }
-            if (inRun) builder.AddRect(new Vector2(runStart, bandBottom), new Vector2(runEnd, bandTop), Palette.GroundDeep);
+
+            if (inRun)
+            {
+                builder.AddRect(new Vector2(runStart, bandBottom), new Vector2(runEnd, bandTop), Palette.GroundDeep);
+            }
         }
 
-        /// <summary>The cream line: a strip of constant thickness along the surface, on the body's side of it.</summary>
+        /// <summary>
+        /// The cream line: a strip of constant thickness along the surface, on the body's side of it.
+        /// </summary>
         static void AddSurfaceLine(MeshBuilder builder, IReadOnlyList<Vector2> surface)
         {
             int count = surface.Count;
@@ -119,8 +194,11 @@ namespace SfxShowcase.Art
                 Vector2 normalAfter = i < count - 1 ? Shapes.RightNormal(surface[i], surface[i + 1]) : Vector2.zero;
                 inner[i] = surface[i] + Shapes.Miter(normalBefore, normalAfter, ArtStyle.TopLineThickness);
             }
+
             for (int i = 0; i < count - 1; i++)
+            {
                 builder.AddQuad(surface[i], surface[i + 1], inner[i + 1], inner[i], Palette.SignalCream);
+            }
         }
 
         /// <summary>Whether a surface segment has ground under it (a vertical step has none of its own).</summary>

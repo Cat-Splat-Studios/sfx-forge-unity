@@ -29,17 +29,25 @@ namespace SfxShowcase.Tests
     {
         /// <summary>Part of the name of the port the device sends on, unless SFXFORGE_LINK_IN names another.</summary>
         public const string FromDevice = "SFX to Unity";
-        /// <summary>Part of the name of the port the device listens on, unless SFXFORGE_LINK_OUT names another.</summary>
+
+        /// <summary>
+        /// Part of the name of the port the device listens on, unless SFXFORGE_LINK_OUT names another.
+        /// </summary>
         public const string ToDevice = "Unity to SFX";
 
-        const string InVariable = "SFXFORGE_LINK_IN", OutVariable = "SFXFORGE_LINK_OUT";
+        const string InVariable = "SFXFORGE_LINK_IN";
+        const string OutVariable = "SFXFORGE_LINK_OUT";
         const float AnswerSeconds = 15f;
-        const float PieceSeconds = 0.1f;                    // between two pieces of a song sent one by one
-        const float ForgetSeconds = 2.5f;                   // a little more than the device's two seconds for a transfer that broke off
+        const float PieceSeconds = 0.1f; // between two pieces of a song sent one by one
+
+        // a little more than the device's two seconds for a transfer that broke off
+        const float ForgetSeconds = 2.5f;
 
         SfxLink link;
         readonly List<byte[]> messages = new List<byte[]>();
-        byte[] restoreSong;                                 // the device's own song and sounds while a test has put others there
+
+        // the device's own song and sounds while a test has put others there
+        byte[] restoreSong;
         SfxPatch[] restoreSounds;
 
         [SetUp]
@@ -47,19 +55,36 @@ namespace SfxShowcase.Tests
         {
             string wantedIn = Environment.GetEnvironmentVariable(InVariable);
             string wantedOut = Environment.GetEnvironmentVariable(OutVariable);
-            if (string.IsNullOrEmpty(wantedIn)) wantedIn = FromDevice;
-            if (string.IsNullOrEmpty(wantedOut)) wantedOut = ToDevice;
+            if (string.IsNullOrEmpty(wantedIn))
+            {
+                wantedIn = FromDevice;
+            }
 
-            string[] inputs = MidiPorts.Inputs(), outputs = MidiPorts.Outputs();
+            if (string.IsNullOrEmpty(wantedOut))
+            {
+                wantedOut = ToDevice;
+            }
+
+            string[] inputs = MidiPorts.Inputs();
+            string[] outputs = MidiPorts.Outputs();
             string found = $"inputs: [{string.Join(", ", inputs)}], outputs: [{string.Join(", ", outputs)}]";
             if (SfxLink.Find(inputs, wantedIn) < 0 || SfxLink.Find(outputs, wantedOut) < 0)
-                Assert.Inconclusive($"the link needs a MIDI input named like \"{wantedIn}\" and an output named like \"{wantedOut}\"; {found}");
+            {
+                Assert.Inconclusive(
+                    $"the link needs a MIDI input named like \"{wantedIn}\" and an output named like \"{wantedOut}\"; {found}"
+                );
+            }
 
             link = new SfxLink();
-            Assert.IsTrue(link.Open(wantedIn, wantedOut), $"both ports open ({found}); another program may hold one of them");
+            Assert.IsTrue(
+                link.Open(wantedIn, wantedOut),
+                $"both ports open ({found}); another program may hold one of them"
+            );
             messages.Clear();
             link.MessageReceived += messages.Add;
-            Debug.Log($"LINK: ok ports open: from the device \"{link.InputName}\", to the device \"{link.OutputName}\"");
+            Debug.Log(
+                $"LINK: ok ports open: from the device \"{link.InputName}\", to the device \"{link.OutputName}\""
+            );
         }
 
         [TearDown]
@@ -67,12 +92,23 @@ namespace SfxShowcase.Tests
         {
             if (link != null && restoreSong != null && restoreSounds != null)
             {
-                bool sent = link.SendSong(restoreSounds, restoreSong);   // a test that failed half way: the device's own song back
+                // a test that failed half way: the device's own song back
+                bool sent = link.SendSong(restoreSounds, restoreSong);
                 System.Threading.Thread.Sleep(1500);
-                Debug.Log(sent ? "LINK: the device's own song and sounds were sent back after a failed test" : "LINK: the device's own song could NOT be sent back: it has what the failed test left");
+                Debug.Log(
+                    sent
+                        ? "LINK: the device's own song and sounds were sent back after a failed test"
+                        : "LINK: the device's own song could NOT be sent back: it has what the failed test left"
+                );
             }
-            restoreSong = null; restoreSounds = null;
-            if (link != null) link.Dispose();
+
+            restoreSong = null;
+            restoreSounds = null;
+            if (link != null)
+            {
+                link.Dispose();
+            }
+
             link = null;
         }
 
@@ -94,43 +130,72 @@ namespace SfxShowcase.Tests
             const int pad = 0;
             int gotSlot = -1;
             SfxPatch got = default;
-            link.PatchReceived += (slot, patch) => { gotSlot = slot; got = patch; };
+            link.PatchReceived += (slot, patch) =>
+            {
+                gotSlot = slot;
+                got = patch;
+            };
 
             Assert.IsTrue(link.SendText("UNITY: PATCH?"), "text goes out");
             Assert.IsTrue(link.RequestPatch(pad), "the request goes out");
             yield return Until(() => gotSlot >= 0, AnswerSeconds);
 
-            Assert.AreEqual(pad, gotSlot, $"the device answered with pad {pad + 1}'s patch within {AnswerSeconds} s ({messages.Count} messages came in). Is SFX FORGE running, with its MIDI in and out on these ports?");
+            Assert.AreEqual(
+                pad,
+                gotSlot,
+                $"the device answered with pad {pad + 1}'s patch within {AnswerSeconds} s ({messages.Count} messages came in). Is SFX FORGE running, with its MIDI in and out on these ports?"
+            );
             Assert.Greater((int)got.level, 0, "and the patch is a sound, not silence");
-            Debug.Log($"LINK: ok a patch came from the device: pad {gotSlot + 1}, engine {got.engine}, {messages.Count} message(s) in");
+            Debug.Log(
+                $"LINK: ok a patch came from the device: pad {gotSlot + 1}, engine {got.engine}, {messages.Count} message(s) in"
+            );
         }
 
         /// <summary>
-        /// Unity asks for the song; the device answers with its 16 sounds and the song in pieces (11 for the factory song), and what arrives
-        /// plays: an <see cref="SfxMusicPlayer"/> is given the received song and its bar counter moves.
+        /// Unity asks for the song; the device answers with its 16 sounds and the song in pieces (11 for the
+        /// factory song), and what arrives plays: an <see cref="SfxMusicPlayer"/> is given the received song and
+        /// its bar counter moves.
         /// </summary>
         [UnityTest, Explicit]
         public IEnumerator TheDeviceSendsItsSongAndItPlays()
         {
             byte[] packed = null;
             SfxPatch[] sounds = null;
-            link.SongReceived += (song, itsSounds) => { packed = song; sounds = itsSounds; };
+            link.SongReceived += (song, itsSounds) =>
+            {
+                packed = song;
+                sounds = itsSounds;
+            };
 
             Assert.IsTrue(link.SendText("UNITY: SONG?"), "text goes out");
             Assert.IsTrue(link.RequestSong(), "the request goes out");
             yield return Until(() => packed != null, AnswerSeconds);
 
-            Assert.IsNotNull(packed, $"the song arrived within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, with its MIDI in and out on these ports?");
-            Assert.IsTrue(SfxPackedSong.IsValid(packed), $"a whole packed song ({packed.Length} bytes, beginning with {(packed.Length > 0 ? packed[0] : -1)})");
+            Assert.IsNotNull(
+                packed,
+                $"the song arrived within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, with its MIDI in and out on these ports?"
+            );
+            Assert.IsTrue(
+                SfxPackedSong.IsValid(packed),
+                $"a whole packed song ({packed.Length} bytes, beginning with {(packed.Length > 0 ? packed[0] : -1)})"
+            );
             Assert.IsNotNull(sounds, "and all 16 sounds came with it");
-            Debug.Log($"LINK: ok the song came from the device: {packed.Length} bytes and {sounds.Length} sounds in {messages.Count} messages");
+            Debug.Log(
+                $"LINK: ok the song came from the device: {packed.Length} bytes and {sounds.Length} sounds in {messages.Count} messages"
+            );
 
             var song = ScriptableObject.CreateInstance<SfxSong>();
             song.Set(sounds, packed);
             Assert.IsTrue(song.IsValid, "what arrived is a song the package can play");
-            Debug.Log($"LINK: ok the song is valid: {song.Bpm} BPM, {song.StepsPerPattern} steps a pattern, {song.ArrangementBars} bars arranged; {CompareWithTheDemoSong(song)}");
+            Debug.Log(
+                $"LINK: ok the song is valid: {song.Bpm} BPM, {song.StepsPerPattern} steps a pattern, {song.ArrangementBars} bars arranged; {CompareWithTheDemoSong(song)}"
+            );
 
-            if (!SfxNative.Available) Assert.Inconclusive("the native library is not here, so the song cannot be played");
+            if (!SfxNative.Available)
+            {
+                Assert.Inconclusive("the native library is not here, so the song cannot be played");
+            }
+
             var listener = new GameObject("Listener").AddComponent<AudioListener>();
             var music = new GameObject("Received Song").AddComponent<SfxMusicPlayer>();
             music.song = song;
@@ -159,24 +224,42 @@ namespace SfxShowcase.Tests
             for (int n = 0; n < transfers; n++)
             {
                 messages.Clear();
-                int before = arrived, frame = 0;
+                int before = arrived;
+                int frame = 0;
                 Assert.IsTrue(link.RequestSong(), "the request goes out");
-                yield return Until(() => { link.SendIntensity((frame++ % 100) / 100f); return arrived > before; }, 6f);
-                if (arrived == before) failures.Add($"transfer {n + 1}: {messages.Count} messages: {Describe(messages)}");
+                yield return Until(
+                    () =>
+                    {
+                        link.SendIntensity((frame++ % 100) / 100f);
+                        return arrived > before;
+                    },
+                    6f
+                );
+                if (arrived == before)
+                {
+                    failures.Add($"transfer {n + 1}: {messages.Count} messages: {Describe(messages)}");
+                }
+
                 yield return Until(() => false, 0.3f);
             }
-            Debug.Log($"LINK: {(failures.Count == 0 ? "ok" : "FAILED")} the song arrived whole {arrived} times out of {transfers}");
-            Assert.IsEmpty(failures, $"{failures.Count} of {transfers} transfers did not arrive whole: {string.Join(" | ", failures)}");
+
+            Debug.Log(
+                $"LINK: {(failures.Count == 0 ? "ok" : "FAILED")} the song arrived whole {arrived} times out of {transfers}"
+            );
+            Assert.IsEmpty(
+                failures,
+                $"{failures.Count} of {transfers} transfers did not arrive whole: {string.Join(" | ", failures)}"
+            );
         }
 
         /// <summary>
         /// Songs go TO the device and are asked back: what comes back is what was sent, the 16 sounds too.
         ///  1. a song, piece by piece in order;
         ///  2. another, last piece first;
-        ///  3. the last half of the pieces of one song and nothing more, then, after the two seconds in which the device
-        ///     forgets a transfer that broke off, another song whole with two pairs of neighbours swapped; and the same
-        ///     with the first half of one, then another whole, last piece first. (Without those two seconds the pieces
-        ///     of the two songs can add up to a whole one: no piece says which song it belongs to.)
+        ///  3. the last half of the pieces of one song and nothing more, then, after the two seconds in which the
+        ///     device forgets a transfer that broke off, another song whole with two pairs of neighbours swapped; and
+        ///     the same with the first half of one, then another whole, last piece first. (Without those two seconds
+        ///     the pieces of the two songs can add up to a whole one: no piece says which song it belongs to.)
         ///  4. a song and 16 changed sounds with <c>SfxLink.SendSong</c>, all at once: the sounds must be in the MUSIC
         ///     kit and the kit that is selected on the device must be as it was.
         /// The three songs are the device's own and two made from it that differ from it and from each other in every
@@ -191,18 +274,31 @@ namespace SfxShowcase.Tests
             SfxPatch[] backSounds = null;
             int padSlot = -1;
             SfxPatch pad = default;
-            link.SongReceived += (song, itsSounds) => { back = song; backSounds = itsSounds; };
-            link.PatchReceived += (slot, patch) => { padSlot = slot; pad = patch; };
+            link.SongReceived += (song, itsSounds) =>
+            {
+                back = song;
+                backSounds = itsSounds;
+            };
+            link.PatchReceived += (slot, patch) =>
+            {
+                padSlot = slot;
+                pad = patch;
+            };
 
             IEnumerator Fetch()
             {
-                back = null; backSounds = null;
+                back = null;
+                backSounds = null;
                 messages.Clear();
                 Assert.IsTrue(link.RequestSong(), "the request goes out");
                 yield return Until(() => back != null, AnswerSeconds);
-                Assert.IsNotNull(back, $"the song came back within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)})");
+                Assert.IsNotNull(
+                    back,
+                    $"the song came back within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)})"
+                );
                 Assert.IsNotNull(backSounds, "and its 16 sounds came with it");
             }
+
             IEnumerator FetchSelectedPad()
             {
                 padSlot = -1;
@@ -210,6 +306,7 @@ namespace SfxShowcase.Tests
                 yield return Until(() => padSlot == 0, AnswerSeconds);
                 Assert.AreEqual(0, padSlot, "pad 1 of the selected kit came back");
             }
+
             IEnumerator Send(byte[] song, int[] order, int from, int count)
             {
                 byte[][] pieces = SfxProtocol.BuildSongPieces(song);
@@ -218,6 +315,7 @@ namespace SfxShowcase.Tests
                     Assert.IsTrue(link.SendSysEx(pieces[order[n]]), $"piece {order[n]} goes out");
                     yield return Until(() => false, PieceSeconds);
                 }
+
                 yield return Until(() => false, 0.5f);
             }
 
@@ -227,60 +325,132 @@ namespace SfxShowcase.Tests
             byte[] own = back;
             SfxPatch[] ownSounds = backSounds;
             Assert.AreEqual(6, SfxPackedSong.Format(own), "the device's song is in format 6 (firmware 1.6.0 on)");
-            int pieceCount = (own.Length + SfxProtocol.SongPieceBytes - 1) / SfxProtocol.SongPieceBytes, half = pieceCount / 2;
+            int pieceCount = (own.Length + SfxProtocol.SongPieceBytes - 1) / SfxProtocol.SongPieceBytes;
+            int half = pieceCount / 2;
             Assert.GreaterOrEqual(pieceCount, 6, "a song of at least six pieces (the factory song has 11)");
             var inOrder = new int[pieceCount];
             var lastFirst = new int[pieceCount];
-            for (int i = 0; i < pieceCount; i++) { inOrder[i] = i; lastFirst[i] = pieceCount - 1 - i; }
+            for (int i = 0; i < pieceCount; i++)
+            {
+                inOrder[i] = i;
+                lastFirst[i] = pieceCount - 1 - i;
+            }
+
             var swapped = (int[])inOrder.Clone();
             (swapped[1], swapped[2]) = (swapped[2], swapped[1]);
             (swapped[pieceCount - 3], swapped[pieceCount - 2]) = (swapped[pieceCount - 2], swapped[pieceCount - 3]);
-            restoreSong = own; restoreSounds = ownSounds;            // (TearDown puts them back if the test does not get to)
-            byte[] second = AnotherSong(own), third = AnotherSong(second);
+
+            // (TearDown puts them back if the test does not get to)
+            restoreSong = own;
+            restoreSounds = ownSounds;
+            byte[] second = AnotherSong(own);
+            byte[] third = AnotherSong(second);
             for (int k = 0; k < pieceCount; k++)
-                Assert.IsTrue(PieceDiffers(own, second, k) && PieceDiffers(second, third, k) && PieceDiffers(own, third, k), $"the three songs differ in piece {k}");
+            {
+                Assert.IsTrue(
+                    PieceDiffers(own, second, k) && PieceDiffers(second, third, k) && PieceDiffers(own, third, k),
+                    $"the three songs differ in piece {k}"
+                );
+            }
 
             // 1. piece by piece, in order
             yield return Send(second, inOrder, 0, pieceCount);
             yield return Fetch();
-            Assert.AreEqual(0, Different(second, back), "sent in order: bytes in which the device's song differs from the one sent");
-            Assert.AreEqual(0, DifferentSounds(ownSounds, backSounds), "and its sounds are as they were (sounds that differ)");
+            Assert.AreEqual(
+                0,
+                Different(second, back),
+                "sent in order: bytes in which the device's song differs from the one sent"
+            );
+            Assert.AreEqual(
+                0,
+                DifferentSounds(ownSounds, backSounds),
+                "and its sounds are as they were (sounds that differ)"
+            );
             Debug.Log("LINK: ok a song sent to the device piece by piece came back the same");
 
             // 2. last piece first
             yield return Send(third, lastFirst, 0, pieceCount);
             yield return Fetch();
-            Assert.AreEqual(0, Different(third, back), "sent last piece first: bytes in which the device's song differs from the one sent");
+            Assert.AreEqual(
+                0,
+                Different(third, back),
+                "sent last piece first: bytes in which the device's song differs from the one sent"
+            );
             Debug.Log("LINK: ok a song sent to the device last piece first came back the same");
 
-            // 3. a transfer that broke off, then a whole one: the last half of one song's pieces, then another with neighbours swapped …
+            // 3. a transfer that broke off, then a whole one: the last half of one song's pieces, then another with
+            //    neighbours swapped …
             yield return Send(second, inOrder, pieceCount - half, half);
             yield return Until(() => false, ForgetSeconds);
             yield return Send(own, swapped, 0, pieceCount);
             yield return Fetch();
-            Assert.AreEqual(0, Different(own, back), "after the last pieces of another song, a whole song with neighbours swapped: bytes that differ");
+            Assert.AreEqual(
+                0,
+                Different(own, back),
+                "after the last pieces of another song, a whole song with neighbours swapped: bytes that differ"
+            );
+
             // … and the first half of one, then another, last piece first
             yield return Send(third, inOrder, 0, half);
             yield return Until(() => false, ForgetSeconds);
             yield return Send(second, lastFirst, 0, pieceCount);
             yield return Fetch();
-            Assert.AreEqual(0, Different(second, back), "after the first pieces of another song, a whole song last piece first: bytes that differ");
+            Assert.AreEqual(
+                0,
+                Different(second, back),
+                "after the first pieces of another song, a whole song last piece first: bytes that differ"
+            );
             Debug.Log("LINK: ok a transfer that broke off (its first pieces, or its last) did not spoil the next");
 
             // 4. SfxLink.SendSong: 16 changed sounds and a song the device does not have, all at once
             var otherSounds = (SfxPatch[])ownSounds.Clone();
-            for (int i = 0; i < otherSounds.Length; i++) otherSounds[i].level = (byte)(otherSounds[i].level > 60 ? otherSounds[i].level - 5 : otherSounds[i].level + 5);
-            Assert.AreEqual(otherSounds.Length, DifferentSounds(ownSounds, otherSounds), "every sound to be sent differs from the device's");
+            for (int i = 0; i < otherSounds.Length; i++)
+            {
+                otherSounds[i].level = (byte)(
+                    otherSounds[i].level > 60 ? otherSounds[i].level - 5 : otherSounds[i].level + 5
+                );
+            }
+
+            Assert.AreEqual(
+                otherSounds.Length,
+                DifferentSounds(ownSounds, otherSounds),
+                "every sound to be sent differs from the device's"
+            );
             Assert.IsTrue(link.SendSong(otherSounds, third), "the sounds and the song go out");
             yield return Until(() => false, 2.5f);
             yield return Fetch();
-            Assert.AreEqual(0, Different(third, back), "sent with SendSong: bytes in which the device's song differs from the one sent");
-            Assert.AreEqual(0, DifferentSounds(otherSounds, backSounds), "sent with SendSong: sounds of the device's MUSIC kit that differ from those sent (a firmware before 1.3.1 ignores them)");
+            Assert.AreEqual(
+                0,
+                Different(third, back),
+                "sent with SendSong: bytes in which the device's song differs from the one sent"
+            );
+            Assert.AreEqual(
+                0,
+                DifferentSounds(otherSounds, backSounds),
+                "sent with SendSong: sounds of the device's MUSIC kit that differ from those sent (a firmware "
+                    + "before 1.3.1 ignores them)"
+            );
             yield return FetchSelectedPad();
             bool musicKitSelected = Same(selectedPadBefore, ownSounds[0]);
-            if (musicKitSelected) Debug.Log("LINK: (the MUSIC kit seems to be selected on the device, so whether SendSong leaves the selected kit alone cannot be seen)");
-            else Assert.IsTrue(Same(selectedPadBefore, pad), "SendSong left the kit that is selected on the device alone (its pad 1 is as before)");
-            Debug.Log("LINK: ok SfxLink.SendSong put the song and its 16 sounds on the device" + (musicKitSelected ? "" : " and left the selected kit alone"));
+            if (musicKitSelected)
+            {
+                Debug.Log(
+                    "LINK: (the MUSIC kit seems to be selected on the device, so whether SendSong leaves the "
+                        + "selected kit alone cannot be seen)"
+                );
+            }
+            else
+            {
+                Assert.IsTrue(
+                    Same(selectedPadBefore, pad),
+                    "SendSong left the kit that is selected on the device alone (its pad 1 is as before)"
+                );
+            }
+
+            Debug.Log(
+                "LINK: ok SfxLink.SendSong put the song and its 16 sounds on the device"
+                    + (musicKitSelected ? "" : " and left the selected kit alone")
+            );
 
             // the device's own song and sounds back
             Assert.IsTrue(link.SendSong(ownSounds, own), "the device's own sounds and song go back");
@@ -288,83 +458,153 @@ namespace SfxShowcase.Tests
             yield return Fetch();
             Assert.AreEqual(0, Different(own, back), "the device has its own song again (bytes that differ)");
             Assert.AreEqual(0, DifferentSounds(ownSounds, backSounds), "and its own sounds (sounds that differ)");
-            restoreSong = null; restoreSounds = null;
+            restoreSong = null;
+            restoreSounds = null;
             Debug.Log("LINK: ok the device has its own song and sounds again");
         }
 
-        static int Different(byte[] a, byte[] b) { int n = 0; for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) n++; return n; }
+        static int Different(byte[] a, byte[] b)
+        {
+            int n = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                {
+                    n++;
+                }
+            }
+
+            return n;
+        }
 
         static bool Same(SfxPatch a, SfxPatch b)
         {
-            byte[] x = a.Pack(), y = b.Pack();
-            for (int i = 0; i < x.Length; i++) if (x[i] != y[i]) return false;
+            byte[] x = a.Pack();
+            byte[] y = b.Pack();
+            for (int i = 0; i < x.Length; i++)
+            {
+                if (x[i] != y[i])
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 
         static int DifferentSounds(SfxPatch[] a, SfxPatch[] b)
         {
             int n = 0;
-            for (int i = 0; i < a.Length; i++) if (!Same(a[i], b[i])) n++;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (!Same(a[i], b[i]))
+                {
+                    n++;
+                }
+            }
+
             return n;
         }
 
         static bool PieceDiffers(byte[] a, byte[] b, int piece)
         {
-            int from = piece * SfxProtocol.SongPieceBytes, to = Math.Min(a.Length, from + SfxProtocol.SongPieceBytes);
-            for (int i = from; i < to; i++) if (a[i] != b[i]) return true;
+            int from = piece * SfxProtocol.SongPieceBytes;
+            int to = Math.Min(a.Length, from + SfxProtocol.SongPieceBytes);
+            for (int i = from; i < to; i++)
+            {
+                if (a[i] != b[i])
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 
         /// <summary>
         /// A song that differs from the given one in every piece and is still a song the device takes and gives back
-        /// unchanged, byte for byte and as long: another swing in the first piece, and in each further piece one note of
-        /// a sound's row, or one value of a lane's row, one higher. Where those are is the layout of a format-6 song
+        /// unchanged, byte for byte and as long: another swing in the first piece, and in each further piece one note
+        /// of a sound's row, or one value of a lane's row, one higher. Where those are is the layout of a format-6 song
         /// (core/sfx_song.h, sfx_song_pack): after the head of 147 bytes a block a pattern - its grid, the sounds and
         /// the lanes that have a row, then those rows. (A note or a point that goes from nothing to something stays in
         /// a row that is there, so no row comes or goes and the song keeps its length.)
         /// </summary>
         static byte[] AnotherSong(byte[] song)
         {
-            const int Patterns = 8, Sounds = 16, Lanes = 24, Swing = 4, SwingMost = 100, Head = 147;
+            const int Patterns = 8;
+            const int Sounds = 16;
+            const int Lanes = 24;
+            const int Swing = 4;
+            const int SwingMost = 100;
+            const int Head = 147;
             Assert.AreEqual(6, SfxPackedSong.Format(song), "a packed song of format 6");
-            var may = new bool[song.Length];                           // the bytes that may go one higher
+            var may = new bool[song.Length]; // the bytes that may go one higher
             int at = Head;
             for (int p = 0; p < Patterns; p++)
             {
-                int steps = 16 << song[at], bits = (steps + 6) / 7;
-                int rows = song[at + 1] | song[at + 2] << 7 | song[at + 3] << 14, lanes = song[at + 4] | song[at + 5] << 7 | song[at + 6] << 14 | song[at + 7] << 21;
+                int steps = 16 << song[at];
+                int bits = (steps + 6) / 7;
+                int rows = song[at + 1] | song[at + 2] << 7 | song[at + 3] << 14;
+                int lanes = song[at + 4] | song[at + 5] << 7 | song[at + 6] << 14 | song[at + 7] << 21;
                 at += 8;
                 for (int s = 0; s < Sounds; s++)
                 {
-                    if ((rows >> s & 1) == 0) continue;
-                    for (int i = 0; i < steps; i++) may[at + bits + i] = song[at + bits + i] < 126;      // its notes
+                    if ((rows >> s & 1) == 0)
+                    {
+                        continue;
+                    }
+
+                    // its notes
+                    for (int i = 0; i < steps; i++)
+                    {
+                        may[at + bits + i] = song[at + bits + i] < 126;
+                    }
+
                     at += bits + 3 * steps;
                 }
+
                 for (int l = 0; l < Lanes; l++)
                 {
-                    if ((lanes >> l & 1) == 0) continue;
-                    for (int i = 0; i < steps; i++) may[at + i] = song[at + i] < 126;                    // its points
+                    if ((lanes >> l & 1) == 0)
+                    {
+                        continue;
+                    }
+
+                    // its points
+                    for (int i = 0; i < steps; i++)
+                    {
+                        may[at + i] = song[at + i] < 126;
+                    }
+
                     at += steps;
                 }
             }
+
             var other = (byte[])song.Clone();
             other[Swing] = (byte)((other[Swing] + 17) % (SwingMost + 1));
             for (int piece = 1; piece * SfxProtocol.SongPieceBytes < song.Length; piece++)
             {
-                int from = piece * SfxProtocol.SongPieceBytes, to = Math.Min(song.Length, from + SfxProtocol.SongPieceBytes);
+                int from = piece * SfxProtocol.SongPieceBytes;
+                int to = Math.Min(song.Length, from + SfxProtocol.SongPieceBytes);
                 for (int i = from; i < to; i++)
                 {
-                    if (!may[i]) continue;
+                    if (!may[i])
+                    {
+                        continue;
+                    }
+
                     other[i] = (byte)(other[i] + 1);
                     break;
                 }
             }
+
             return other;
         }
 
         /// <summary>
         /// The game drives the device: pads played, intensity moved, a pattern cued, text shown. Nothing comes back for
-        /// these, so the test can only say that every message left; whether the device followed is seen and heard there.
+        /// these, so the test can only say that every message left; whether the device followed is seen
+        /// and heard there.
         /// </summary>
         [UnityTest, Explicit]
         public IEnumerator TheGameDrivesTheDevice()
@@ -376,58 +616,98 @@ namespace SfxShowcase.Tests
                 yield return Until(() => false, 0.3f);
                 Assert.IsTrue(link.ReleasePad(pad), $"pad {pad + 1} is released");
             }
+
             for (int step = 0; step <= 10; step++)
             {
-                link.SendIntensity(step / 10f);                      // (false when the 7-bit value did not change)
+                link.SendIntensity(step / 10f); // (false when the 7-bit value did not change)
                 yield return Until(() => false, 0.2f);
             }
+
             Assert.IsTrue(link.CuePattern(2), "pattern C is cued");
             Assert.IsTrue(link.SendText("UNITY: DONE"), "text goes out");
             Debug.Log("LINK: ok pads, intensity, a cue and text were sent to the device");
         }
 
         /// <summary>
-        /// Unity asks the device what it is; the device answers with its identity: its hardware, its firmware's version,
-        /// its profile and its flags. A firmware before 1.4.0 does not answer, and this test fails there by design.
+        /// Unity asks the device what it is; the device answers with its identity: its hardware, its firmware's
+        /// version, its profile and its flags. A firmware before 1.4.0 does not answer, and this test fails
+        /// there by design.
         /// </summary>
         [UnityTest, Explicit]
         public IEnumerator TheDeviceSaysWhatItIs()
         {
             int answers = 0;
             SfxDeviceInfo said = default;
-            link.IdentityReceived += device => { answers++; said = device; };
+            link.IdentityReceived += device =>
+            {
+                answers++;
+                said = device;
+            };
 
             Assert.IsTrue(link.SendText("UNITY: WHO?"), "text goes out");
-            Assert.IsTrue(link.RequestIdentity(), "the request goes out");     // (Open asked once already: a second answer says the same)
+
+            // (Open asked once already: a second answer says the same)
+            Assert.IsTrue(link.RequestIdentity(), "the request goes out");
             yield return Until(() => answers > 0, AnswerSeconds);
 
-            Assert.Greater(answers, 0, $"the device said what it is within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, firmware 1.6.0 or later, with its MIDI in and out on these ports?");
+            Assert.Greater(
+                answers,
+                0,
+                $"the device said what it is within {AnswerSeconds} s ({messages.Count} messages came in: {Describe(messages)}). Is SFX FORGE running, firmware 1.6.0 or later, with its MIDI in and out on these ports?"
+            );
             Assert.IsTrue(link.Device.HasValue && link.Device.Value.Equals(said), "and the link keeps what it said");
             Debug.Log($"LINK: ok the device said what it is: {said} ({said.profile}; flags {said.flags})");
 
             Assert.AreEqual(SfxDeviceInfo.HardwareVibeFm, said.hardware, "it is SFX FORGE on VIBE FM");
-            Assert.IsTrue(said.IsAtLeast(1, 6, 0), $"its firmware is 1.6.0 or later (it says {said.major}.{said.minor}.{said.patch})");
-            Assert.AreEqual(SfxProfile.VibeFm1, said.profile, "its profile is the one this package is made for: song format 6, up to 64 steps a pattern");
+            Assert.IsTrue(
+                said.IsAtLeast(1, 6, 0),
+                $"its firmware is 1.6.0 or later (it says {said.major}.{said.minor}.{said.patch})"
+            );
+            Assert.AreEqual(
+                SfxProfile.VibeFm1,
+                said.profile,
+                "its profile is the one this package is made for: song format 6, up to 64 steps a pattern"
+            );
             Assert.IsTrue(said.HasPads, "it has pads");
             Assert.IsTrue(said.HasEncoders, "it has encoders for the game");
             Assert.IsTrue(said.TakesSongSounds, "it takes a song's sounds");
             Assert.IsTrue(said.TakesTelemetry, "it takes telemetry");
             Assert.IsNull(SfxLink.Refusal(link.Device, true), "so nothing stands against sending it a patch or a song");
-            Debug.Log("LINK: ok firmware 1.6.0 or later, the profile of this package, pads, encoders, a song's sounds, telemetry");
+            Debug.Log(
+                "LINK: ok firmware 1.6.0 or later, the profile of this package, pads, encoders, a song's sounds, "
+                    + "telemetry"
+            );
         }
 
-        /// <summary>What came in, in order and in short: "p3" a patch for pad 4, "s7/208" piece 7 of the song and its length, "id/24" an identity and its length, otherwise the first byte and the length.</summary>
+        /// <summary>
+        /// What came in, in order and in short: "p3" a patch for pad 4, "s7/208" piece 7 of the song and its length,
+        /// "id/24" an identity and its length, otherwise the first byte and the length.
+        /// </summary>
         public static string Describe(List<byte[]> incoming)
         {
             var text = new System.Text.StringBuilder();
             foreach (byte[] m in incoming)
             {
-                if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.Dump) text.Append('p').Append(m[5]);
-                else if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.SongChunk) text.Append('s').Append(m[5]).Append('/').Append(m.Length);
-                else if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.Identity) text.Append("id/").Append(m.Length);
-                else text.Append(m.Length > 0 ? m[0].ToString("X2") : "--").Append('/').Append(m.Length);
+                if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.Dump)
+                {
+                    text.Append('p').Append(m[5]);
+                }
+                else if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.SongChunk)
+                {
+                    text.Append('s').Append(m[5]).Append('/').Append(m.Length);
+                }
+                else if (m.Length > 6 && m[0] == 0xF0 && m[1] == 0x7D && m[4] == SfxProtocol.Identity)
+                {
+                    text.Append("id/").Append(m.Length);
+                }
+                else
+                {
+                    text.Append(m.Length > 0 ? m[0].ToString("X2") : "--").Append('/').Append(m.Length);
+                }
+
                 text.Append(' ');
             }
+
             return text.ToString().TrimEnd();
         }
 
@@ -436,16 +716,40 @@ namespace SfxShowcase.Tests
         {
 #if UNITY_EDITOR
             var demo = UnityEditor.AssetDatabase.LoadAssetAtPath<SfxSong>(ShowcaseFolders.SongPath);
-            if (demo == null || !demo.IsValid) return "the demo song asset is not here to compare with";
-            if (demo.data.Length != received.data.Length) return "it is not the demo song (another length)";
+            if (demo == null || !demo.IsValid)
+            {
+                return "the demo song asset is not here to compare with";
+            }
+
+            if (demo.data.Length != received.data.Length)
+            {
+                return "it is not the demo song (another length)";
+            }
+
             int different = 0;
-            for (int i = 0; i < demo.data.Length; i++) if (demo.data[i] != received.data[i]) different++;
+            for (int i = 0; i < demo.data.Length; i++)
+            {
+                if (demo.data[i] != received.data[i])
+                {
+                    different++;
+                }
+            }
+
             int soundsDifferent = 0;
             for (int i = 0; i < SfxProtocol.Slots; i++)
             {
-                byte[] a = demo.sounds[i].Pack(), b = received.sounds[i].Pack();
-                for (int k = 0; k < a.Length; k++) if (a[k] != b[k]) { soundsDifferent++; break; }
+                byte[] a = demo.sounds[i].Pack();
+                byte[] b = received.sounds[i].Pack();
+                for (int k = 0; k < a.Length; k++)
+                {
+                    if (a[k] != b[k])
+                    {
+                        soundsDifferent++;
+                        break;
+                    }
+                }
             }
+
             return different == 0 && soundsDifferent == 0
                 ? "it is the demo song of the demo project, byte for byte"
                 : $"it differs from the demo project's song in {different} byte(s) and {soundsDifferent} sound(s) (the device's song was edited, or is another)";

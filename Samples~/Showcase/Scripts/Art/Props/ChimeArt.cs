@@ -16,7 +16,13 @@ namespace SfxShowcase.Art
         public static GameObject Create(ArtKit kit)
         {
             var chime = new GameObject("Chime");
-            GameObject diamond = kit.CreatePart("Diamond", kit.SharedMesh("Chime", DiamondMesh), DepthLayer.Props, 0, chime.transform);
+            GameObject diamond = kit.CreatePart(
+                "Diamond",
+                kit.SharedMesh("Chime", DiamondMesh),
+                DepthLayer.Props,
+                0,
+                chime.transform
+            );
             chime.AddComponent<ChimeSpin>().Configure(diamond.transform);
             return chime;
         }
@@ -24,7 +30,9 @@ namespace SfxShowcase.Art
         /// <summary>The diamond on its own, for the HUD's Chime icon.</summary>
         public static Mesh DiamondMesh()
         {
-            return new InkedShape().Add(Shapes.Diamond(HalfWidth, HalfHeight, Roundness), Palette.ChimeCyan).ToMesh("Chime");
+            return new InkedShape()
+                .Add(Shapes.Diamond(HalfWidth, HalfHeight, Roundness), Palette.ChimeCyan)
+                .ToMesh("Chime");
         }
     }
 }

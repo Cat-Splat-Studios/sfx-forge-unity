@@ -12,8 +12,16 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("Cap height of the letters, HUD units.")]
         float height = 0.7f;
-        [SerializeField, Tooltip("Which point of the line sits on this object's origin: 0 = its left end, 0.5 = its middle, 1 = its right end.")]
+
+        [
+            SerializeField,
+            Tooltip(
+                "Which point of the line sits on this object's origin: 0 = its left end, 0.5 = its middle, 1 = "
+                    + "its right end."
+            )
+        ]
         float anchor;
+
         [SerializeField, Tooltip("How far down and right the Ink shadow is drawn, HUD units.")]
         float shadowOffset = 0.05f;
 
@@ -32,13 +40,18 @@ namespace SfxShowcase.Art
         /// <summary>Shows a line of text (upper case, digits, : . / -) at an opacity of 0..1.</summary>
         public void Show(string text, float opacity = 1f)
         {
-            if (text == shownText && Mathf.Approximately(opacity, shownOpacity)) return;
+            if (text == shownText && Mathf.Approximately(opacity, shownOpacity))
+            {
+                return;
+            }
+
             shownText = text;
             shownOpacity = opacity;
 
             if (mesh == null)
             {
                 var filter = GetComponent<MeshFilter>();
+
                 // In play mode this reuses the mesh the scene builder left here; otherwise a fresh one.
                 mesh = filter.sharedMesh != null ? filter.sharedMesh : new Mesh { name = "HUD Label" };
                 filter.sharedMesh = mesh;

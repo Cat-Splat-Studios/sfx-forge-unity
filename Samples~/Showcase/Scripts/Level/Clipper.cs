@@ -11,17 +11,28 @@ namespace SfxShowcase.Level
     public sealed class Clipper : MonoBehaviour
     {
         [Tooltip("The art kit asset, asked for the shards when the Clipper is popped.")]
-        [SerializeField] ArtKitBase art;
+        [SerializeField]
+        ArtKitBase art;
+
         [Tooltip("The Clipper's visual (facing its local +x); mirrored to face the way it walks, hidden when popped.")]
-        [SerializeField] Transform visual;
+        [SerializeField]
+        Transform visual;
+
         [Tooltip("The trigger the player touches, switched off when popped.")]
-        [SerializeField] Collider2D bodyTrigger;
+        [SerializeField]
+        Collider2D bodyTrigger;
+
         [Tooltip("How far it walks to each side of where it was placed, metres.")]
-        [SerializeField] float patrolHalfRange = 3f;
+        [SerializeField]
+        float patrolHalfRange = 3f;
+
         [Tooltip("Walking speed, m/s.")]
-        [SerializeField] float walkSpeed = 1.5f;
+        [SerializeField]
+        float walkSpeed = 1.5f;
+
         [Tooltip("Where the shards appear, metres above the feet.")]
-        [SerializeField] float burstHeight = 0.6f;
+        [SerializeField]
+        float burstHeight = 0.6f;
 
         Vector3 home;
         float offset;
@@ -48,13 +59,18 @@ namespace SfxShowcase.Level
 
         void Update()
         {
-            if (defeated) return;
+            if (defeated)
+            {
+                return;
+            }
+
             offset += direction * walkSpeed * Time.deltaTime;
             if (Mathf.Abs(offset) >= patrolHalfRange)
             {
                 offset = Mathf.Clamp(offset, -patrolHalfRange, patrolHalfRange);
                 direction = -direction;
             }
+
             transform.position = home + Vector3.right * offset;
             visual.localScale = new Vector3(direction, 1f, 1f);
         }
@@ -65,12 +81,17 @@ namespace SfxShowcase.Level
 
         void Touch(Collider2D other)
         {
-            if (defeated || !other.TryGetComponent(out PlayerBase player)) return;
+            if (defeated || !other.TryGetComponent(out PlayerBase player))
+            {
+                return;
+            }
+
             if (!player.IsAttacking)
             {
                 player.Hurt(transform.position);
                 return;
             }
+
             SetDefeated(true);
             art.SpawnEffect(EffectKind.ClipperShards, (Vector2)transform.position + Vector2.up * burstHeight);
             player.Rebound();

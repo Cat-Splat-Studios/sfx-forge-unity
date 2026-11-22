@@ -15,11 +15,21 @@ namespace SfxShowcase.Tests
     /// </summary>
     public sealed class ShowcaseTests : ShowcaseTestBase
     {
-        /// <summary>The whole-level run must leave Split Signal's launch ramp at least this fast (m/s) to land on the first platform.</summary>
+        /// <summary>
+        /// The whole-level run must leave Split Signal's launch ramp at least this fast (m/s) to land on
+        /// the first platform.
+        /// </summary>
         const float SplitLipMinimumSpeed = 14.5f;
-        /// <summary>The whole-level run must leave Overdrive's last ramp at least this fast (m/s): the launch its Chime field is laid along.</summary>
+
+        /// <summary>
+        /// The whole-level run must leave Overdrive's last ramp at least this fast (m/s): the launch its Chime
+        /// field is laid along.
+        /// </summary>
         const float FinalLipMinimumSpeed = 16f;
-        /// <summary>The fewest Chimes the whole-level run must pick up from Overdrive on (the final flight's field holds 15).</summary>
+
+        /// <summary>
+        /// The fewest Chimes the whole-level run must pick up from Overdrive on (the final flight's field holds 15).
+        /// </summary>
         const int OverdriveMinimumChimes = 4;
 
         // ---- The scene -------------------------------------------------------------------------------------------
@@ -29,12 +39,21 @@ namespace SfxShowcase.Tests
         {
             Assert.AreEqual(GamePhase.Title, session.Phase, "the game waits on the title card");
             Assert.IsFalse(player.HasControl, "the player cannot move yet");
-            Assert.AreEqual(level.ChimeCount, UnityEngine.Object.FindObjectsByType<Chime>(FindObjectsSortMode.None).Length, "every Chime the level counts is in the scene");
+            Assert.AreEqual(
+                level.ChimeCount,
+                UnityEngine.Object.FindObjectsByType<Chime>(FindObjectsSortMode.None).Length,
+                "every Chime the level counts is in the scene"
+            );
             Assert.IsNotNull(UnityEngine.Object.FindFirstObjectByType<FollowCamera>(), "the camera follows");
 
             input.MoveX = 1f;
             yield return UntilGameTime(() => false, 0.5f);
-            Assert.AreEqual(level.SpawnPoint.x, player.Position.x, 0.01f, "holding right on the title card moves nothing");
+            Assert.AreEqual(
+                level.SpawnPoint.x,
+                player.Position.x,
+                0.01f,
+                "holding right on the title card moves nothing"
+            );
         }
 
         [UnityTest]
@@ -43,7 +62,12 @@ namespace SfxShowcase.Tests
             yield return UntilGameTime(() => false, 0.5f);
             Assert.IsTrue(player.IsGrounded, "the player has landed");
             Assert.AreEqual(level.SpawnPoint.x, player.Position.x, 0.05f, "where the level says a run starts");
-            Assert.AreEqual(DesignTargets.StandingRadius, player.Position.y, 0.05f, "one radius above the ground at y = 0");
+            Assert.AreEqual(
+                DesignTargets.StandingRadius,
+                player.Position.y,
+                0.05f,
+                "one radius above the ground at y = 0"
+            );
             Assert.AreEqual(0f, player.GroundSpeed, 0.01f, "at rest");
             Assert.AreEqual(0f, player.GroundAngle, 0.5f, "on flat ground");
             Assert.AreEqual(TerrainPlane.A, player.Plane, "on the plane loops are entered on");
@@ -63,7 +87,12 @@ namespace SfxShowcase.Tests
 
             yield return UntilGameTime(() => false, 1.5f);
             Assert.IsTrue(player.IsGrounded);
-            Assert.AreEqual(DesignTargets.CruiseSpeed, player.GroundSpeed, 0.5f, "flat running tops out at cruise speed");
+            Assert.AreEqual(
+                DesignTargets.CruiseSpeed,
+                player.GroundSpeed,
+                0.5f,
+                "flat running tops out at cruise speed"
+            );
             Assert.AreEqual(1, player.Facing);
 
             input.Release();
@@ -75,12 +104,32 @@ namespace SfxShowcase.Tests
         public IEnumerator AJumpReachesTheDesignedHeightAndIsCutShortWhenLetGo()
         {
             yield return StartRun();
-            float groundY = player.Position.y, highest = groundY;
+            float groundY = player.Position.y;
+            float highest = groundY;
             input.JumpHeld = true;
-            yield return UntilGameTime(() => { highest = Mathf.Max(highest, player.Position.y); return !player.IsGrounded; }, 0.5f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    highest = Mathf.Max(highest, player.Position.y);
+                    return !player.IsGrounded;
+                },
+                0.5f
+            );
             Assert.AreEqual(1, events.Jumps, "Jump raises its event");
-            yield return UntilGameTime(() => { highest = Mathf.Max(highest, player.Position.y); return player.IsGrounded; }, 3f);
-            Assert.AreEqual(DesignTargets.JumpHeight, highest - groundY, 0.4f, "a held jump reaches the design's height");
+            yield return UntilGameTime(
+                () =>
+                {
+                    highest = Mathf.Max(highest, player.Position.y);
+                    return player.IsGrounded;
+                },
+                3f
+            );
+            Assert.AreEqual(
+                DesignTargets.JumpHeight,
+                highest - groundY,
+                0.4f,
+                "a held jump reaches the design's height"
+            );
 
             input.JumpHeld = false;
             yield return UntilGameTime(() => false, 0.2f);
@@ -89,7 +138,14 @@ namespace SfxShowcase.Tests
             yield return null;
             yield return null;
             input.JumpHeld = false;
-            yield return UntilGameTime(() => { tapped = Mathf.Max(tapped, player.Position.y); return player.IsGrounded && events.Jumps == 2 && player.Velocity.y <= 0f; }, 3f);
+            yield return UntilGameTime(
+                () =>
+                {
+                    tapped = Mathf.Max(tapped, player.Position.y);
+                    return player.IsGrounded && events.Jumps == 2 && player.Velocity.y <= 0f;
+                },
+                3f
+            );
             Assert.AreEqual(2, events.Jumps);
             Assert.Less(tapped - groundY, DesignTargets.JumpHeight * 0.6f, "a tapped jump is a short hop");
         }
@@ -101,24 +157,41 @@ namespace SfxShowcase.Tests
             yield return StartRun();
             LevelLayout.GetLoop(0, out Vector2 loopCentre, out float loopRadius);
             float highestInLoop = float.MinValue;
-            bool wasOnPlaneB = false, wasUpsideDown = false;
+            bool wasOnPlaneB = false;
+            bool wasUpsideDown = false;
             Action watchLoop = () =>
             {
                 Vector2 at = player.Position;
-                if (Mathf.Abs(at.x - loopCentre.x) > loopRadius) return;
+                if (Mathf.Abs(at.x - loopCentre.x) > loopRadius)
+                {
+                    return;
+                }
+
                 highestInLoop = Mathf.Max(highestInLoop, at.y);
                 wasOnPlaneB |= player.Plane == TerrainPlane.B;
                 wasUpsideDown |= player.IsGrounded && Mathf.Abs(player.GroundAngle) > 150f;
             };
             yield return Pilot(() => player.Position.x > 320f, 90f, watchLoop);
 
-            Assert.Greater(player.Position.x, 320f, "the player ran from the start, over the three hills and through the loop");
+            Assert.Greater(
+                player.Position.x,
+                320f,
+                "the player ran from the start, over the three hills and through the loop"
+            );
             Assert.AreEqual(0, events.Respawns, "without falling out of the level");
-            Assert.Greater(highestInLoop, loopCentre.y + loopRadius - 2f * DesignTargets.StandingRadius, "it passed the top of the ring");
+            Assert.Greater(
+                highestInLoop,
+                loopCentre.y + loopRadius - 2f * DesignTargets.StandingRadius,
+                "it passed the top of the ring"
+            );
             Assert.IsTrue(wasUpsideDown, "running on the ceiling");
             Assert.IsTrue(wasOnPlaneB, "the switch at the top put it on the loop's second half");
             Assert.AreEqual(TerrainPlane.A, player.Plane, "and the switch after the loop put it back");
-            CollectionAssert.AreEqual(new[] { SectionId.SoftStart, SectionId.RollingSines, SectionId.FullCycle }, events.Sections, "three sections were announced on the way");
+            CollectionAssert.AreEqual(
+                new[] { SectionId.SoftStart, SectionId.RollingSines, SectionId.FullCycle },
+                events.Sections,
+                "three sections were announced on the way"
+            );
         }
 
         [UnityTest]
@@ -128,7 +201,11 @@ namespace SfxShowcase.Tests
             float startX = player.Position.x;
             input.Down = true;
             yield return UntilGameTime(() => false, 0.1f);
-            for (int tap = 0; tap < 6; tap++) yield return TapJump();
+            for (int tap = 0; tap < 6; tap++)
+            {
+                yield return TapJump();
+            }
+
             Assert.AreEqual(6, events.WindUpTaps, "Down and Jump at rest winds up: one event a tap");
             Assert.AreEqual(0, events.Jumps, "and is not a jump");
             Assert.IsTrue(player.IsCharging);
@@ -141,7 +218,11 @@ namespace SfxShowcase.Tests
             Assert.AreEqual(1, events.Bursts, "letting go of Down releases the Burst");
             Assert.Greater(events.LastBurstCharge, 0.9f);
             Assert.IsTrue(player.IsRolling, "the player shoots off tucked");
-            Assert.Greater(player.GroundSpeed, 0.85f * DesignTargets.TopSpeed, "at nearly top speed, from a standstill");
+            Assert.Greater(
+                player.GroundSpeed,
+                0.85f * DesignTargets.TopSpeed,
+                "at nearly top speed, from a standstill"
+            );
         }
 
         [UnityTest]
@@ -154,9 +235,17 @@ namespace SfxShowcase.Tests
             SectionInfo fullCycle = Sections.Get(SectionId.FullCycle);
             player.PlaceAt(new Vector2(fullCycle.StartX + 21f, 3f));
             yield return UntilGameTime(() => player.IsGrounded, 2f);
-            Assert.Greater(Mathf.Abs(player.GroundAngle), steepest, "the player stands on ground steeper than the stand-firm angle");
+            Assert.Greater(
+                Mathf.Abs(player.GroundAngle),
+                steepest,
+                "the player stands on ground steeper than the stand-firm angle"
+            );
             yield return UntilGameTime(() => false, 1f);
-            Assert.Greater(player.GroundSpeed, 5f, "with no input at all, the slope carries the player downhill, faster and faster");
+            Assert.Greater(
+                player.GroundSpeed,
+                5f,
+                "with no input at all, the slope carries the player downhill, faster and faster"
+            );
 
             // The rise after the loop: at most 12 degrees.
             player.PlaceAt(new Vector2(fullCycle.StartX + 91f, -2f));
@@ -173,12 +262,18 @@ namespace SfxShowcase.Tests
             yield return StartRun();
             LevelLayout.GetLoop(0, out Vector2 loopCentre, out float loopRadius);
             PlaneSwitch afterLoop = null;
-            foreach (PlaneSwitch candidate in UnityEngine.Object.FindObjectsByType<PlaneSwitch>(FindObjectsSortMode.None))
+            foreach (
+                PlaneSwitch candidate in UnityEngine.Object.FindObjectsByType<PlaneSwitch>(FindObjectsSortMode.None)
+            )
             {
                 float x = candidate.transform.position.x;
                 bool isBeyondTheLoop = x > loopCentre.x + loopRadius;
-                if (isBeyondTheLoop && (afterLoop == null || x < afterLoop.transform.position.x)) afterLoop = candidate;
+                if (isBeyondTheLoop && (afterLoop == null || x < afterLoop.transform.position.x))
+                {
+                    afterLoop = candidate;
+                }
             }
+
             Assert.IsNotNull(afterLoop, "a plane switch stands on the ground after the first loop");
             Vector2 foot = afterLoop.transform.position;
 
@@ -188,12 +283,24 @@ namespace SfxShowcase.Tests
 
             input.MoveX = -1f;
             yield return UntilGameTime(() => player.Plane == TerrainPlane.B, 3f);
-            Assert.AreEqual(TerrainPlane.B, player.Plane, "walking back into the switch towards the loop gives the loop's second plane");
+            Assert.AreEqual(
+                TerrainPlane.B,
+                player.Plane,
+                "walking back into the switch towards the loop gives the loop's second plane"
+            );
 
             input.MoveX = 1f;
             yield return UntilGameTime(() => player.Position.x > foot.x + 2.5f, 4f);
-            Assert.Greater(player.Position.x, foot.x + 2f, "the player turned round inside the switch and walked out again");
-            Assert.AreEqual(TerrainPlane.A, player.Plane, "and left on the plane of the direction it left in, the one loops are entered on");
+            Assert.Greater(
+                player.Position.x,
+                foot.x + 2f,
+                "the player turned round inside the switch and walked out again"
+            );
+            Assert.AreEqual(
+                TerrainPlane.A,
+                player.Plane,
+                "and left on the plane of the direction it left in, the one loops are entered on"
+            );
         }
 
         [UnityTest]
@@ -207,11 +314,18 @@ namespace SfxShowcase.Tests
             Action watchRoute = () =>
             {
                 Vector2 at = player.Position;
-                if (at.x > 660f && at.x < 695f) lowestUnderThePlatforms = Mathf.Min(lowestUnderThePlatforms, at.y);
+                if (at.x > 660f && at.x < 695f)
+                {
+                    lowestUnderThePlatforms = Mathf.Min(lowestUnderThePlatforms, at.y);
+                }
             };
             yield return Pilot(() => player.Position.x > split.EndX - 4f, 90f, watchRoute, rolling: false);
 
-            Assert.Less(lowestUnderThePlatforms, 2f, "a runner who does not roll down the hill falls short of the platforms, into the trough");
+            Assert.Less(
+                lowestUnderThePlatforms,
+                2f,
+                "a runner who does not roll down the hill falls short of the platforms, into the trough"
+            );
             Assert.Greater(player.Position.x, split.EndX - 4f, "and still reaches the end of the section");
             Assert.AreEqual(0, events.Respawns, "without being sent back");
             CollectionAssert.Contains(events.Checkpoints, 2, "past the third Tuning Fork");
@@ -231,7 +345,13 @@ namespace SfxShowcase.Tests
 
             int stillThere = 0;
             foreach (Chime chime in UnityEngine.Object.FindObjectsByType<Chime>(FindObjectsSortMode.None))
-                if (!chime.IsCollected) stillThere++;
+            {
+                if (!chime.IsCollected)
+                {
+                    stillThere++;
+                }
+            }
+
             Assert.AreEqual(level.ChimeCount - 5, stillThere, "collected Chimes are gone from the level");
         }
 
@@ -244,13 +364,27 @@ namespace SfxShowcase.Tests
             player.PlaceAt(foot + Vector2.up * 1.5f);
             yield return UntilGameTime(() => events.WooferBounces > 0, 1f);
             Assert.AreEqual(1, events.WooferBounces, "falling onto a Woofer fires it");
-            Assert.AreEqual(woofer.LaunchVelocity.y, player.Velocity.y, 1.5f, "and replaces the player's velocity with the Woofer's own");
+            Assert.AreEqual(
+                woofer.LaunchVelocity.y,
+                player.Velocity.y,
+                1.5f,
+                "and replaces the player's velocity with the Woofer's own"
+            );
             Assert.IsFalse(player.IsGrounded);
-            Assert.Less(player.Speed, 0.5f * DesignTargets.CruiseSpeed, "flying straight up is not \"speed\": the meter, the music and the wind count travel, not height");
+            Assert.Less(
+                player.Speed,
+                0.5f * DesignTargets.CruiseSpeed,
+                "flying straight up is not \"speed\": the meter, the music and the wind count travel, not height"
+            );
 
             float rising = player.Velocity.y;
             player.Rebound();
-            Assert.AreEqual(rising, player.Velocity.y, 0.001f, "a rebound never slows a player that is already rising faster");
+            Assert.AreEqual(
+                rising,
+                player.Velocity.y,
+                0.001f,
+                "a rebound never slows a player that is already rising faster"
+            );
 
             yield return UntilGameTime(() => player.IsGrounded, 3f);
             Assert.IsTrue(player.IsGrounded, "the flight ends on ground");
@@ -271,7 +405,11 @@ namespace SfxShowcase.Tests
             Assert.AreEqual(1, events.Hurts, "touching Static hurts");
             Assert.AreEqual(5, events.LastScatterCount, "the carried Chimes scatter, and the event says how many");
             Assert.AreEqual(0, session.ChimeCount, "none are carried any more");
-            Assert.AreEqual(5, UnityEngine.Object.FindObjectsByType<ScatteredChime>(FindObjectsSortMode.None).Length, "five Chimes fly out");
+            Assert.AreEqual(
+                5,
+                UnityEngine.Object.FindObjectsByType<ScatteredChime>(FindObjectsSortMode.None).Length,
+                "five Chimes fly out"
+            );
             Assert.IsTrue(player.IsInvulnerable, "the player blinks for a moment");
             Assert.AreEqual(0, events.Respawns, "a hit with Chimes is not a respawn");
 
@@ -306,7 +444,11 @@ namespace SfxShowcase.Tests
 
             // every gap in the ground of the level (a pit) lies in Static Field, and the second fork stands before them
             TuningFork guard = forks[1];
-            Assert.AreEqual(SectionId.StaticField, Sections.At(guard.transform.position.x), "the second Tuning Fork stands in Static Field");
+            Assert.AreEqual(
+                SectionId.StaticField,
+                Sections.At(guard.transform.position.x),
+                "the second Tuning Fork stands in Static Field"
+            );
             float firstPitX = FirstGapInTheGround(staticField.StartX, staticField.EndX);
             Assert.Less(guard.transform.position.x, firstPitX, "before its first pit");
 
@@ -317,20 +459,36 @@ namespace SfxShowcase.Tests
             player.PlaceAt(new Vector2(firstPitX + 2f, guard.transform.position.y - 2f));
             yield return UntilGameTime(() => events.Respawns > 0, 8f);
             Assert.AreEqual(1, events.Respawns, "falling into the pit is a respawn");
-            Assert.AreEqual(guard.transform.position.x, player.Position.x, 0.5f, "at the fork at the start of the same section, not a section back");
+            Assert.AreEqual(
+                guard.transform.position.x,
+                player.Position.x,
+                0.5f,
+                "at the fork at the start of the same section, not a section back"
+            );
         }
 
-        /// <summary>The first x between two bounds with no ground under it: probes downwards every half metre.</summary>
+        /// <summary>
+        /// The first x between two bounds with no ground under it: probes downwards every half metre.
+        /// </summary>
         static float FirstGapInTheGround(float fromX, float toX)
         {
-            const float probeTop = 100f, probeLength = 300f, step = 0.5f;
+            const float probeTop = 100f;
+            const float probeLength = 300f;
+            const float step = 0.5f;
             for (float x = fromX + step; x < toX; x += step)
             {
                 bool ground = false;
                 foreach (RaycastHit2D hit in Physics2D.RaycastAll(new Vector2(x, probeTop), Vector2.down, probeLength))
+                {
                     ground |= hit.collider.GetComponent<GroundSurface>() != null;
-                if (!ground) return x;
+                }
+
+                if (!ground)
+                {
+                    return x;
+                }
             }
+
             Assert.Fail($"there is no pit between x = {fromX} and x = {toX}");
             return toX;
         }
@@ -375,45 +533,101 @@ namespace SfxShowcase.Tests
         public IEnumerator TheWholeLevelCanBeRunFromStartToGoal()
         {
             yield return StartRun();
+
             // What the layout's comments and Chime flights are built on, measured as the pilot passes:
             // the speed off each launch ramp's lip (the last 2 m of ground before it), whether the tucked launch of
             // Split Signal reached the first platform, and the Chimes picked up from Overdrive on.
-            const float splitLipX = 650f, finalLipX = 930f, lipLength = 2f;
-            const float firstPlatformStartX = 656f, firstPlatformEndX = 672f, firstPlatformY = 6.5f;
+            const float splitLipX = 650f;
+            const float finalLipX = 930f;
+            const float lipLength = 2f;
+            const float firstPlatformStartX = 656f;
+            const float firstPlatformEndX = 672f;
+            const float firstPlatformY = 6.5f;
             float overdriveStartX = Sections.Get(SectionId.Overdrive).StartX;
-            float splitLipSpeed = 0f, finalLipSpeed = 0f;
+            float splitLipSpeed = 0f;
+            float finalLipSpeed = 0f;
             Vector2 finalLipVelocity = Vector2.zero;
             bool landedOnFirstPlatform = false;
             int chimesBeforeOverdrive = -1;
             Action measure = () =>
             {
                 Vector2 at = player.Position;
-                if (chimesBeforeOverdrive < 0 && at.x >= overdriveStartX) chimesBeforeOverdrive = events.ChimesCollected;
-                if (!player.IsGrounded) return;
-                if (at.x > splitLipX - lipLength && at.x < splitLipX) splitLipSpeed = Mathf.Max(splitLipSpeed, player.GroundSpeed);
+                if (chimesBeforeOverdrive < 0 && at.x >= overdriveStartX)
+                {
+                    chimesBeforeOverdrive = events.ChimesCollected;
+                }
+
+                if (!player.IsGrounded)
+                {
+                    return;
+                }
+
+                if (at.x > splitLipX - lipLength && at.x < splitLipX)
+                {
+                    splitLipSpeed = Mathf.Max(splitLipSpeed, player.GroundSpeed);
+                }
+
                 if (at.x > finalLipX - lipLength && at.x < finalLipX && player.GroundSpeed > finalLipSpeed)
                 {
                     finalLipSpeed = player.GroundSpeed;
                     finalLipVelocity = player.Velocity;
                 }
-                landedOnFirstPlatform |= at.x > firstPlatformStartX && at.x < firstPlatformEndX && at.y > firstPlatformY;
+
+                landedOnFirstPlatform |=
+                    at.x > firstPlatformStartX && at.x < firstPlatformEndX && at.y > firstPlatformY;
             };
             yield return Pilot(() => session.Phase == GamePhase.Finished, 240f, measure);
 
             int overdriveChimes = events.ChimesCollected - chimesBeforeOverdrive;
-            Debug.Log($"SHOWCASE RUN  finished in {session.ElapsedSeconds:0.0} s with {session.ChimeCount} Chimes, top speed {session.TopSpeedReached:0.0} m/s, {events.Hurts} hits, {events.Respawns} respawns");
-            Debug.Log($"SHOWCASE RUN  split lip {splitLipSpeed:0.0} m/s, final lip {finalLipSpeed:0.0} m/s as {finalLipVelocity}, {overdriveChimes} Chimes from Overdrive on, first platform {(landedOnFirstPlatform ? "reached" : "missed")}");
-            Assert.AreEqual(GamePhase.Finished, session.Phase, $"the pilot reached the goal (it stopped at x = {player.Position.x:0.0}, y = {player.Position.y:0.0})");
+            Debug.Log(
+                $"SHOWCASE RUN  finished in {session.ElapsedSeconds:0.0} s with {session.ChimeCount} Chimes, top speed {session.TopSpeedReached:0.0} m/s, {events.Hurts} hits, {events.Respawns} respawns"
+            );
+            Debug.Log(
+                $"SHOWCASE RUN  split lip {splitLipSpeed:0.0} m/s, final lip {finalLipSpeed:0.0} m/s as {finalLipVelocity}, {overdriveChimes} Chimes from Overdrive on, first platform {(landedOnFirstPlatform ? "reached" : "missed")}"
+            );
+            Assert.AreEqual(
+                GamePhase.Finished,
+                session.Phase,
+                $"the pilot reached the goal (it stopped at x = {player.Position.x:0.0}, y = {player.Position.y:0.0})"
+            );
             Assert.AreEqual(1, events.GoalsReached);
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, events.Checkpoints, "all three Tuning Forks were lit, in order");
+            CollectionAssert.AreEqual(
+                new[] { 0, 1, 2 },
+                events.Checkpoints,
+                "all three Tuning Forks were lit, in order"
+            );
             Assert.AreEqual(1, events.FinalLaunches, "the last ramp announced the final launch");
-            CollectionAssert.IsSubsetOf((SectionId[])Enum.GetValues(typeof(SectionId)), events.Sections, "every section of the level was entered");
-            Assert.Greater(session.TopSpeedReached, 0.9f * DesignTargets.TopSpeed, "somewhere on the way the player was near top speed");
-            Assert.LessOrEqual(session.TopSpeedReached, DesignTargets.TopSpeed + 0.001f, "and the top speed the results show is never above the speed cap, whatever the falls");
-            Assert.GreaterOrEqual(splitLipSpeed, SplitLipMinimumSpeed, "a tuck down Split Signal's hill leaves the launch ramp fast enough for the high route");
+            CollectionAssert.IsSubsetOf(
+                (SectionId[])Enum.GetValues(typeof(SectionId)),
+                events.Sections,
+                "every section of the level was entered"
+            );
+            Assert.Greater(
+                session.TopSpeedReached,
+                0.9f * DesignTargets.TopSpeed,
+                "somewhere on the way the player was near top speed"
+            );
+            Assert.LessOrEqual(
+                session.TopSpeedReached,
+                DesignTargets.TopSpeed + 0.001f,
+                "and the top speed the results show is never above the speed cap, whatever the falls"
+            );
+            Assert.GreaterOrEqual(
+                splitLipSpeed,
+                SplitLipMinimumSpeed,
+                "a tuck down Split Signal's hill leaves the launch ramp fast enough for the high route"
+            );
             Assert.IsTrue(landedOnFirstPlatform, "and lands on its first platform");
-            Assert.GreaterOrEqual(finalLipSpeed, FinalLipMinimumSpeed, "Overdrive's last ramp is left at the speed its Chime field is laid along");
-            Assert.GreaterOrEqual(overdriveChimes, OverdriveMinimumChimes, "and the final flight passes through that field");
+            Assert.GreaterOrEqual(
+                finalLipSpeed,
+                FinalLipMinimumSpeed,
+                "Overdrive's last ramp is left at the speed its Chime field is laid along"
+            );
+            Assert.GreaterOrEqual(
+                overdriveChimes,
+                OverdriveMinimumChimes,
+                "and the final flight passes through that field"
+            );
             Assert.Greater(events.ChimesCollected, 30, "and picked up Chimes along the route");
         }
     }

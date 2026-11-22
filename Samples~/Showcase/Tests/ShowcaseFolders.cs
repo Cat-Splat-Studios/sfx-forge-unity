@@ -12,16 +12,24 @@ namespace SfxShowcase.Tests
     /// </summary>
     static class ShowcaseFolders
     {
-        /// <summary>The showcase's own folder as an asset path. Known in the editor only: a player has no folders.</summary>
+        /// <summary>
+        /// The showcase's own folder as an asset path. Known in the editor only: a player has no folders.
+        /// </summary>
         public static string Root
         {
             get
             {
 #if UNITY_EDITOR
                 string assembly = typeof(ShowcaseFolders).Assembly.GetName().Name;
-                string definition = UnityEditor.Compilation.CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(assembly);
+                string definition =
+                    UnityEditor.Compilation.CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(assembly);
                 if (string.IsNullOrEmpty(definition))
-                    throw new InvalidOperationException($"the showcase's tests cannot find their folder: the assembly {assembly} has no assembly definition file");
+                {
+                    throw new InvalidOperationException(
+                        $"the showcase's tests cannot find their folder: the assembly {assembly} has no assembly definition file"
+                    );
+                }
+
                 return Path.GetDirectoryName(Path.GetDirectoryName(definition)).Replace('\\', '/');
 #else
                 throw new InvalidOperationException("the showcase's folder is only known in the editor");
@@ -43,7 +51,11 @@ namespace SfxShowcase.Tests
         public static string CaptureFolder(string environmentVariable)
         {
             string chosen = Environment.GetEnvironmentVariable(environmentVariable);
-            if (!string.IsNullOrEmpty(chosen)) return Path.GetFullPath(chosen);
+            if (!string.IsNullOrEmpty(chosen))
+            {
+                return Path.GetFullPath(chosen);
+            }
+
             string repository = Repository;
             return repository != null
                 ? Path.Combine(repository, "out", "unity-video")
@@ -59,8 +71,9 @@ namespace SfxShowcase.Tests
             get
             {
                 string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", ".."));
-                bool isRepository = Directory.Exists(Path.Combine(root, "sfx-forge"))
-                                    && File.Exists(Path.Combine(root, "unity", "com.catsplat.sfxforge", "package.json"));
+                bool isRepository =
+                    Directory.Exists(Path.Combine(root, "sfx-forge"))
+                    && File.Exists(Path.Combine(root, "unity", "com.catsplat.sfxforge", "package.json"));
                 return isRepository ? root : null;
             }
         }

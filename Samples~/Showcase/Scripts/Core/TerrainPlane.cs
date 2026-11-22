@@ -7,10 +7,14 @@ namespace SfxShowcase.Core
     /// </summary>
     public enum TerrainPlane
     {
-        /// <summary>Solid for the player whatever plane it is on (ground); never a value for the player itself.</summary>
+        /// <summary>
+        /// Solid for the player whatever plane it is on (ground); never a value for the player itself.
+        /// </summary>
         Both = 0,
+
         /// <summary>The default plane: the half of a loop the player runs up first.</summary>
         A = 1,
+
         /// <summary>The half of a loop the player comes down.</summary>
         B = 2,
     }

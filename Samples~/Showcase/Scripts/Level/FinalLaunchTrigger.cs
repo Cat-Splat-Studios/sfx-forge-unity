@@ -26,7 +26,11 @@ namespace SfxShowcase.Level
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (fired || !other.TryGetComponent(out PlayerBase player) || player.Velocity.x <= 0f) return;
+            if (fired || !other.TryGetComponent(out PlayerBase player) || player.Velocity.x <= 0f)
+            {
+                return;
+            }
+
             fired = true;
             GameEvents.RaiseFinalLaunch();
         }

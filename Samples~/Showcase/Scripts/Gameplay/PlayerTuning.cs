@@ -1,21 +1,24 @@
 using System;
-using UnityEngine;
 using SfxShowcase.Core;
+using UnityEngine;
 
 namespace SfxShowcase.Gameplay
 {
     /// <summary>
     /// Every number that shapes how the player moves, in one place. Units are metres, seconds and degrees.
-    /// The values that the level is also built against (gravity, cruise and top speed, jump height, the two radii) start
-    /// from <see cref="DesignTargets"/>; change those there, not here, or the level's jumps and Woofers stop fitting.
-    /// Each value's comment says what it feels like, so it can be tuned in the Inspector on the player.
+    /// The values that the level is also built against (gravity, cruise and top speed, jump height, the two radii)
+    /// start from <see cref="DesignTargets"/>; change those there, not here, or the level's jumps and Woofers stop
+    /// fitting. Each value's comment says what it feels like, so it can be tuned in the Inspector on the player.
     /// </summary>
     [Serializable]
     public sealed class PlayerTuning
     {
         // ---- Running ---------------------------------------------------------------------------------------------
 
-        /// <summary>How fast holding forward builds speed on flat ground. 5 = two seconds from rest to cruise: gentle, never twitchy.</summary>
+        /// <summary>
+        /// How fast holding forward builds speed on flat ground. 5 = two seconds from rest to cruise:
+        /// gentle, never twitchy.
+        /// </summary>
         [Tooltip("Ground acceleration while holding forward, m/s². 5 = two seconds from rest to cruise.")]
         public float acceleration = 5f;
 
@@ -27,7 +30,9 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Slow-down with no input, m/s². Low = a long coast.")]
         public float friction = 4f;
 
-        /// <summary>The speed flat running tops out at; anything above it has to be earned from slopes, Woofers and Bursts.</summary>
+        /// <summary>
+        /// The speed flat running tops out at; anything above it has to be earned from slopes, Woofers and Bursts.
+        /// </summary>
         [Tooltip("The speed holding forward reaches on flat ground, m/s.")]
         public float cruiseSpeed = DesignTargets.CruiseSpeed;
 
@@ -35,7 +40,10 @@ namespace SfxShowcase.Gameplay
         [Tooltip("The hard cap on ground speed, m/s.")]
         public float topSpeed = DesignTargets.TopSpeed;
 
-        /// <summary>How fast earned speed above cruise leaks away while still holding forward. Low = a good line keeps its speed.</summary>
+        /// <summary>
+        /// How fast earned speed above cruise leaks away while still holding forward. Low = a good line
+        /// keeps its speed.
+        /// </summary>
         [Tooltip("Slow-down above cruise speed while holding forward, m/s².")]
         public float overCruiseDrag = 1f;
 
@@ -49,30 +57,46 @@ namespace SfxShowcase.Gameplay
 
         // ---- Slopes ----------------------------------------------------------------------------------------------
 
-        /// <summary>How strongly a slope pulls a running player: downhill adds this times the sine of the slope, uphill takes it. Higher = hills matter more.</summary>
+        /// <summary>
+        /// How strongly a slope pulls a running player: downhill adds this times the sine of the slope, uphill takes
+        /// it. Higher = hills matter more.
+        /// </summary>
         [Tooltip("Slope pull while running, m/s² at a vertical wall (scaled by the sine of the slope).")]
         public float slopeFactorRunning = 7f;
 
-        /// <summary>The slope's drag on a tucked player going uphill. Stronger than running: a Tuck gives up climbing power.</summary>
+        /// <summary>
+        /// The slope's drag on a tucked player going uphill. Stronger than running: a Tuck gives up climbing power.
+        /// </summary>
         [Tooltip("Slope pull while tucked and going uphill, m/s².")]
         public float slopeFactorTuckedUphill = 10f;
 
-        /// <summary>The slope's push on a tucked player going downhill. The biggest number here: tucking down a hill is the fastest thing in the game.</summary>
+        /// <summary>
+        /// The slope's push on a tucked player going downhill. The biggest number here: tucking down a hill is the
+        /// fastest thing in the game.
+        /// </summary>
         [Tooltip("Slope pull while tucked and going downhill, m/s².")]
         public float slopeFactorTuckedDownhill = 20f;
 
         /// <summary>
-        /// On slopes gentler than this a player who is not steering stands firm and coasts to a stop (friction applies);
-        /// on steeper ones there is no friction without input, so the slope carries a coasting runner and slides a standing one.
+        /// On slopes gentler than this a player who is not steering stands firm and coasts to a stop (friction
+        /// applies); on steeper ones there is no friction without input, so the slope carries a coasting runner and
+        /// slides a standing one.
         /// </summary>
-        [Tooltip("Slopes gentler than this hold a player who is not steering; steeper ones carry it downhill. Degrees.")]
+        [Tooltip(
+            "Slopes gentler than this hold a player who is not steering; steeper ones carry it downhill. Degrees."
+        )]
         public float standFirmAngle = 23f;
 
-        /// <summary>Below this ground speed a steep surface no longer holds the player: speed is what keeps you on a wall.</summary>
+        /// <summary>
+        /// Below this ground speed a steep surface no longer holds the player: speed is what keeps you on a wall.
+        /// </summary>
         [Tooltip("Minimum ground speed to stay in control on a steep surface, m/s.")]
         public float slipSpeed = 3f;
 
-        /// <summary>Surfaces steeper than this count as steep: too slow on them and the controls lock while the slope takes over.</summary>
+        /// <summary>
+        /// Surfaces steeper than this count as steep: too slow on them and the controls lock while the
+        /// slope takes over.
+        /// </summary>
         [Tooltip("Steeper than this is 'steep' for slipping, degrees.")]
         public float slipAngle = 45f;
 
@@ -80,7 +104,10 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Steeper than this, a too-slow player falls off, degrees.")]
         public float detachAngle = 70f;
 
-        /// <summary>How long left/right is ignored after slipping. Long enough that the player cannot fight the slope, short enough not to annoy.</summary>
+        /// <summary>
+        /// How long left/right is ignored after slipping. Long enough that the player cannot fight the slope, short
+        /// enough not to annoy.
+        /// </summary>
         [Tooltip("Seconds of ignored left/right after slipping on a steep surface.")]
         public float slipControlLock = 0.5f;
 
@@ -98,7 +125,10 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Friction while tucked, m/s².")]
         public float tuckFriction = 1.5f;
 
-        /// <summary>Braking while tucked when pressing against the motion. Much weaker than the running brake: a roll is a commitment.</summary>
+        /// <summary>
+        /// Braking while tucked when pressing against the motion. Much weaker than the running brake: a roll
+        /// is a commitment.
+        /// </summary>
         [Tooltip("Braking while tucked when pressing against the motion, m/s².")]
         public float tuckBraking = 10f;
 
@@ -120,15 +150,21 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Height of a fully held jump, m.")]
         public float jumpHeight = DesignTargets.JumpHeight;
 
-        /// <summary>Letting go of Jump while rising faster than this drops the upward speed to it at once: a tap is a hop.</summary>
+        /// <summary>
+        /// Letting go of Jump while rising faster than this drops the upward speed to it at once: a tap is a hop.
+        /// </summary>
         [Tooltip("Upward speed left when Jump is released early, m/s.")]
         public float jumpCutSpeed = 6f;
 
-        /// <summary>How fast left/right steers in the air. Enough to place a landing, not enough to reverse instantly.</summary>
+        /// <summary>
+        /// How fast left/right steers in the air. Enough to place a landing, not enough to reverse instantly.
+        /// </summary>
         [Tooltip("Air steering, m/s².")]
         public float airAcceleration = 12f;
 
-        /// <summary>A gentle loss of sideways speed near the top of a rise, so floaty hops do not carry forever.</summary>
+        /// <summary>
+        /// A gentle loss of sideways speed near the top of a rise, so floaty hops do not carry forever.
+        /// </summary>
         [Tooltip("Fraction of sideways speed lost per second while rising slowly.")]
         public float airDrag = 0.35f;
 
@@ -144,7 +180,10 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Upward speed of the rebound off a defeated Clipper, m/s.")]
         public float reboundSpeed = 9f;
 
-        /// <summary>A Woofer whose push lifts a grounded player by less than this keeps them on the ground (a horizontal Woofer).</summary>
+        /// <summary>
+        /// A Woofer whose push lifts a grounded player by less than this keeps them on the ground (a
+        /// horizontal Woofer).
+        /// </summary>
         [Tooltip("A Woofer pushing away from the ground slower than this leaves the player on the ground, m/s.")]
         public float groundedBounceLift = 1f;
 
@@ -158,7 +197,10 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Taps of Jump for a full charge.")]
         public int windUpTaps = 6;
 
-        /// <summary>The fraction of the charge that leaks away each second while holding. Slow: there is time to aim, not to wait.</summary>
+        /// <summary>
+        /// The fraction of the charge that leaks away each second while holding. Slow: there is time to
+        /// aim, not to wait.
+        /// </summary>
         [Tooltip("Fraction of the charge lost per second while holding.")]
         public float windUpLeak = 0.25f;
 
@@ -166,7 +208,9 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Burst speed at zero charge, m/s.")]
         public float burstMinSpeed = 11f;
 
-        /// <summary>The Burst speed at full charge: just under the speed cap, like letting go of a stretched rubber band.</summary>
+        /// <summary>
+        /// The Burst speed at full charge: just under the speed cap, like letting go of a stretched rubber band.
+        /// </summary>
         [Tooltip("Burst speed at full charge, m/s.")]
         public float burstMaxSpeed = 21f;
 
@@ -184,7 +228,9 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Seconds of invulnerability after a hit.")]
         public float invulnerableSeconds = 2f;
 
-        /// <summary>The pause between being lost (a pit, or a hit with no Chimes) and reappearing; the time the fade has.</summary>
+        /// <summary>
+        /// The pause between being lost (a pit, or a hit with no Chimes) and reappearing; the time the fade has.
+        /// </summary>
         [Tooltip("Seconds between being lost and reappearing.")]
         public float respawnDelay = 0.8f;
 
@@ -192,7 +238,9 @@ namespace SfxShowcase.Gameplay
         [Tooltip("Seconds of invulnerability after reappearing.")]
         public float respawnInvulnerableSeconds = 1f;
 
-        /// <summary>The player reappears this far above a Tuning Fork's respawn point and drops onto the ground.</summary>
+        /// <summary>
+        /// The player reappears this far above a Tuning Fork's respawn point and drops onto the ground.
+        /// </summary>
         [Tooltip("Height above a Tuning Fork's respawn point at which the player reappears, m.")]
         public float respawnLift = 0.6f;
 
@@ -256,23 +304,37 @@ namespace SfxShowcase.Gameplay
 
         // ---- Sensors (collision) ---------------------------------------------------------------------------------
 
-        /// <summary>The longest distance moved between two collision checks. Smaller than the tucked radius, so nothing is tunnelled through at top speed.</summary>
+        /// <summary>
+        /// The longest distance moved between two collision checks. Smaller than the tucked radius, so nothing is
+        /// tunnelled through at top speed.
+        /// </summary>
         [Tooltip("Longest move between collision checks, m.")]
         public float maxStepDistance = 0.2f;
 
-        /// <summary>How far the two floor sensors sit in front of and behind the centre. Wider = smoother over corners, but later to fall off ledges.</summary>
+        /// <summary>
+        /// How far the two floor sensors sit in front of and behind the centre. Wider = smoother over corners, but
+        /// later to fall off ledges.
+        /// </summary>
         [Tooltip("Distance of each floor sensor from the centre along the ground, m.")]
         public float footSpread = 0.3f;
 
-        /// <summary>How far below the feet the ground may drop away between checks and still hold the player. Larger = stickier over crests.</summary>
+        /// <summary>
+        /// How far below the feet the ground may drop away between checks and still hold the player. Larger =
+        /// stickier over crests.
+        /// </summary>
         [Tooltip("How far below the feet the floor sensors reach while grounded, m.")]
         public float groundSnapDistance = 0.3f;
 
-        /// <summary>The sharpest change of ground direction the player follows in one step; anything sharper is a wall or a ledge.</summary>
+        /// <summary>
+        /// The sharpest change of ground direction the player follows in one step; anything sharper is a
+        /// wall or a ledge.
+        /// </summary>
         [Tooltip("Sharpest corner the player runs around without stopping or leaving the ground, degrees.")]
         public float maxGroundTurnAngle = 50f;
 
-        /// <summary>Ground ahead that is at least this much steeper than the ground underfoot stops the player like a wall.</summary>
+        /// <summary>
+        /// Ground ahead that is at least this much steeper than the ground underfoot stops the player like a wall.
+        /// </summary>
         [Tooltip("Ground ahead this much steeper than underfoot is a wall, degrees.")]
         public float wallAngle = 60f;
 

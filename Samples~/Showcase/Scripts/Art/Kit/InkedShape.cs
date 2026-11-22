@@ -23,14 +23,28 @@ namespace SfxShowcase.Art
         /// <summary>Adds a convex piece of the silhouette: filled with the colour, outlined in Ink.</summary>
         public InkedShape Add(IReadOnlyList<Vector2> convexPolygon, Color fill)
         {
-            pieces.Add(new Piece { Points = convexPolygon, Color = fill, Outlined = true });
+            pieces.Add(
+                new Piece
+                {
+                    Points = convexPolygon,
+                    Color = fill,
+                    Outlined = true,
+                }
+            );
             return this;
         }
 
         /// <summary>Adds a convex detail drawn on top without an outline of its own (eyes, a stripe).</summary>
         public InkedShape AddDetail(IReadOnlyList<Vector2> convexPolygon, Color color)
         {
-            pieces.Add(new Piece { Points = convexPolygon, Color = color, Outlined = false });
+            pieces.Add(
+                new Piece
+                {
+                    Points = convexPolygon,
+                    Color = color,
+                    Outlined = false,
+                }
+            );
             return this;
         }
 
@@ -38,9 +52,17 @@ namespace SfxShowcase.Art
         public void AddTo(MeshBuilder builder)
         {
             foreach (Piece piece in pieces)
-                if (piece.Outlined) builder.AddPolygon(Shapes.Outset(piece.Points, ArtStyle.OutlineWidth), Palette.Ink);
+            {
+                if (piece.Outlined)
+                {
+                    builder.AddPolygon(Shapes.Outset(piece.Points, ArtStyle.OutlineWidth), Palette.Ink);
+                }
+            }
+
             foreach (Piece piece in pieces)
+            {
                 builder.AddPolygon(piece.Points, piece.Color);
+            }
         }
 
         /// <summary>The shape as a new mesh.</summary>

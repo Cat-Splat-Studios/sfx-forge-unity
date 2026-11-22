@@ -12,8 +12,10 @@ namespace SfxShowcase.Art
     {
         const float CellHeight = 6f;
         const float CellWidth = 4f;
+
         /// <summary>Grid units from the start of one glyph to the start of the next.</summary>
         const float Advance = 5.5f;
+
         /// <summary>Stroke thickness in grid units.</summary>
         const float StrokeThickness = 0.85f;
 
@@ -69,7 +71,11 @@ namespace SfxShowcase.Art
         /// <summary>The width of a line of text drawn at a cap height, in the same units as the height.</summary>
         public static float Width(string text, float height)
         {
-            if (string.IsNullOrEmpty(text)) return 0f;
+            if (string.IsNullOrEmpty(text))
+            {
+                return 0f;
+            }
+
             return ((text.Length - 1) * Advance + CellWidth) * (height / CellHeight);
         }
 
@@ -82,7 +88,11 @@ namespace SfxShowcase.Art
             float unit = height / CellHeight;
             for (int i = 0; i < text.Length; i++)
             {
-                if (!Glyphs.TryGetValue(text[i], out string glyph)) continue;
+                if (!Glyphs.TryGetValue(text[i], out string glyph))
+                {
+                    continue;
+                }
+
                 Vector2 glyphOrigin = origin + new Vector2(i * Advance * unit, 0f);
                 DrawGlyph(builder, glyph, glyphOrigin, unit, color);
             }
@@ -99,9 +109,14 @@ namespace SfxShowcase.Art
                     strokeStarted = false;
                     continue;
                 }
+
                 Vector2 point = origin + new Vector2(glyph[i] - '0', glyph[i + 1] - '0') * unit;
                 i++;
-                if (strokeStarted) builder.AddLine(previous, point, StrokeThickness * unit, color);
+                if (strokeStarted)
+                {
+                    builder.AddLine(previous, point, StrokeThickness * unit, color);
+                }
+
                 previous = point;
                 strokeStarted = true;
             }

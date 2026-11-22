@@ -18,28 +18,49 @@ namespace SfxShowcase.Level
 
         /// <summary>The player's centre is this far above the ground it stands on.</summary>
         const float PlayerRadius = DesignTargets.StandingRadius;
-        /// <summary>Chimes "at running height" hang this far above the ground: a runner's centre passes through them.</summary>
+
+        /// <summary>
+        /// Chimes "at running height" hang this far above the ground: a runner's centre passes through them.
+        /// </summary>
         const float ChimeHeight = 0.8f;
+
         /// <summary>Distance between the points of a curved piece of ground, metres.</summary>
         const float CurveStep = 0.5f;
+
         /// <summary>Length of one straight piece of a loop's surface, metres.</summary>
         const float LoopStep = 0.4f;
-        /// <summary>How far each half of a loop continues past the top, so the player has ground under it while the switch there changes its plane.</summary>
+
+        /// <summary>
+        /// How far each half of a loop continues past the top, so the player has ground under it while the switch there
+        /// changes its plane.
+        /// </summary>
         const float LoopOverlapDegrees = 25f;
+
         /// <summary>The wall of a loop outside its running surface, metres (art only).</summary>
         const float LoopWallThickness = 1f;
+
         /// <summary>The body under a floating platform's surface, metres (art only).</summary>
         const float PlatformThickness = 0.8f;
-        /// <summary>How high the middle of a floating platform rises above its ends: each one is half a sine wave.</summary>
+
+        /// <summary>
+        /// How high the middle of a floating platform rises above its ends: each one is half a sine wave.
+        /// </summary>
         const float PlatformHump = 0.6f;
+
         /// <summary>The camera shows this much beyond each end of the level, where the boundary walls stand.</summary>
         const float BoundsMarginX = 4f;
+
         /// <summary>The camera can look this far above the highest ground (Woofer flights go up there).</summary>
         const float BoundsMarginAbove = 22f;
+
         /// <summary>The camera stops this far above the height at which the player is lost in a pit.</summary>
         const float BoundsMarginAboveKill = 1f;
-        /// <summary>The ground's body is drawn down to this far below the kill height, out of the camera's sight.</summary>
+
+        /// <summary>
+        /// The ground's body is drawn down to this far below the kill height, out of the camera's sight.
+        /// </summary>
         const float GroundDepthBelowKill = 1f;
+
         /// <summary>The camera's distance in front of the play plane (z = 0).</summary>
         const float CameraDistance = 10f;
 
@@ -55,14 +76,21 @@ namespace SfxShowcase.Level
         static readonly Vector2 LoopTopSwitchSize = new Vector2(1f, 3f);
         static readonly Vector2 FinalLaunchTriggerSize = new Vector2(1.5f, 12f);
 
-        // ---- Measured launches: the Chime flights are laid along these -----------------------------------------------
-        // Read from the PlayMode run (Tests: the whole-level run asserts both lip speeds). Measure again after
-        // changing the tuning or the ramps.
+        // ---- Measured launches: the Chime flights are laid along these
+        // ----------------------------------------------- Read from the PlayMode run (Tests: the whole-level run
+        // asserts both lip speeds). Measure again after changing the tuning or the ramps.
 
-        /// <summary>The velocity a player tucked from the top of Split Signal's hill leaves the launch ramp with: 16.7 m/s at 38°.</summary>
+        /// <summary>
+        /// The velocity a player tucked from the top of Split Signal's hill leaves the launch ramp with:
+        /// 16.7 m/s at 38°.
+        /// </summary>
         static readonly Vector2 SplitLaunchVelocity = new Vector2(13.2f, 10.3f);
-        /// <summary>The velocity a runner leaves Overdrive's last ramp with after the valley's Woofer: 18.6 m/s at 29°.</summary>
+
+        /// <summary>
+        /// The velocity a runner leaves Overdrive's last ramp with after the valley's Woofer: 18.6 m/s at 29°.
+        /// </summary>
         static readonly Vector2 FinalLaunchVelocity = new Vector2(16.3f, 8.9f);
+
         /// <summary>Where the valley's Woofer stands, on the flat before the last ramp.</summary>
         const float FinalWooferX = 904f;
 
@@ -88,51 +116,83 @@ namespace SfxShowcase.Level
             return level;
         }
 
-        /// <summary>0 – 90 m. Running and jumping: flat ground, two low steps, Chime lines, one Chime arc that traces a jump.</summary>
+        /// <summary>
+        /// 0 – 90 m. Running and jumping: flat ground, two low steps, Chime lines, one Chime arc that traces a jump.
+        /// </summary>
         static void SoftStart(LevelData level)
         {
-            level.AddGround("Soft Start", new SurfacePath(-8f, 12f)
-                .FlatTo(0f).StepTo(0f)          // the wall that closes the level on the left
-                .FlatTo(30f).StepTo(1f)         // low step 1: 1.0 m, must be jumped
-                .FlatTo(55f).StepTo(2.5f)       // low step 2: 1.5 m
-                .FlatTo(90f));
+            level.AddGround(
+                "Soft Start",
+                new SurfacePath(-8f, 12f)
+                    .FlatTo(0f)
+                    .StepTo(0f) // the wall that closes the level on the left
+                    .FlatTo(30f)
+                    .StepTo(1f) // low step 1: 1.0 m, must be jumped
+                    .FlatTo(55f)
+                    .StepTo(2.5f) // low step 2: 1.5 m
+                    .FlatTo(90f)
+            );
 
             level.Spawn = new Vector2(6f, 0f + PlayerRadius);
 
             level.ChimeLine(12f, 20f, 5);
+
             // The arc of a full jump at cruise speed, taken 5 m before step 1; it lands on the step near x = 34.
-            level.ChimeFlight(new Vector2(25f, 0f + PlayerRadius), new Vector2(DesignTargets.CruiseSpeed, JumpSpeed), 0.15f, 0.75f, 5);
+            level.ChimeFlight(
+                new Vector2(25f, 0f + PlayerRadius),
+                new Vector2(DesignTargets.CruiseSpeed, JumpSpeed),
+                0.15f,
+                0.75f,
+                5
+            );
             level.ChimeLine(40f, 48f, 5);
             level.ChimeLine(64f, 76f, 7);
         }
 
-        /// <summary>90 – 220 m. The first slopes: three sine hills, each taller than the last, Chimes in the valleys, one Clipper.</summary>
+        /// <summary>
+        /// 90 – 220 m. The first slopes: three sine hills, each taller than the last, Chimes in the
+        /// valleys, one Clipper.
+        /// </summary>
         static void RollingSines(LevelData level)
         {
-            // Steepest slope 30°. A runner arriving at cruise crests every hill; tucked in a valley, the next hill is faster.
-            level.AddGround("Rolling Sines", level.StartSection(SectionId.RollingSines)
-                .FlatTo(94f)
-                .CurveTo(108f, 5.5f)            // hill 1: 3 m up
-                .CurveTo(124f, 1.5f)            // valley 1
-                .CurveTo(142f, 7.5f)            // hill 2: 6 m up
-                .FlatTo(156f)                   // its flat top, where the Clipper walks
-                .CurveTo(174f, 1f)              // valley 2
-                .CurveTo(206f, 9f)              // hill 3: 8 m up
-                .FlatTo(220f));
+            // Steepest slope 30°. A runner arriving at cruise crests every
+            // hill; tucked in a valley, the next hill is faster.
+            level.AddGround(
+                "Rolling Sines",
+                level
+                    .StartSection(SectionId.RollingSines)
+                    .FlatTo(94f)
+                    .CurveTo(108f, 5.5f) // hill 1: 3 m up
+                    .CurveTo(124f, 1.5f) // valley 1
+                    .CurveTo(142f, 7.5f) // hill 2: 6 m up
+                    .FlatTo(156f) // its flat top, where the Clipper walks
+                    .CurveTo(174f, 1f) // valley 2
+                    .CurveTo(206f, 9f) // hill 3: 8 m up
+                    .FlatTo(220f)
+            );
 
-            level.ChimeLine(116f, 132f, 9);     // through valley 1, along the line a tucked player rolls
-            level.ChimeLine(164f, 184f, 11);    // through valley 2
-            level.AddClipper(149f, 3f);         // reached at or below cruise speed, after the climb; easy to jump
+            level.ChimeLine(116f, 132f, 9); // through valley 1, along the line a tucked player rolls
+            level.ChimeLine(164f, 184f, 11); // through valley 2
+
+            // reached at or below cruise speed, after the climb; easy to jump
+            level.AddClipper(149f, 3f);
         }
 
-        /// <summary>220 – 340 m. The first loop: a 15 m downhill run-up, the loop, a gentle rise, Tuning Fork 1.</summary>
+        /// <summary>
+        /// 220 – 340 m. The first loop: a 15 m downhill run-up, the loop, a gentle rise, Tuning Fork 1.
+        /// </summary>
         static void FullCycle(LevelData level)
         {
-            level.AddGround("Full Cycle", level.StartSection(SectionId.FullCycle)
-                .CurveTo(262f, -6f)             // run-up, 15 m down: top speed at the foot when tucked from the top
-                .FlatTo(292f)                   // the loop stands on this flat, its foot at x = 272
-                .CurveTo(330f, -1f)             // 5 m rise, at most 12° steep: bleeds about 2 m/s
-                .FlatTo(340f));
+            level.AddGround(
+                "Full Cycle",
+                level
+                    .StartSection(SectionId.FullCycle)
+                    // run-up, 15 m down: top speed at the foot when tucked from the top
+                    .CurveTo(262f, -6f)
+                    .FlatTo(292f) // the loop stands on this flat, its foot at x = 272
+                    .CurveTo(330f, -1f) // 5 m rise, at most 12° steep: bleeds about 2 m/s
+                    .FlatTo(340f)
+            );
 
             // Radius 6 m: the centre climbs 11 m. TUCKED it needs about 17 m/s at the foot (a full Wind-Up Burst from
             // standing there, 21 m/s, clears it). RUNNING and holding forward it is far more forgiving: the run
@@ -142,22 +202,34 @@ namespace SfxShowcase.Level
             level.AddPlaneSwitch(262f, TerrainPlane.A, TerrainPlane.A);
             level.AddPlaneSwitch(281.5f, TerrainPlane.A, TerrainPlane.B);
 
-            level.ChimeLine(224f, 248f, 9);     // down the run-up
+            level.ChimeLine(224f, 248f, 9); // down the run-up
             level.ChimeCircle(loop.Center, loop.Radius - ChimeHeight, 12);
-            level.ChimeLine(300f, 320f, 6);     // up the rise
+            level.ChimeLine(300f, 320f, 6); // up the rise
             level.AddTuningFork(335f);
         }
 
-        /// <summary>340 – 460 m. Woofers: three terraces too tall to jump, a Woofer at the foot of each, a diagonal one over a dip.</summary>
+        /// <summary>
+        /// 340 – 460 m. Woofers: three terraces too tall to jump, a Woofer at the foot of each, a
+        /// diagonal one over a dip.
+        /// </summary>
         static void WooferSteps(LevelData level)
         {
-            level.AddGround("Woofer Steps", level.StartSection(SectionId.WooferSteps)
-                .FlatTo(362f).StepTo(4f)        // terrace 1: 5 m up (a jump is 3.5 m)
-                .FlatTo(388f).StepTo(9f)        // terrace 2
-                .FlatTo(414f).StepTo(14f)       // terrace 3, the highest ground of the level
-                .FlatTo(446f).StepTo(8f)        // the dip the diagonal Woofer flies over
-                .FlatTo(449f)
-                .SlopeTo(460f, 11f));           // 15° way out of the dip for whoever walks off the edge instead
+            level.AddGround(
+                "Woofer Steps",
+                level
+                    .StartSection(SectionId.WooferSteps)
+                    .FlatTo(362f)
+                    .StepTo(4f) // terrace 1: 5 m up (a jump is 3.5 m)
+                    .FlatTo(388f)
+                    .StepTo(9f) // terrace 2
+                    .FlatTo(414f)
+                    .StepTo(14f) // terrace 3, the highest ground of the level
+                    .FlatTo(446f)
+                    .StepTo(8f) // the dip the diagonal Woofer flies over
+                    .FlatTo(449f)
+                    // 15° way out of the dip for whoever walks off the edge instead
+                    .SlopeTo(460f, 11f)
+            );
 
             // Each terrace Woofer stands 2 m before its wall and leans towards it: 7.3 m up, landing 2.4 m past the
             // edge with no input at all.
@@ -165,11 +237,15 @@ namespace SfxShowcase.Level
             level.ChimesAbove(level.AddWoofer(360f, terraceLaunch), 0.1f, 0.4f, 4);
             level.ChimesAbove(level.AddWoofer(386f, terraceLaunch), 0.1f, 0.4f, 4);
             level.ChimesAbove(level.AddWoofer(412f, terraceLaunch), 0.1f, 0.4f, 4);
+
             // The diagonal one: 1.2 s in the air, over the dip, landing near x = 461 at 16 m/s sideways.
             level.ChimesAbove(level.AddWoofer(443f, new Vector2(16f, 15f)), 0.15f, 0.9f, 6);
         }
 
-        /// <summary>460 – 600 m. The hazard stretch, behind Tuning Fork 2: saw-tooth ridges with Static below their drops, four Clippers, two pits.</summary>
+        /// <summary>
+        /// 460 – 600 m. The hazard stretch, behind Tuning Fork 2: saw-tooth ridges with Static below their drops, four
+        /// Clippers, two pits.
+        /// </summary>
         static void StaticField(LevelData level)
         {
             // Tuning Fork 2 stands on the landing flat, BEFORE the hazards: every pit of the level and its densest
@@ -177,19 +253,40 @@ namespace SfxShowcase.Level
             // Every tooth is an 8 m ramp (14°) rising 2 m with a sheer 2 m drop back to the flat; the Static sits
             // below the drop, where a runner who simply runs off the edge at cruise comes down. The first one is 23 m
             // after the landing from Woofer Steps. Pits are 4 m wide: a jump clears them from 5 m/s.
-            level.AddGround("Static Field A", level.StartSection(SectionId.StaticField)
-                .FlatTo(474f).SlopeTo(482f, 13f).StepTo(11f)    // tooth 1, its drop at 482
-                .FlatTo(504f),                                  // pit 1: 504 – 508
-                wallAtStart: false, wallAtEnd: true);
-            level.AddGround("Static Field B", new SurfacePath(508f, 11f)
-                .FlatTo(516f).SlopeTo(524f, 13f).StepTo(11f)    // tooth 2, its drop at 524
-                .FlatTo(529f).SlopeTo(537f, 13f).StepTo(11f)    // tooth 3 straight after it, its drop at 537
-                .FlatTo(556f),                                  // pit 2: 556 – 560
-                wallAtStart: true, wallAtEnd: true);
-            level.AddGround("Static Field C", new SurfacePath(560f, 11f)
-                .FlatTo(574f).SlopeTo(582f, 13f).StepTo(11f)    // tooth 4, its drop at 582
-                .FlatTo(600f),
-                wallAtStart: true, wallAtEnd: false);
+            level.AddGround(
+                "Static Field A",
+                level
+                    .StartSection(SectionId.StaticField)
+                    .FlatTo(474f)
+                    .SlopeTo(482f, 13f)
+                    .StepTo(11f) // tooth 1, its drop at 482
+                    .FlatTo(504f), // pit 1: 504 – 508
+                wallAtStart: false,
+                wallAtEnd: true
+            );
+            level.AddGround(
+                "Static Field B",
+                new SurfacePath(508f, 11f)
+                    .FlatTo(516f)
+                    .SlopeTo(524f, 13f)
+                    .StepTo(11f) // tooth 2, its drop at 524
+                    .FlatTo(529f)
+                    .SlopeTo(537f, 13f)
+                    .StepTo(11f) // tooth 3 straight after it, its drop at 537
+                    .FlatTo(556f), // pit 2: 556 – 560
+                wallAtStart: true,
+                wallAtEnd: true
+            );
+            level.AddGround(
+                "Static Field C",
+                new SurfacePath(560f, 11f)
+                    .FlatTo(574f)
+                    .SlopeTo(582f, 13f)
+                    .StepTo(11f) // tooth 4, its drop at 582
+                    .FlatTo(600f),
+                wallAtStart: true,
+                wallAtEnd: false
+            );
 
             level.AddTuningFork(466f);
 
@@ -201,7 +298,7 @@ namespace SfxShowcase.Level
             level.AddClipper(495f, 3f);
             level.AddClipper(549f, 3f);
             level.AddClipper(567f, 3f);
-            level.AddClipper(591f, 2f);         // the last guard of the section
+            level.AddClipper(591f, 2f); // the last guard of the section
 
             // The safe line: an arc over every drop and every pit. (The arcs over the drops are symmetric and only
             // roughly follow a jump taken on the ramp, which is thrown back by the slope: about one Chime in three is
@@ -214,23 +311,36 @@ namespace SfxShowcase.Level
             level.ChimeArcOverGround(580f, 588.5f, 3.5f, 3);
         }
 
-        /// <summary>600 – 800 m. Tuning Fork 3, then a launch ramp splits the level: floating platforms above (fast, no enemies), a trough below (busy, fair).</summary>
+        /// <summary>
+        /// 600 – 800 m. Tuning Fork 3, then a launch ramp splits the level: floating platforms above (fast, no
+        /// enemies), a trough below (busy, fair).
+        /// </summary>
         static void SplitSignal(LevelData level)
         {
-            level.AddGround("Split Signal", level.StartSection(SectionId.SplitSignal)
-                .FlatTo(610f)
-                .CurveTo(636f, 2f)              // 9 m down: tucked from the top it gives about 19 m/s at the bottom
-                .FlatTo(642f)
-                .RampTo(650f, 6f)               // launch ramp, 38° at the lip: about 16.5 m/s off it tucked, 10 m/s running
-                .StepTo(3.5f).FlatTo(653.5f)    // a ledge under the lip with the second-chance Woofer
-                .StepTo(0f)                     // the low route's floor
-                .FlatTo(726f).StepTo(1.5f)      // a low terrace in the trough (jumpable)
-                .FlatTo(746f).StepTo(0f)
-                .FlatTo(770f)
-                .CurveTo(788f, 3f)              // the routes rejoin
-                .FlatTo(800f));
+            level.AddGround(
+                "Split Signal",
+                level
+                    .StartSection(SectionId.SplitSignal)
+                    .FlatTo(610f)
+                    // 9 m down: tucked from the top it gives about 19 m/s at the bottom
+                    .CurveTo(636f, 2f)
+                    .FlatTo(642f)
+                    // launch ramp, 38° at the lip: about 16.5 m/s off it tucked, 10 m/s running
+                    .RampTo(650f, 6f)
+                    .StepTo(3.5f)
+                    .FlatTo(653.5f) // a ledge under the lip with the second-chance Woofer
+                    .StepTo(0f) // the low route's floor
+                    .FlatTo(726f)
+                    .StepTo(1.5f) // a low terrace in the trough (jumpable)
+                    .FlatTo(746f)
+                    .StepTo(0f)
+                    .FlatTo(770f)
+                    .CurveTo(788f, 3f) // the routes rejoin
+                    .FlatTo(800f)
+            );
 
-            // Tuning Fork 3 at the start, before the hill: whoever falls in the trough gets another try at the high route.
+            // Tuning Fork 3 at the start, before the hill: whoever falls
+            // in the trough gets another try at the high route.
             level.AddTuningFork(604f);
 
             // HIGH ROUTE. Leaving the lip at about 14.5 m/s or more lands on the first platform – a tuck from the top
@@ -241,7 +351,9 @@ namespace SfxShowcase.Level
             PlatformPiece third = level.AddPlatform(699f, 715f, 6.5f);
             PlatformPiece fourth = level.AddPlatform(721f, 737f, 7f);
             PlatformPiece fifth = level.AddPlatform(743f, 759f, 6.5f);
-            PlatformPiece last = level.AddPlatform(765f, 779f, 5.5f);    // running off its end lands on the rejoining slope
+
+            // running off its end lands on the rejoining slope
+            PlatformPiece last = level.AddPlatform(765f, 779f, 5.5f);
 
             // The flight of a tucked arrival, as measured: 16.7 m/s off the 38° lip.
             level.ChimeFlight(new Vector2(650f, 6f + PlayerRadius), SplitLaunchVelocity, 0.15f, 0.6f, 4);
@@ -258,26 +370,35 @@ namespace SfxShowcase.Level
             level.ChimeLine(660f, 668f, 3);
             level.AddClipper(682f, 3f);
             level.AddStatic(691f);
+
             // The second chance at x = 700: 7.7 m up, through the third platform from below and down onto it.
             level.ChimesAbove(level.AddWoofer(700f, new Vector2(4f, 21.5f)), 0.1f, 0.25f, 3);
             level.AddClipper(714f, 3f);
-            level.AddStatic(736f);              // on the low terrace
+            level.AddStatic(736f); // on the low terrace
             level.ChimeArcOverGround(733.5f, 738.5f, 2.2f, 3);
             level.AddClipper(758f, 3f);
         }
 
-        /// <summary>800 – 960 m. The speed finale: a horizontal Woofer, a 12 m downhill, two loops back to back, a valley with a second horizontal Woofer and the launch ramp.</summary>
+        /// <summary>
+        /// 800 – 960 m. The speed finale: a horizontal Woofer, a 12 m downhill, two loops back to back, a valley with a
+        /// second horizontal Woofer and the launch ramp.
+        /// </summary>
         static void Overdrive(LevelData level)
         {
-            level.AddGround("Overdrive", level.StartSection(SectionId.Overdrive)
-                .FlatTo(806f)
-                .CurveTo(838f, -9f)             // 12 m down from 20 m/s: top speed before the bottom
-                .FlatTo(888f)                   // both loops stand on this flat
-                .CurveTo(900f, -12f)            // the final valley
-                .FlatTo(910f)                   // the second horizontal Woofer stands here
-                .RampTo(930f, -5f)              // launch ramp, 7 m up, 29° at the lip: about 18.5 m/s off it
-                .StepTo(-10f)                   // the landing strip, 5 m below the lip
-                .FlatTo(960f));
+            level.AddGround(
+                "Overdrive",
+                level
+                    .StartSection(SectionId.Overdrive)
+                    .FlatTo(806f)
+                    .CurveTo(838f, -9f) // 12 m down from 20 m/s: top speed before the bottom
+                    .FlatTo(888f) // both loops stand on this flat
+                    .CurveTo(900f, -12f) // the final valley
+                    .FlatTo(910f) // the second horizontal Woofer stands here
+                    // launch ramp, 7 m up, 29° at the lip: about 18.5 m/s off it
+                    .RampTo(930f, -5f)
+                    .StepTo(-10f) // the landing strip, 5 m below the lip
+                    .FlatTo(960f)
+            );
 
             // Fires along the ground: 20 m/s, so even a walker arrives at the loops with speed to spare.
             level.AddWoofer(new Vector2(803f, 3f + PlayerRadius), new Vector2(20f, 0f));
@@ -286,12 +407,15 @@ namespace SfxShowcase.Level
             level.AddLoop(850f, 6f);
             level.AddLoop(870f, 7f);
             level.AddPlaneSwitch(840f, TerrainPlane.A, TerrainPlane.A);
-            level.AddPlaneSwitch(859.5f, TerrainPlane.A, TerrainPlane.B);     // after loop 1 = before loop 2
+            level.AddPlaneSwitch(859.5f, TerrainPlane.A, TerrainPlane.B); // after loop 1 = before loop 2
             level.AddPlaneSwitch(880.5f, TerrainPlane.A, TerrainPlane.B);
 
             // The loops and the drag above cruise speed leave about 15 m/s in the valley, and the ramp is 7 m tall:
             // without help the lip would be reached at cruise speed. This Woofer gives top speed again for the launch.
-            level.AddWoofer(new Vector2(FinalWooferX, level.GroundAt(FinalWooferX) + PlayerRadius), new Vector2(DesignTargets.TopSpeed, 0f));
+            level.AddWoofer(
+                new Vector2(FinalWooferX, level.GroundAt(FinalWooferX) + PlayerRadius),
+                new Vector2(DesignTargets.TopSpeed, 0f)
+            );
 
             // The field of Chimes under the last flight: three rows along the measured launch, which lands near
             // x = 945. The middle row is the flight itself, the lower one a slower launch's, the upper one a jump's
@@ -306,9 +430,14 @@ namespace SfxShowcase.Level
         /// <summary>960 – 1000 m. The goal: a flat strip, the Resonator at x = 980, 20 m to stop in.</summary>
         static void TheResonator(LevelData level)
         {
-            level.AddGround("The Resonator", level.StartSection(SectionId.TheResonator)
-                .FlatTo(1000f).StepTo(2f)       // the wall that closes the level on the right
-                .FlatTo(1008f));
+            level.AddGround(
+                "The Resonator",
+                level
+                    .StartSection(SectionId.TheResonator)
+                    .FlatTo(1000f)
+                    .StepTo(2f) // the wall that closes the level on the right
+                    .FlatTo(1008f)
+            );
 
             level.Goal = level.OnGround(980f);
         }
@@ -324,26 +453,48 @@ namespace SfxShowcase.Level
         {
             /// <summary>Chimes placed in the level.</summary>
             public readonly int Chimes;
+
             /// <summary>Woofers.</summary>
             public readonly int Woofers;
+
             /// <summary>Static burrs.</summary>
             public readonly int Statics;
+
             /// <summary>Clippers.</summary>
             public readonly int Clippers;
+
             /// <summary>Tuning Forks.</summary>
             public readonly int TuningForks;
+
             /// <summary>Loops; each has a half on plane A, a half on plane B and a switch at its top.</summary>
             public readonly int Loops;
+
             /// <summary>Floating one-way platforms.</summary>
             public readonly int Platforms;
+
             /// <summary>Plane switches: the ones standing on the ground plus one at the top of every loop.</summary>
             public readonly int PlaneSwitches;
 
             /// <summary>Creates the counts.</summary>
-            public PieceCounts(int chimes, int woofers, int statics, int clippers, int tuningForks, int loops, int platforms, int planeSwitches)
+            public PieceCounts(
+                int chimes,
+                int woofers,
+                int statics,
+                int clippers,
+                int tuningForks,
+                int loops,
+                int platforms,
+                int planeSwitches
+            )
             {
-                Chimes = chimes; Woofers = woofers; Statics = statics; Clippers = clippers; TuningForks = tuningForks;
-                Loops = loops; Platforms = platforms; PlaneSwitches = planeSwitches;
+                Chimes = chimes;
+                Woofers = woofers;
+                Statics = statics;
+                Clippers = clippers;
+                TuningForks = tuningForks;
+                Loops = loops;
+                Platforms = platforms;
+                PlaneSwitches = planeSwitches;
             }
         }
 
@@ -351,11 +502,22 @@ namespace SfxShowcase.Level
         public static PieceCounts CountPieces()
         {
             LevelData level = Describe();
-            return new PieceCounts(level.Chimes.Count, level.Woofers.Count, level.Statics.Count, level.Clippers.Count,
-                level.TuningForks.Count, level.Loops.Count, level.Platforms.Count, level.PlaneSwitches.Count + level.Loops.Count);
+            return new PieceCounts(
+                level.Chimes.Count,
+                level.Woofers.Count,
+                level.Statics.Count,
+                level.Clippers.Count,
+                level.TuningForks.Count,
+                level.Loops.Count,
+                level.Platforms.Count,
+                level.PlaneSwitches.Count + level.Loops.Count
+            );
         }
 
-        /// <summary>The circle of a loop's running surface, by its order in the level (0 = the first): for tests that ask "did the player go over the top?".</summary>
+        /// <summary>
+        /// The circle of a loop's running surface, by its order in the level (0 = the first): for tests that ask "did
+        /// the player go over the top?".
+        /// </summary>
         public static void GetLoop(int index, out Vector2 centre, out float radius)
         {
             LoopPiece loop = Describe().Loops[index];
@@ -375,15 +537,25 @@ namespace SfxShowcase.Level
         /// </summary>
         public static void Build(ShowcaseContext context)
         {
-            if (context == null) throw new ArgumentNullException(nameof(context));
-            if (context.Art == null) throw new InvalidOperationException("LevelLayout.Build needs context.Art: create the art kit first.");
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            if (context.Art == null)
+            {
+                throw new InvalidOperationException("LevelLayout.Build needs context.Art: create the art kit first.");
+            }
 
             ArtKitBase art = context.Art;
             LevelData level = Describe();
             float killY = level.LowestGround - DesignTargets.KillDepth;
             var bounds = Rect.MinMaxRect(
-                Sections.LevelStartX - BoundsMarginX, killY + BoundsMarginAboveKill,
-                Sections.LevelEndX + BoundsMarginX, level.HighestGround + BoundsMarginAbove);
+                Sections.LevelStartX - BoundsMarginX,
+                killY + BoundsMarginAboveKill,
+                Sections.LevelEndX + BoundsMarginX,
+                level.HighestGround + BoundsMarginAbove
+            );
 
             Transform root = new GameObject("Level").transform;
             BuildTerrain(level, art, Group("Terrain", root), killY - GroundDepthBelowKill);
@@ -411,12 +583,22 @@ namespace SfxShowcase.Level
         /// </summary>
         public static void BuildCamera(ShowcaseContext context)
         {
-            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             if (context.Player == null || context.Level == null)
-                throw new InvalidOperationException("LevelLayout.BuildCamera needs context.Player and context.Level: build the level and install the gameplay first.");
+            {
+                throw new InvalidOperationException(
+                    "LevelLayout.BuildCamera needs context.Player and context.Level: build the level and install the "
+                        + "gameplay first."
+                );
+            }
 
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
             var camera = cameraObject.AddComponent<Camera>();
+
             // The art kit's background covers the whole view; a solid clear keeps a skybox from ever showing through.
             camera.clearFlags = CameraClearFlags.SolidColor;
             cameraObject.AddComponent<AudioListener>();
@@ -432,15 +614,26 @@ namespace SfxShowcase.Level
         // The contract with the movement code (ARCHITECTURE.md 3.2) lives in these three methods and nowhere else:
         // ground is a non-trigger EdgeCollider2D with a GroundSurface beside it; everything else is a trigger.
 
-        static void AddGroundCollider(GameObject target, IReadOnlyList<Vector2> surface, TerrainPlane plane, bool oneWay)
+        static void AddGroundCollider(
+            GameObject target,
+            IReadOnlyList<Vector2> surface,
+            TerrainPlane plane,
+            bool oneWay
+        )
         {
             var points = new Vector2[surface.Count];
-            for (int i = 0; i < points.Length; i++) points[i] = surface[i];
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = surface[i];
+            }
+
             target.AddComponent<EdgeCollider2D>().points = points;
             target.AddComponent<GroundSurface>().Configure(plane, oneWay);
         }
 
-        /// <summary>A box trigger standing on the object's origin: it reaches from local y = 0 up to the box's height.</summary>
+        /// <summary>
+        /// A box trigger standing on the object's origin: it reaches from local y = 0 up to the box's height.
+        /// </summary>
         static BoxCollider2D AddStandingTrigger(GameObject target, Vector2 size)
         {
             var box = target.AddComponent<BoxCollider2D>();
@@ -474,10 +667,19 @@ namespace SfxShowcase.Level
         static List<Vector2> WithPitWalls(GroundPiece piece, float bottomY)
         {
             var path = new List<Vector2>(piece.Surface.Count + 2);
-            Vector2 start = piece.Surface[0], end = piece.Surface[piece.Surface.Count - 1];
-            if (piece.WallAtStart) path.Add(new Vector2(start.x, bottomY));
+            Vector2 start = piece.Surface[0];
+            Vector2 end = piece.Surface[piece.Surface.Count - 1];
+            if (piece.WallAtStart)
+            {
+                path.Add(new Vector2(start.x, bottomY));
+            }
+
             path.AddRange(piece.Surface);
-            if (piece.WallAtEnd) path.Add(new Vector2(end.x, bottomY));
+            if (piece.WallAtEnd)
+            {
+                path.Add(new Vector2(end.x, bottomY));
+            }
+
             return path;
         }
 
@@ -493,9 +695,9 @@ namespace SfxShowcase.Level
         }
 
         /// <summary>
-        /// A loop is two arcs of ground. The right half (foot, up the right side, over the top) is solid on plane A, the
-        /// plane the player arrives on; the left half (top, down the left side, foot) on plane B. The switch at the top
-        /// moves the player from one to the other. The flat ground runs on underneath, solid on both planes.
+        /// A loop is two arcs of ground. The right half (foot, up the right side, over the top) is solid on plane A,
+        /// the plane the player arrives on; the left half (top, down the left side, foot) on plane B. The switch at the
+        /// top moves the player from one to the other. The flat ground runs on underneath, solid on both planes.
         /// </summary>
         static void BuildLoops(LevelData level, ArtKitBase art, Transform parent)
         {
@@ -518,7 +720,9 @@ namespace SfxShowcase.Level
             }
         }
 
-        /// <summary>Points on a loop's running surface between two angles (degrees, counter-clockwise from +x).</summary>
+        /// <summary>
+        /// Points on a loop's running surface between two angles (degrees, counter-clockwise from +x).
+        /// </summary>
         static List<Vector2> Arc(LoopPiece loop, float fromDegrees, float toDegrees)
         {
             float arcLength = Mathf.Abs(toDegrees - fromDegrees) * Mathf.Deg2Rad * loop.Radius;
@@ -529,6 +733,7 @@ namespace SfxShowcase.Level
                 float radians = Mathf.Lerp(fromDegrees, toDegrees, i / (float)steps) * Mathf.Deg2Rad;
                 points.Add(loop.Center + new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * loop.Radius);
             }
+
             return points;
         }
 
@@ -536,7 +741,11 @@ namespace SfxShowcase.Level
         {
             foreach (PlaneSwitchPlacement placement in level.PlaneSwitches)
             {
-                GameObject planeSwitch = Piece($"Plane Switch x={placement.Position.x:0.#}", parent, placement.Position);
+                GameObject planeSwitch = Piece(
+                    $"Plane Switch x={placement.Position.x:0.#}",
+                    parent,
+                    placement.Position
+                );
                 AddStandingTrigger(planeSwitch, GroundSwitchSize);
                 planeSwitch.AddComponent<PlaneSwitch>().Configure(placement.WhenMovingRight, placement.WhenMovingLeft);
             }
@@ -560,6 +769,7 @@ namespace SfxShowcase.Level
             {
                 WooferPlacement placement = level.Woofers[i];
                 GameObject woofer = Piece($"Woofer {i + 1}", parent, placement.BasePosition);
+
                 // The art's Woofer fires along its local +y: turn the whole object so that is the launch direction.
                 float angle = Vector2.SignedAngle(Vector2.up, placement.LaunchVelocity);
                 woofer.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
@@ -588,14 +798,18 @@ namespace SfxShowcase.Level
                 ClipperPlacement placement = level.Clippers[i];
                 GameObject clipper = Piece($"Clipper {i + 1}", parent, placement.Position);
                 GameObject visual = Attach(art.CreateClipper(), clipper.transform);
-                // It moves, so it carries a kinematic body: a moving trigger without one is rebuilt by the physics every step.
+
+                // It moves, so it carries a kinematic body: a moving trigger
+                // without one is rebuilt by the physics every step.
                 clipper.AddComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
                 BoxCollider2D trigger = AddStandingTrigger(clipper, ClipperTriggerSize);
                 clipper.AddComponent<Clipper>().Configure(art, visual.transform, trigger, placement.PatrolHalfRange);
             }
         }
 
-        /// <summary>Builds the forks in level order and returns their respawn points (the index is the fork's index).</summary>
+        /// <summary>
+        /// Builds the forks in level order and returns their respawn points (the index is the fork's index).
+        /// </summary>
         static Vector2[] BuildTuningForks(LevelData level, ArtKitBase art, Transform parent)
         {
             var respawnPoints = new Vector2[level.TuningForks.Count];
@@ -609,6 +823,7 @@ namespace SfxShowcase.Level
                 AddStandingTrigger(fork, TuningForkTriggerSize);
                 fork.AddComponent<TuningFork>().Configure(i, respawnPoints[i], visual);
             }
+
             return respawnPoints;
         }
 
@@ -623,18 +838,28 @@ namespace SfxShowcase.Level
 
         // ---- Triggers that only raise events ---------------------------------------------------------------------
 
-        /// <summary>One volume over the whole level, taller and deeper than the camera's bounds so a falling player stays inside it.</summary>
+        /// <summary>
+        /// One volume over the whole level, taller and deeper than the camera's bounds so a falling player
+        /// stays inside it.
+        /// </summary>
         static void BuildSectionTrigger(LevelData level, Rect bounds, Transform parent)
         {
-            GameObject sections = Piece("Section Trigger", parent, new Vector2(bounds.center.x, bounds.yMin - bounds.height));
+            GameObject sections = Piece(
+                "Section Trigger",
+                parent,
+                new Vector2(bounds.center.x, bounds.yMin - bounds.height)
+            );
             AddStandingTrigger(sections, new Vector2(bounds.width * 2f, bounds.height * 3f));
             sections.AddComponent<SectionTrigger>().Configure(Sections.At(level.Spawn.x));
         }
 
-        /// <summary>A tall strip just past the lip of Overdrive's launch ramp: the player crosses it as it leaves the ground.</summary>
+        /// <summary>
+        /// A tall strip just past the lip of Overdrive's launch ramp: the player crosses it as it leaves the ground.
+        /// </summary>
         static void BuildFinalLaunchTrigger(LevelData level, Transform parent)
         {
-            Vector2 foot = level.FinalLaunchLip + new Vector2(FinalLaunchTriggerSize.x * 0.5f, -FinalLaunchTriggerSize.y * 0.25f);
+            Vector2 foot =
+                level.FinalLaunchLip + new Vector2(FinalLaunchTriggerSize.x * 0.5f, -FinalLaunchTriggerSize.y * 0.25f);
             GameObject trigger = Piece("Final Launch Trigger", parent, foot);
             AddStandingTrigger(trigger, FinalLaunchTriggerSize);
             trigger.AddComponent<FinalLaunchTrigger>();
@@ -699,13 +924,20 @@ namespace SfxShowcase.Level
             }
 
             /// <summary>Half a sine wave to (x, y), level at both ends: the flank of a hill.</summary>
-            public SurfacePath CurveTo(float x, float y) => Sample(x, t => Mathf.Lerp(End.y, y, (1f - Mathf.Cos(Mathf.PI * t)) * 0.5f));
+            public SurfacePath CurveTo(float x, float y) =>
+                Sample(x, t => Mathf.Lerp(End.y, y, (1f - Mathf.Cos(Mathf.PI * t)) * 0.5f));
 
-            /// <summary>A quarter sine wave to (x, y), level at its start and steepest at its end: a launch ramp.</summary>
-            public SurfacePath RampTo(float x, float y) => Sample(x, t => Mathf.Lerp(End.y, y, 1f - Mathf.Cos(Mathf.PI * 0.5f * t)));
+            /// <summary>
+            /// A quarter sine wave to (x, y), level at its start and steepest at its end: a launch ramp.
+            /// </summary>
+            public SurfacePath RampTo(float x, float y) =>
+                Sample(x, t => Mathf.Lerp(End.y, y, 1f - Mathf.Cos(Mathf.PI * 0.5f * t)));
 
-            /// <summary>Half a sine wave that rises by height and comes back to the starting height at x: a floating platform.</summary>
-            public SurfacePath HumpTo(float x, float height) => Sample(x, t => End.y + height * Mathf.Sin(Mathf.PI * t));
+            /// <summary>
+            /// Half a sine wave that rises by height and comes back to the starting height at x: a floating platform.
+            /// </summary>
+            public SurfacePath HumpTo(float x, float height) =>
+                Sample(x, t => End.y + height * Mathf.Sin(Mathf.PI * t));
 
             SurfacePath Sample(float x, Func<float, float> heightAt)
             {
@@ -713,19 +945,26 @@ namespace SfxShowcase.Level
                 Vector2 start = End;
                 int steps = Mathf.CeilToInt((x - start.x) / CurveStep);
                 var sampled = new Vector2[steps];
+
                 // heightAt reads End, so every height is taken before the first new point is added.
                 for (int i = 1; i <= steps; i++)
                 {
                     float t = i / (float)steps;
                     sampled[i - 1] = new Vector2(Mathf.Lerp(start.x, x, t), heightAt(t));
                 }
+
                 points.AddRange(sampled);
                 return this;
             }
 
             void RequireForward(float x)
             {
-                if (x <= End.x) throw new InvalidOperationException($"A surface runs left to right: x = {x} is not beyond {End.x}.");
+                if (x <= End.x)
+                {
+                    throw new InvalidOperationException(
+                        $"A surface runs left to right: x = {x} is not beyond {End.x}."
+                    );
+                }
             }
         }
 
@@ -734,11 +973,15 @@ namespace SfxShowcase.Level
         {
             public readonly string Name;
             public readonly IReadOnlyList<Vector2> Surface;
-            public readonly bool WallAtStart, WallAtEnd;
+            public readonly bool WallAtStart;
+            public readonly bool WallAtEnd;
 
             public GroundPiece(string name, IReadOnlyList<Vector2> surface, bool wallAtStart, bool wallAtEnd)
             {
-                Name = name; Surface = surface; WallAtStart = wallAtStart; WallAtEnd = wallAtEnd;
+                Name = name;
+                Surface = surface;
+                WallAtStart = wallAtStart;
+                WallAtEnd = wallAtEnd;
             }
         }
 
@@ -764,18 +1007,21 @@ namespace SfxShowcase.Level
 
             public LoopPiece(Vector2 center, float radius)
             {
-                Center = center; Radius = radius;
+                Center = center;
+                Radius = radius;
             }
         }
 
         /// <summary>A Woofer: where its base is and the velocity it gives.</summary>
         readonly struct WooferPlacement
         {
-            public readonly Vector2 BasePosition, LaunchVelocity;
+            public readonly Vector2 BasePosition;
+            public readonly Vector2 LaunchVelocity;
 
             public WooferPlacement(Vector2 basePosition, Vector2 launchVelocity)
             {
-                BasePosition = basePosition; LaunchVelocity = launchVelocity;
+                BasePosition = basePosition;
+                LaunchVelocity = launchVelocity;
             }
         }
 
@@ -787,7 +1033,8 @@ namespace SfxShowcase.Level
 
             public ClipperPlacement(Vector2 position, float patrolHalfRange)
             {
-                Position = position; PatrolHalfRange = patrolHalfRange;
+                Position = position;
+                PatrolHalfRange = patrolHalfRange;
             }
         }
 
@@ -795,11 +1042,14 @@ namespace SfxShowcase.Level
         readonly struct PlaneSwitchPlacement
         {
             public readonly Vector2 Position;
-            public readonly TerrainPlane WhenMovingRight, WhenMovingLeft;
+            public readonly TerrainPlane WhenMovingRight;
+            public readonly TerrainPlane WhenMovingLeft;
 
             public PlaneSwitchPlacement(Vector2 position, TerrainPlane whenMovingRight, TerrainPlane whenMovingLeft)
             {
-                Position = position; WhenMovingRight = whenMovingRight; WhenMovingLeft = whenMovingLeft;
+                Position = position;
+                WhenMovingRight = whenMovingRight;
+                WhenMovingLeft = whenMovingLeft;
             }
         }
 
@@ -821,13 +1071,16 @@ namespace SfxShowcase.Level
 
             /// <summary>Where the player's centre is when a run starts.</summary>
             public Vector2 Spawn;
+
             /// <summary>The ground between the Resonator's prongs.</summary>
             public Vector2 Goal;
+
             /// <summary>The top of Overdrive's launch ramp.</summary>
             public Vector2 FinalLaunchLip;
 
             /// <summary>The height of the lowest point of the ground.</summary>
             public float LowestGround { get; private set; } = float.MaxValue;
+
             /// <summary>The height of the highest point of the ground.</summary>
             public float HighestGround { get; private set; } = float.MinValue;
 
@@ -842,7 +1095,12 @@ namespace SfxShowcase.Level
                 Vector2 end = GroundEnd;
                 float startX = Sections.Get(section).StartX;
                 if (!Mathf.Approximately(end.x, startX))
-                    throw new InvalidOperationException($"{section} starts at x = {startX} in the Sections table, but the ground before it ends at x = {end.x}.");
+                {
+                    throw new InvalidOperationException(
+                        $"{section} starts at x = {startX} in the Sections table, but the ground before it ends at x = {end.x}."
+                    );
+                }
+
                 return new SurfacePath(end.x, end.y);
             }
 
@@ -863,7 +1121,12 @@ namespace SfxShowcase.Level
             public void AddGround(string name, SurfacePath path, bool wallAtStart = false, bool wallAtEnd = false)
             {
                 if (Ground.Count > 0 && !wallAtStart && (path.Points[0] - GroundEnd).sqrMagnitude > 1e-6f)
-                    throw new InvalidOperationException($"\"{name}\" starts at {path.Points[0]} but the ground before it ends at {GroundEnd}: pieces must meet, or have a wall at a pit.");
+                {
+                    throw new InvalidOperationException(
+                        $"\"{name}\" starts at {path.Points[0]} but the ground before it ends at {GroundEnd}: pieces must meet, or have a wall at a pit."
+                    );
+                }
+
                 Ground.Add(new GroundPiece(name, path.Points, wallAtStart, wallAtEnd));
                 foreach (Vector2 point in path.Points)
                 {
@@ -901,12 +1164,18 @@ namespace SfxShowcase.Level
                     IReadOnlyList<Vector2> surface = piece.Surface;
                     for (int i = 0; i < surface.Count - 1; i++)
                     {
-                        Vector2 left = surface[i], right = surface[i + 1];
+                        Vector2 left = surface[i];
+                        Vector2 right = surface[i + 1];
                         if (right.x > left.x && x >= left.x && x <= right.x)
+                        {
                             return Mathf.Lerp(left.y, right.y, (x - left.x) / (right.x - left.x));
+                        }
                     }
                 }
-                throw new InvalidOperationException($"There is no ground at x = {x} (a pit, or the section's ground is added after its objects).");
+
+                throw new InvalidOperationException(
+                    $"There is no ground at x = {x} (a pit, or the section's ground is added after its objects)."
+                );
             }
 
             /// <summary>The point on the ground at x.</summary>
@@ -927,7 +1196,8 @@ namespace SfxShowcase.Level
 
             public void AddStatic(float x) => Statics.Add(OnGround(x));
 
-            public void AddClipper(float x, float patrolHalfRange) => Clippers.Add(new ClipperPlacement(OnGround(x), patrolHalfRange));
+            public void AddClipper(float x, float patrolHalfRange) =>
+                Clippers.Add(new ClipperPlacement(OnGround(x), patrolHalfRange));
 
             public void AddTuningFork(float x) => TuningForks.Add(OnGround(x));
 
@@ -937,7 +1207,9 @@ namespace SfxShowcase.Level
             public void ChimeLine(float fromX, float toX, int count)
             {
                 for (int i = 0; i < count; i++)
+                {
                     Chimes.Add(OnGround(Mathf.Lerp(fromX, toX, i / (count - 1f))) + Vector2.up * ChimeHeight);
+                }
             }
 
             /// <summary>Chimes on a parabola between two points, its middle raised by apex metres.</summary>
@@ -950,7 +1222,9 @@ namespace SfxShowcase.Level
                 }
             }
 
-            /// <summary>Chimes evenly spaced round a circle, the first at its lowest point: the inside of a loop.</summary>
+            /// <summary>
+            /// Chimes evenly spaced round a circle, the first at its lowest point: the inside of a loop.
+            /// </summary>
             public void ChimeCircle(Vector2 center, float radius, int count)
             {
                 for (int i = 0; i < count; i++)
@@ -960,13 +1234,23 @@ namespace SfxShowcase.Level
                 }
             }
 
-            /// <summary>An arc that starts and ends at running height above the ground at fromX and toX: over a notch or a pit.</summary>
+            /// <summary>
+            /// An arc that starts and ends at running height above the ground at fromX and toX: over a notch or a pit.
+            /// </summary>
             public void ChimeArcOverGround(float fromX, float toX, float apex, int count)
             {
-                ChimeArc(OnGround(fromX) + Vector2.up * ChimeHeight, OnGround(toX) + Vector2.up * ChimeHeight, apex, count);
+                ChimeArc(
+                    OnGround(fromX) + Vector2.up * ChimeHeight,
+                    OnGround(toX) + Vector2.up * ChimeHeight,
+                    apex,
+                    count
+                );
             }
 
-            /// <summary>An arc from just before the end of one platform to just after the start of the next: the jump between them.</summary>
+            /// <summary>
+            /// An arc from just before the end of one platform to just after the start of the next: the
+            /// jump between them.
+            /// </summary>
             public void ChimeArcBetween(PlatformPiece from, PlatformPiece to, float apex, int count)
             {
                 var inset = new Vector2(0.5f, 0f);
@@ -974,7 +1258,9 @@ namespace SfxShowcase.Level
                 ChimeArc(from.End - inset + lift, to.Start + inset + lift, apex, count);
             }
 
-            /// <summary>Chimes along the flight of a player thrown from a point with a velocity, evenly spaced in time.</summary>
+            /// <summary>
+            /// Chimes along the flight of a player thrown from a point with a velocity, evenly spaced in time.
+            /// </summary>
             public void ChimeFlight(Vector2 start, Vector2 velocity, float firstTime, float lastTime, int count)
             {
                 for (int i = 0; i < count; i++)
@@ -987,7 +1273,13 @@ namespace SfxShowcase.Level
             /// <summary>Chimes along the flight a Woofer gives, showing where it throws.</summary>
             public void ChimesAbove(WooferPlacement woofer, float firstTime, float lastTime, int count)
             {
-                ChimeFlight(woofer.BasePosition + Vector2.up * PlayerRadius, woofer.LaunchVelocity, firstTime, lastTime, count);
+                ChimeFlight(
+                    woofer.BasePosition + Vector2.up * PlayerRadius,
+                    woofer.LaunchVelocity,
+                    firstTime,
+                    lastTime,
+                    count
+                );
             }
         }
     }

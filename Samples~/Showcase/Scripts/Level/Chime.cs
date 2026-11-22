@@ -5,18 +5,23 @@ namespace SfxShowcase.Level
 {
     /// <summary>
     /// A Chime placed in the level: the collectible. Touching it gives the player one Chime (the player raises
-    /// <see cref="GameEvents.ChimeCollected"/> itself, so the level never counts a combo), hides it and asks the art kit
-    /// for the small ring. It comes back when a new run starts. The Chimes scattered by a hit are not these: they belong
-    /// to the gameplay folder.
+    /// <see cref="GameEvents.ChimeCollected"/> itself, so the level never counts a combo), hides it and asks the art
+    /// kit for the small ring. It comes back when a new run starts. The Chimes scattered by a hit are not these: they
+    /// belong to the gameplay folder.
     /// </summary>
     public sealed class Chime : MonoBehaviour
     {
         [Tooltip("The art kit asset, asked for the collect effect.")]
-        [SerializeField] ArtKitBase art;
+        [SerializeField]
+        ArtKitBase art;
+
         [Tooltip("The Chime's visual, hidden once collected.")]
-        [SerializeField] GameObject visual;
+        [SerializeField]
+        GameObject visual;
+
         [Tooltip("The trigger the player touches, switched off once collected.")]
-        [SerializeField] Collider2D pickupTrigger;
+        [SerializeField]
+        Collider2D pickupTrigger;
 
         bool collected;
 
@@ -37,7 +42,11 @@ namespace SfxShowcase.Level
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (collected || !other.TryGetComponent(out PlayerBase player)) return;
+            if (collected || !other.TryGetComponent(out PlayerBase player))
+            {
+                return;
+            }
+
             SetCollected(true);
             player.AddChimes(1);
             art.SpawnEffect(EffectKind.ChimePop, transform.position);

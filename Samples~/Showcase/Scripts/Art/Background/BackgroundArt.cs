@@ -23,9 +23,42 @@ namespace SfxShowcase.Art
 
             var parallax = background.AddComponent<ParallaxBackground>();
             parallax.Configure(camera, sky, sun, levelBounds.center.y);
-            AddLayer(kit, parallax, "Far Wave", DepthLayer.FarWave, Palette.FarViolet, 0.1f, -1.5f, levelBounds, 2f, SineWave);
-            AddLayer(kit, parallax, "Mid Wave", DepthLayer.MidWave, Palette.MidViolet, 0.25f, -4.5f, levelBounds, 15f, SquareWave);
-            AddLayer(kit, parallax, "Near Wave", DepthLayer.NearWave, Palette.NearIndigo, 0.45f, -7.5f, levelBounds, 16f, SawWave);
+            AddLayer(
+                kit,
+                parallax,
+                "Far Wave",
+                DepthLayer.FarWave,
+                Palette.FarViolet,
+                0.1f,
+                -1.5f,
+                levelBounds,
+                2f,
+                SineWave
+            );
+            AddLayer(
+                kit,
+                parallax,
+                "Mid Wave",
+                DepthLayer.MidWave,
+                Palette.MidViolet,
+                0.25f,
+                -4.5f,
+                levelBounds,
+                15f,
+                SquareWave
+            );
+            AddLayer(
+                kit,
+                parallax,
+                "Near Wave",
+                DepthLayer.NearWave,
+                Palette.NearIndigo,
+                0.45f,
+                -7.5f,
+                levelBounds,
+                16f,
+                SawWave
+            );
             parallax.Arrange();
             return background;
         }
@@ -34,8 +67,18 @@ namespace SfxShowcase.Art
         /// One silhouette. A layer with parallax factor f slides past the camera at f times the camera's speed, so over
         /// the whole level the camera sees only f times the level's width of it – that is how wide the mesh is made.
         /// </summary>
-        static void AddLayer(ArtKit kit, ParallaxBackground parallax, string name, DepthLayer depth, Color color,
-            float parallaxFactor, float baseline, Rect levelBounds, float step, Func<float, float> heightAt)
+        static void AddLayer(
+            ArtKit kit,
+            ParallaxBackground parallax,
+            string name,
+            DepthLayer depth,
+            Color color,
+            float parallaxFactor,
+            float baseline,
+            Rect levelBounds,
+            float step,
+            Func<float, float> heightAt
+        )
         {
             float start = levelBounds.xMin * parallaxFactor - MarginBeyondLevel;
             float end = levelBounds.xMax * parallaxFactor + MarginBeyondLevel;
@@ -45,9 +88,15 @@ namespace SfxShowcase.Art
                 // Each step is sampled just inside its two ends, so square and saw waves keep their vertical edges.
                 float leftHeight = heightAt(x + step * 0.001f);
                 float rightHeight = heightAt(x + step * 0.999f);
-                builder.AddQuad(new Vector2(x, -SilhouetteDepth), new Vector2(x + step, -SilhouetteDepth),
-                    new Vector2(x + step, rightHeight), new Vector2(x, leftHeight), color);
+                builder.AddQuad(
+                    new Vector2(x, -SilhouetteDepth),
+                    new Vector2(x + step, -SilhouetteDepth),
+                    new Vector2(x + step, rightHeight),
+                    new Vector2(x, leftHeight),
+                    color
+                );
             }
+
             Transform layer = kit.CreatePart(name, builder.ToMesh(name), depth, 0, parallax.transform).transform;
             parallax.AddLayer(layer, parallaxFactor, baseline);
         }
@@ -66,17 +115,39 @@ namespace SfxShowcase.Art
         /// <summary>The near layer: a saw-tooth ridge that climbs for 16 m and drops.</summary>
         static float SawWave(float x) => 3f * Mathf.Repeat(x / 16f, 1f);
 
-        /// <summary>A 1 × 1 quad centred on the origin: Horizon Peach at the bottom, Dusk Magenta in the middle, Night Plum on top.</summary>
+        /// <summary>
+        /// A 1 × 1 quad centred on the origin: Horizon Peach at the bottom, Dusk Magenta in the middle,
+        /// Night Plum on top.
+        /// </summary>
         static Mesh SkyMesh()
         {
             var builder = new MeshBuilder();
-            Vector2 bottomLeft = new Vector2(-0.5f, -0.5f), bottomRight = new Vector2(0.5f, -0.5f);
-            Vector2 middleLeft = new Vector2(-0.5f, 0f), middleRight = new Vector2(0.5f, 0f);
-            Vector2 topLeft = new Vector2(-0.5f, 0.5f), topRight = new Vector2(0.5f, 0.5f);
-            builder.AddQuad(bottomLeft, bottomRight, middleRight, middleLeft,
-                Palette.HorizonPeach, Palette.HorizonPeach, Palette.DuskMagenta, Palette.DuskMagenta);
-            builder.AddQuad(middleLeft, middleRight, topRight, topLeft,
-                Palette.DuskMagenta, Palette.DuskMagenta, Palette.NightPlum, Palette.NightPlum);
+            Vector2 bottomLeft = new Vector2(-0.5f, -0.5f);
+            Vector2 bottomRight = new Vector2(0.5f, -0.5f);
+            Vector2 middleLeft = new Vector2(-0.5f, 0f);
+            Vector2 middleRight = new Vector2(0.5f, 0f);
+            Vector2 topLeft = new Vector2(-0.5f, 0.5f);
+            Vector2 topRight = new Vector2(0.5f, 0.5f);
+            builder.AddQuad(
+                bottomLeft,
+                bottomRight,
+                middleRight,
+                middleLeft,
+                Palette.HorizonPeach,
+                Palette.HorizonPeach,
+                Palette.DuskMagenta,
+                Palette.DuskMagenta
+            );
+            builder.AddQuad(
+                middleLeft,
+                middleRight,
+                topRight,
+                topLeft,
+                Palette.DuskMagenta,
+                Palette.DuskMagenta,
+                Palette.NightPlum,
+                Palette.NightPlum
+            );
             return builder.ToMesh("Sky");
         }
 

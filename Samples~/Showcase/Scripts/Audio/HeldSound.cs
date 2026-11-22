@@ -31,7 +31,11 @@ namespace SfxShowcase.Audio
         /// <summary>Starts the sound if it is not held already.</summary>
         public void Hold()
         {
-            if (held || Player == null) return;
+            if (held || Player == null)
+            {
+                return;
+            }
+
             Player.Play(1f, 0f, midiNote);
             held = true;
         }
@@ -39,7 +43,11 @@ namespace SfxShowcase.Audio
         /// <summary>Lets the sound go: it fades over the patch's RELEASE time.</summary>
         public void LetGo()
         {
-            if (!held) return;
+            if (!held)
+            {
+                return;
+            }
+
             Player.Release();
             held = false;
         }

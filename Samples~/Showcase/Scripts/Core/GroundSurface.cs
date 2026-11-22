@@ -11,10 +11,12 @@ namespace SfxShowcase.Core
     public sealed class GroundSurface : MonoBehaviour
     {
         [Tooltip("The collision plane this ground is solid on. Both for everything except the two halves of a loop.")]
-        [SerializeField] TerrainPlane plane = TerrainPlane.Both;
+        [SerializeField]
+        TerrainPlane plane = TerrainPlane.Both;
 
         [Tooltip("A floating platform: solid only from above, the player passes through it from below.")]
-        [SerializeField] bool oneWay;
+        [SerializeField]
+        bool oneWay;
 
         /// <summary>The collision plane this ground is solid on.</summary>
         public TerrainPlane Plane => plane;

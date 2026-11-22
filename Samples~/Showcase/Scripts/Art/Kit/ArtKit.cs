@@ -18,6 +18,7 @@ namespace SfxShowcase.Art
     {
         [SerializeField, Tooltip("The unlit vertex-colour material of all solid geometry. Created on first use.")]
         Material opaqueMaterial;
+
         [SerializeField, Tooltip("The same kind of material, for geometry with alpha below 1. Created on first use.")]
         Material transparentMaterial;
 
@@ -29,7 +30,11 @@ namespace SfxShowcase.Art
         {
             get
             {
-                if (opaqueMaterial == null) opaqueMaterial = ArtMaterials.CreateUnlit("Showcase Opaque");
+                if (opaqueMaterial == null)
+                {
+                    opaqueMaterial = ArtMaterials.CreateUnlit("Showcase Opaque");
+                }
+
                 return opaqueMaterial;
             }
         }
@@ -39,7 +44,11 @@ namespace SfxShowcase.Art
         {
             get
             {
-                if (transparentMaterial == null) transparentMaterial = ArtMaterials.CreateUnlit("Showcase Transparent");
+                if (transparentMaterial == null)
+                {
+                    transparentMaterial = ArtMaterials.CreateUnlit("Showcase Transparent");
+                }
+
                 return transparentMaterial;
             }
         }
@@ -52,7 +61,13 @@ namespace SfxShowcase.Art
         {
             var meshes = new List<Mesh>();
             foreach (Mesh mesh in generatedMeshes)
-                if (mesh != null) meshes.Add(mesh);
+            {
+                if (mesh != null)
+                {
+                    meshes.Add(mesh);
+                }
+            }
+
             return meshes;
         }
 
@@ -67,6 +82,7 @@ namespace SfxShowcase.Art
                 mesh = create();
                 sharedMeshes[key] = mesh;
             }
+
             return mesh;
         }
 
@@ -81,10 +97,21 @@ namespace SfxShowcase.Art
         /// <param name="orderOffset">Steps in front of (+) or behind (−) other parts on the same layer.</param>
         /// <param name="parent">The parent to attach to at the local origin, or null.</param>
         /// <param name="transparent">Whether any vertex of the mesh has alpha below 1.</param>
-        public GameObject CreatePart(string name, Mesh mesh, DepthLayer layer, int orderOffset = 0, Transform parent = null, bool transparent = false)
+        public GameObject CreatePart(
+            string name,
+            Mesh mesh,
+            DepthLayer layer,
+            int orderOffset = 0,
+            Transform parent = null,
+            bool transparent = false
+        )
         {
             var part = new GameObject(name);
-            if (parent != null) part.transform.SetParent(parent, false);
+            if (parent != null)
+            {
+                part.transform.SetParent(parent, false);
+            }
+
             part.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = part.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = transparent ? TransparentMaterial : OpaqueMaterial;
@@ -93,18 +120,25 @@ namespace SfxShowcase.Art
             renderer.receiveShadows = false;
             renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
             renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
-            if (mesh != null) generatedMeshes.Add(mesh);
+            if (mesh != null)
+            {
+                generatedMeshes.Add(mesh);
+            }
+
             return part;
         }
 
         /// <inheritdoc/>
-        public override GameObject CreateGround(IReadOnlyList<Vector2> surface, float bottomY) => TerrainArt.CreateGround(this, surface, bottomY);
+        public override GameObject CreateGround(IReadOnlyList<Vector2> surface, float bottomY) =>
+            TerrainArt.CreateGround(this, surface, bottomY);
 
         /// <inheritdoc/>
-        public override GameObject CreatePlatform(IReadOnlyList<Vector2> surface, float thickness) => TerrainArt.CreatePlatform(this, surface, thickness);
+        public override GameObject CreatePlatform(IReadOnlyList<Vector2> surface, float thickness) =>
+            TerrainArt.CreatePlatform(this, surface, thickness);
 
         /// <inheritdoc/>
-        public override GameObject CreateLoop(Vector2 center, float radius, float thickness) => TerrainArt.CreateLoop(this, center, radius, thickness);
+        public override GameObject CreateLoop(Vector2 center, float radius, float thickness) =>
+            TerrainArt.CreateLoop(this, center, radius, thickness);
 
         /// <inheritdoc/>
         public override GameObject CreateChime() => ChimeArt.Create(this);
@@ -128,10 +162,12 @@ namespace SfxShowcase.Art
         public override GameObject CreateCharacter(PlayerBase player) => CharacterArt.Create(this, player);
 
         /// <inheritdoc/>
-        public override GameObject CreateBackground(Camera camera, Rect levelBounds) => BackgroundArt.Create(this, camera, levelBounds);
+        public override GameObject CreateBackground(Camera camera, Rect levelBounds) =>
+            BackgroundArt.Create(this, camera, levelBounds);
 
         /// <inheritdoc/>
-        public override GameObject CreateHud(Camera camera, PlayerBase player, GameSessionBase session) => HudArt.Create(this, camera, player, session);
+        public override GameObject CreateHud(Camera camera, PlayerBase player, GameSessionBase session) =>
+            HudArt.Create(this, camera, player, session);
 
         /// <inheritdoc/>
         public override void SpawnEffect(EffectKind kind, Vector2 position) => EffectArt.Spawn(this, kind, position);
