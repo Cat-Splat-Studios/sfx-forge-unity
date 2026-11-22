@@ -296,7 +296,7 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   compare the value texts with 46 values read off the device's own pictures and with a table of the firmware's
   arithmetic in 32-bit floats. They also render the pictures of the editor UI on this page and
   in the manual; those are not photographs of the editor.
-- The engine-independent code, with plain .NET and without Unity: 204 checks, all passing with the native library
+- The engine-independent code, with plain .NET and without Unity: 205 checks, all passing with the native library
   that is in this package. Among them the loop switch of the music player's engine (`loopPattern`): on, the
   pattern stays; a cue changes it on the bar line and that one stays; off, the arrangement goes on.
 - The tools for designing sounds. Without Unity: every kind of generated sound over 300 seeds is a valid patch

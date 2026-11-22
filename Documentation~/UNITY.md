@@ -2014,7 +2014,7 @@ Only one Unity process can have the project open.
 ### The core is tested without Unity
 
 `tests/dotnet` in the source repository compiles the package's `Runtime/Core` folder with plain .NET, without Unity,
-and runs it against the native library: 204 checks. All 204 pass with the library built from this source, which is
+and runs it against the native library: 205 checks. All 205 pass with the library built from this source, which is
 the one in the package.
 
 | What is checked | |
