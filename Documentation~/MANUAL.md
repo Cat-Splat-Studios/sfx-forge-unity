@@ -599,7 +599,7 @@ has 16 columns, one for each sixteenth. The title line names the grid of the pat
 | | |
 |---|---|
 | **A grid is a pattern's, not a sound's** | all 16 sounds of a pattern, and its automation, share it |
-| **Change it while the song is stopped, if it matters** | a change of grid, a COPY or an UNDO rewrites a whole pattern at once. If that pattern plays at that moment, one step can sound wrong or be missed, once. Nothing is damaged, and the next round is right |
+| **You can change it while the song plays** | a change of grid, a COPY or an UNDO rewrites a whole pattern at once. The player takes the pattern whole, between two moments of sound: it plays the pattern as it was or as it is now, never half of each. The playhead stays where it is, no step sounds twice or is missed for it, and a held note ends where it would have – on a coarser grid, on the next step that grid has |
 | **An older firmware does not take such a song** | a song from firmware 1.6.0 is in a new format, whether a pattern has a finer grid or not ([section 15](#songs-formats-and-older-firmware)) |
 
 ### UNDO
@@ -1060,7 +1060,7 @@ F2 holds one step only: the first edit after switching on takes the other song's
 |---|---|
 | **Samples** | it cannot play recorded audio: no voice lines, no recorded foley, no real orchestra |
 | **Timing** | a bar is 16 sixteenths at most, each cut in 1, 2 or 4: 1/64 is the finest. No triplets, no notes between steps; swing is the only timing change, and it moves sixteenths |
-| **The grid** | one for a pattern, not one for each sound. The pads show 16 steps at a time. FILL goes to 1/32, not to 1/64. A change of grid, a COPY or an UNDO while that pattern plays can cost one wrong or missed step at that moment |
+| **The grid** | one for a pattern, not one for each sound. The pads show 16 steps at a time. FILL goes to 1/32, not to 1/64 |
 | **Size** | 8 patterns, 32 bars of arrangement, 16 voices – with long reverberant sounds the oldest note is cut to make room |
 | **Automation** | 24 lanes a song, moving in steps, not glides |
 | **Chords** | one note per step for each sound. A chord needs several sounds, or the keys |

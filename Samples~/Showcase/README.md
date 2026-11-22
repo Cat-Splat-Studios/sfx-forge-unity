@@ -23,7 +23,7 @@ scatter when you are hit, Tuning Forks are checkpoints and the Resonator is the 
 > **In the package.** This folder is the sample "Showcase" of the package `com.catsplatstudios.sfxforge`.
 > Import it from the Package Manager (SFX Forge > Samples > Import), open `Showcase.unity` in the imported
 > folder and press Play. The page below was written in the repository the package is generated from: where
-> it says `unity/Demo`, read "your project"; where it names `docs/`, `tests/`, `out/` or `.tools/`, those are
+> it says `unity/Demo`, read "your project"; where it names `docs/`, `tests/`, `videos/`, `out/` or `.tools/`, those are
 > that repository's and are not in the package (the videos and figures are made there). The older demo it
 > mentions (`SfxDemo`) is not in the package either. The links to the manual work in the package's own
 > folder or repository, not from the imported copy under `Assets`. The tests in `Tests/` are compiled
@@ -364,7 +364,7 @@ keys to press on the device (through `out/link/cues.txt`), and writes `out/unity
 ```sh
 node tests/emulator-link.mjs --cues out/link/cues.txt --frames out/link/emulator &      # the device, filmed
 SFXFORGE_LINK_CUES="$PWD/out/link/cues.txt" "$UNITY" -batchmode -projectPath "$PROJECT" -runTests -testPlatform PlayMode   -testFilter SfxShowcase.Tests.LinkSession -testResults "$OUT/link-session.xml" -logFile "$OUT/link-session.log"
-python docs/video/make_link_video.py                # out/video/sfx-forge-unity-link.mp4
+python docs/video/make_link_video.py                # videos/sfx-forge-unity-link.mp4
 ```
 
 Unity will not open a project twice. With the editor open on `unity/Demo`, run the headless commands on a second
