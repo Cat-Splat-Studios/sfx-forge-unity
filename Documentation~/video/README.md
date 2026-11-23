@@ -49,6 +49,6 @@ The instrument itself: sound effects, MUTATE, the five engines, the sequencer an
 
 [![The device: building the song](../img/readme/sfx-forge-build-a-song.jpg)](sfx-forge-build-a-song.mp4)
 
-[`sfx-forge-build-a-song.mp4`](sfx-forge-build-a-song.mp4) · 3:21 · 1920×1080, 30 frames a second, with sound.
+[`sfx-forge-build-a-song.mp4`](sfx-forge-build-a-song.mp4) · 3:44 · 1920×1080, 30 frames a second, with sound.
 
-A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, a second pattern with a hi-hat roll on a grid of 1/32, then arranged, layered, automated, mixed and sent to the game.
+A song played in from nothing with pads and keys over a looping pattern, with ERASE and UNDO, a second pattern with a hi-hat roll on a grid of 1/32, then arranged, layered, automated, played on the PERFORM page, mixed and sent to the game.

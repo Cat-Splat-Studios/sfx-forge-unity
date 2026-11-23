@@ -1,4 +1,4 @@
-# The device's side: SFX FORGE 1.6.0 for VIBE FM
+# The device's side: SFX FORGE 1.7.0 for VIBE FM
 
 `sfx-forge.zip` is the built instrument (a "Vibe"). Drop the zip onto the window of the VIBE FM plugin; or unzip it
 and drop `sfx-forge.wasm` onto the VIBE FM Playground, <https://play.thefirmwarehub.com/>, in Chrome or Edge.
@@ -6,14 +6,23 @@ and drop `sfx-forge.wasm` onto the VIBE FM Playground, <https://play.thefirmware
 How to play it: [the device's manual](../Documentation~/MANUAL.md). How to join it to Unity:
 [section 6 of the Unity manual](../Documentation~/UNITY.md#6-from-the-device-to-the-game).
 
-This build (1.6.0) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
+This build (1.7.0) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
 SysEx and stored files, in a small host of the source repository's own: its checks hand the built `.wasm`
-events and SysEx and read its sound, its MIDI and what it stores, and all 20 of them pass. A few of them also
+events and SysEx and read its sound, its MIDI and what it stores, and all 21 of them pass. A few of them also
 compare the display, to tell that it changed or that the LINK light is on: what a page shows and what a toast
 says is not read. Against
-Unity, the six link tests of the Unity manual passed with firmware 1.6.0 in the SDK's local emulator on
-22 Nov 2026, with songs of sixteenths only. It was not run in the plugin or on hardware, and nobody has listened to
-what is new in it. Its source is not in this package.
+Unity, the six link tests of the Unity manual and the recorded session of the link video passed with
+firmware 1.7.0 in the SDK's local emulator on 23 Nov 2026, each in one run, with songs of sixteenths only.
+It was not run in the plugin or on hardware. Nobody has played its new page, PERFORM, by hand, and nobody
+has listened to what is new in it. Its source is not in this package.
+
+New in 1.7.0: PERFORM, a fourth page of the K5 key (K5 walks SEQ, SONG, AUTO, PERFORM). It shows the whole
+pattern as a grid, one row for each of the 16 sounds, and F1 to F4 choose what the pads are: the steps of
+the selected sound, the kit, mutes, or the patterns and the intensity
+([the device's manual](../Documentation~/MANUAL.md#13-perform-the-whole-pattern-and-the-pads-four-ways)). It
+changes nothing in this package's code, in the messages or in the formats: a device with 1.6.0 and one with
+1.7.0 speak the same song format 6, and the package works with either. The page was tested by a script that
+presses its keys and does not look at the display.
 
 New in 1.6.0: each pattern has its own grid of 1/16, 1/32 or 1/64, which is 16, 32 or 64 steps a bar (SHIFT+F5
 and SHIFT+F6 on the SEQ and AUTO pages: coarser and finer; SHIFT+LEFT and SHIFT+RIGHT: the 16 steps before and

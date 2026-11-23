@@ -40,7 +40,7 @@ rate / amount, wavetable position / warp). Engines: 0 IMPACT, 1 UI BLIP, 2 SCI-F
 
 ### The identity, and what is reserved for later
 
-SFX FORGE 1.x runs on one hardware, and with firmware 1.6.0 both sides hold the same things. A firmware up to 1.5.0
+SFX FORGE 1.x runs on one hardware, and from firmware 1.6.0 on both sides hold the same things. A firmware up to 1.5.0
 already holds less (below), and it will go further: the Unity side can grow
 past what a device holds, and firmwares for other hardware will hold less or other things. So that neither breaks a
 project made today, a game can ask a device what it is before it sends anything, and every format says which
@@ -51,7 +51,7 @@ version wrote it. Nothing about the sound or the messages above changes.
 | Byte | | Today |
 |---|---|---|
 | 0 | hardware: 0 unknown, 1 VIBE FM (the SDK's host – emulator, plugin, VIBE Box; the firmware cannot tell them apart) | 1 |
-| 1 2 3 | firmware version: major, minor, patch | 1 6 0 |
+| 1 2 3 | firmware version: major, minor, patch | 1 7 0 |
 | 4 | profile: 1 = what SFX FORGE 1.x offers on VIBE FM | 1 |
 | 5 | patch format (`SFX_PATCH_VERSION`) | 2 |
 | 6 | song format (`SFX_SONG_VERSION`) | 6 (firmware 1.4 and 1.5: 5) |
@@ -62,7 +62,7 @@ version wrote it. Nothing about the sound or the messages above changes.
 | 16 | values in a patch (`SFX_P_COUNT`) | 25 |
 | 17 | flags: bit 0 has pads, bit 1 has encoders for the game (LINK page), bit 2 takes a song's sounds (`02` with slot 16–31), bit 3 takes telemetry (CC 10–17, ch 2) | 15 |
 
-The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 06 00 01 02 06 10 02 08 40 18 20 10 05 06 19 0F F7`.
+The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 07 00 01 02 06 10 02 08 40 18 20 10 05 06 19 0F F7`.
 
 - **Fields are only ever added at the end.** A reader takes the first 18 bytes and ignores what follows. A message
   with fewer than 18, or with a byte above 127, is not an identity.
@@ -89,10 +89,10 @@ The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 06 00 01 02 06 10 02 08 
 - **What the device stores** (`kits.bin`, `song6.bin`) has no format number of its own: the kits are 32 patches, each
   with its format byte and checksum, and the song is a packed song with its format byte. A stored patch of another
   format keeps its pad's factory sound, and the next SAVE writes this firmware's format over it.
-- **Two song files.** Firmware 1.6.0 saves the song to `song6.bin`: the format-6 song and two check bytes of the
+- **Two song files.** From firmware 1.6.0 on the song is saved to `song6.bin`: the format-6 song and two check bytes of the
   `song.bin` beside it. `song.bin`, the file of the firmwares up to 1.5.0, is read and never written, so an older
   firmware put back on the device still finds its song. If that older firmware then saves, its `song.bin` is the
-  later one: the next start of 1.6.0 loads it, says `OLDER FIRMWARE'S SONG` on the top line, and F2 on SEQ, SONG or
+  later one: the next start of a firmware from 1.6.0 on loads it, says `OLDER FIRMWARE'S SONG` on the top line, and F2 on SEQ, SONG or
   AUTO brings the `song6.bin` song back. SAVE says `SAVED`, or `NOT SAVED: STORE FULL` when a write failed. The
   factory reset deletes `song.bin` and saves.
 

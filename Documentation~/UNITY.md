@@ -570,7 +570,7 @@ value. Put the `SfxPlayer` into its `localPlayers`. The demo's hovercraft engine
 ## 5. Music
 
 An `SfxMusicPlayer` plays an `SfxSong`: 16 instruments and a sequenced song, made on the device
-([MANUAL sections 9 – 13](MANUAL.md#9-tutorial-a-beat)). The package cannot write a song: steps, patterns and the
+([MANUAL sections 9 – 14](MANUAL.md#9-tutorial-a-beat)). The package cannot write a song: steps, patterns and the
 arrangement are made on the device. It plays one, shows it, and lets the game shape it as it runs. Five numbers of
 a song can be changed in its Inspector ([below](#the-song-in-the-inspector)).
 
@@ -674,7 +674,8 @@ The reasons are the texts of `SfxLink.Refusal` ([section 6](#when-a-song-is-not-
 
 From firmware 1.6.0 on every pattern has its own grid: **1/16, 1/32 or 1/64**. That is 16, 32 or 64 steps for a full
 bar: a sixteenth is cut in 1, 2 or 4 steps. The grid is chosen on the device (SHIFT+F5 and SHIFT+F6 on its SEQ and
-AUTO pages, [the device's manual](MANUAL.md)). The package plays it, shows it and reads it; it does not set it.
+AUTO pages, and on PERFORM from firmware 1.7.0 on; [the device's manual](MANUAL.md)). The package plays it, shows it
+and reads it; it does not set it.
 
 Three things stay as they were:
 
@@ -810,8 +811,9 @@ music.loopPattern = false;         // the song's own order again
 With `playOnEnable` and `loopPattern` both on, the song starts on `startPattern` and stays there. `Play()`, `Stop()`
 and `Reload()` leave the switch as it is.
 
-The device has the same switch since its firmware 1.5: LOOP or SONG, F1 on its SEQ, SONG and AUTO pages
-([the device's manual](MANUAL.md)). The two are separate: `loopPattern` is this player's, and is not sent to a device.
+The device has the same switch since its firmware 1.5: LOOP or SONG, F1 on its SEQ, SONG and AUTO pages, and
+SHIFT + F1 on PERFORM, the page firmware 1.7.0 added ([the device's manual](MANUAL.md)). The two are separate:
+`loopPattern` is this player's, and is not sent to a device.
 
 > **What is tested, and what is not.** The switch is the engine's (`sfx_player_set_loop` in `core/sfx_song.h`, the
 > same code the firmware plays its LOOP mode with). `tests/dotnet` drives it through the native library, without
@@ -905,21 +907,18 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 
 > **What is tested, and what is not.** MIDI is implemented for Windows only (winmm).
 >
-> **Firmware 1.6.0 was run against the emulator.** Firmware 1.6.0 gives every pattern its own grid
-> ([section 5](#a-finer-grid)), and with it three things on the wire changed: the song is in format 6 and has no
-> fixed length, the song message has a new shape, and the identity says song format 6 and 64 steps. On 22 Nov 2026
-> (the date in the logs, which is UTC) the six link tests of `Tests/LinkTakes.cs` in the showcase were run with
-> firmware 1.6.0 in the SDK's emulator (`tests/emulator-link.mjs`) and this package, over two loopMIDI ports, with
-> Unity 6000.3 on Windows 11, headless, in a copy of the demo project. All six passed, four times that day: twice
-> with the firmware as it was before its kit key moved to SHIFT + ENTER, in the emulator of SDK 27, and twice after,
-> in the emulator of SDK 28. The last of the four was the firmware as it is now. What the logs said, the same each
-> time but for one count:
+> **Firmware 1.7.0 was run against the emulator.** Firmware 1.7.0 adds a page to the device, PERFORM
+> ([the device's manual, section 13](MANUAL.md#13-perform-the-whole-pattern-and-the-pads-four-ways)), and changes
+> nothing on the wire: no message and no format. The song is in format 6 as before. For the package a device with
+> 1.6.0 and one with 1.7.0 differ in one thing only: the version the identity says. On 23 Nov 2026 the six link
+> tests of `Tests/LinkTakes.cs` in the showcase were run with firmware 1.7.0 in the SDK's emulator
+> (`tests/emulator-link.mjs`) and this package, over two loopMIDI ports, with Unity 6000.3 on Windows 11, headless,
+> in a copy of the demo project. All six passed, in one run. What the log said:
 > - A patch came from the device when Unity asked for one: pad 1.
-> - The device said what it is: VIBE FM, firmware 1.6.0, profile 1, song format 6, 8 patterns of 64 steps, flags 15
+> - The device said what it is: VIBE FM, firmware 1.7.0, profile 1, song format 6, 8 patterns of 64 steps, flags 15
 >   (all four).
 > - The song came from the device when Unity asked for it: 2487 bytes and 16 sounds. It was the demo project's
->   song, byte for byte, and an `SfxMusicPlayer` played it. The firmware sends it in 27 messages; Unity counted 31,
->   32, 31 and 32.
+>   song, byte for byte, and an `SfxMusicPlayer` played it. The firmware sends it in 27 messages; Unity counted 32.
 > - Twenty transfers in a row all arrived whole.
 > - A song sent *to* the device came back the same when asked for: sent piece by piece, last piece first, after a
 >   transfer that broke off, and with `SendSong`, whose 16 sounds arrive in the MUSIC kit while the selected kit
@@ -928,30 +927,49 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > - Pads, intensity, a cue and text were sent to the device. Nothing comes back for these, so the test only says
 >   that every message left.
 >
-> **Not repeated with 1.6.0:**
-> - The recorded session (`Tests/LinkSession.cs`, the link video): SEND and EXPORT pressed on the device and
->   arriving in a running game. It was last run with firmware 1.4.0.
-> - Whether the device followed the game. With 1.4.0, in that session, the INTENSITY on its SONG page followed the
->   game's value. Text was sent in the same session, but the page that was open does not show it, so nobody saw it
->   arrive.
+> **The recorded session** (`Tests/LinkSession.cs`, the link video) was run with 1.7.0 on the same day, once, and
+> passed:
+> - SEND was pressed on the device's SONG page and the song arrived in the running game: 2487 bytes and 16 sounds
+>   in 27 messages. The game's music player was given it.
+> - A sound was mutated on the device and EXPORT was pressed: the patch of pad 1 arrived, and the game played it.
+> - The device followed the game, as far as pictures show it: in the frames of the video that were looked at, the
+>   INTENSITY on the device's SONG page reads 43 %, 69 % and 70 % where the game's value is 0.43, 0.68 and 0.70.
+> - Text was sent in the same session. In the frames that were looked at the device's top line shows the sound's
+>   name or the device's own words (SONG SENT, EXPORTED), so nobody saw a text arrive.
+>
+> The session ran headless: nobody heard it, and nobody has listened to the video.
+>
+> **With firmware 1.6.0**, which gave every pattern its own grid ([section 5](#a-finer-grid)), three things on the
+> wire had changed: the song is in format 6 and has no fixed length, the song message has a new shape, and the
+> identity says song format 6 and 64 steps. On 22 Nov 2026 (the date in the logs, which is UTC) the same six tests
+> passed with 1.6.0, four times that day: twice with the firmware as it was before its kit key moved to
+> SHIFT + ENTER, in the emulator of SDK 27, and twice after, in the emulator of SDK 28. The logs said the same as
+> above, but for the version (1.6.0) and for Unity's count of the song's messages: 31, 32, 31 and 32. The recorded
+> session was run with 1.6.0 that day too, and passed.
+>
+> **Not done with 1.7.0, and not with 1.6.0:**
+> - PERFORM over the link. The page sends and takes nothing of its own, and it was not open in any of these runs:
+>   the six tests press no key of the device, and the recorded session opens SONG and a sound page.
 > - A song with a pattern at 1/32 or 1/64. Every pattern of the songs that crossed has 16 steps, the demo song's
 >   and the test's own alike. A finer pattern has not travelled over a MIDI port. What was done instead:
->   - The firmware's own checks (`sh build.sh` in the source repository) hand the built 1.6.0 the identity request
->     and read its answer, and read the song it sends: 16 sounds, then the factory song in 11 pieces, 27 messages
->     and 2487 bytes of format 6. They also send it songs in both shapes of the message, doubled, out of order and
->     one straight after another, and read back what it took. One of them is a song with a pattern of 64 steps
->     (`tests/check-atomic.mjs`).
+>   - The firmware's own checks (`sh build.sh` in the source repository, 23 of them with 1.7.0) hand the built
+>     firmware the identity request and read its answer, and read the song it sends: 16 sounds, then the factory
+>     song in 11 pieces, 27 messages and 2487 bytes of format 6, byte for byte the demo project's song file. They
+>     also send it songs in both shapes of the message, doubled, out of order and one straight after another, and
+>     read back what it took. One of them is a song with a pattern of 64 steps (`tests/check-atomic.mjs`).
 >   - `tests/dotnet` gives the messages that firmware sent to the package's own receiver (`SfxSongTransfer`), and
 >     the song arrives whole. It also runs both shapes of the message through that receiver, and checks what
->     `SendSong` would send to a device that said 1.6, to one that said 1.5 and to one that said nothing.
+>     `SendSong` would send to a device that said 1.6 or 1.7, to one that said 1.5 and to one that said nothing.
 >
-> Firmware 1.6.0 was not run on hardware or in the plugin, and no firmware older than 1.6.0 was run against this
-> package: what is said below about an older firmware is reasoned from its code.
+> Firmware 1.7.0 was not run on hardware or in the plugin, and nobody has played its new page by hand. No firmware
+> older than 1.6.0 was run against this package: what is said below about an older firmware is reasoned from its
+> code.
 >
 > **Earlier runs, with firmware 1.4.0** (the song message of then: a song was 39 pieces):
 > - The same six tests passed, with a package whose `Open` already sent the identity request before anything else.
 >   The identity then read: VIBE FM, firmware 1.4.0, profile 1, all four flags.
-> - The recorded session passed: SEND and EXPORT pressed on the device arrived in a running game.
+> - The recorded session passed: SEND and EXPORT pressed on the device arrived in a running game, and the
+>   INTENSITY on its SONG page followed the game's value.
 > - Before that, the tests that existed then were run with firmware 1.3.1, which has no identity.
 >
 > **Not tested:** the hardware and the plugin; pads and encoders coming *from* the device (`onPad`, `onEncoder`,
@@ -1002,7 +1020,7 @@ From the top:
 |---|---|
 | **The top line** | the pad touched last, here or on the device, the engine of the patch that came from it, and the link dot |
 | **FROM THE DEVICE** | six bars: what the device's knobs 1 – 4, A and B sent last on its LINK page (CC 20 – 25). `-` until one has sent |
-| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows). While linked, one more line says what the device is, as it answered: `VIBE FM, firmware 1.6.0, profile 1`. If nothing answered within a second it reads `no identity: firmware before 1.4, or nothing answers` ([below](#what-the-device-is-the-identity)) |
+| **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows). While linked, one more line says what the device is, as it answered: `VIBE FM, firmware 1.7.0, profile 1`. If nothing answered within a second it reads `no identity: firmware before 1.4, or nothing answers` ([below](#what-the-device-is-the-identity)) |
 | **PADS PLAY** · **PADS FETCH THEIR PATCH** | two tabs over 16 pad tiles. On the first, a pad plays on the device for as long as the mouse holds it. On the second, a click asks the device for that pad's patch. A pad whose patch has come carries its engine's short name and colour. The pads need the port TO DEVICE |
 | **The text field** · **SHOW ON DEVICE** | writes up to 24 characters on the device's top line. ENTER in the field does the same |
 | **PATCHES FROM THE DEVICE** | what arrived, newest first (the last 32), each a tile: pad number, engine, time, the sound's waveform, **PLAY** and **SAVE** (**SHOW** once it is an asset). With **SAVE AS THEY ARRIVE** on (green; it is on at first), a patch is saved as soon as it arrives, into **FOLDER** (default `Assets/SfxForge`), named like `Pad03_SciFiFm` |
@@ -1036,12 +1054,12 @@ The 18 bytes, each 0 … 127, become an `SfxDeviceInfo`:
 | Byte | `SfxDeviceInfo` | Today |
 |---|---|---|
 | 0 | `hardware`: 0 unknown, 1 VIBE FM. That is the SDK's host – the emulator, the plugin or the hardware; the firmware cannot tell them apart | 1 |
-| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 6 0 (read over the link from 1.6.0 in the emulator, and from 1.4.0 before it) |
+| 1 2 3 | `major`, `minor`, `patch`: the firmware's version. `IsAtLeast(1, 4, 0)` compares | 1 7 0 (read over the link from 1.7.0 in the emulator, and from 1.6.0 and 1.4.0 before it) |
 | 4 … 16 | `profile`, an `SfxProfile`: its `id`, the patch format and the song format it speaks, and how much it holds: sounds in a kit, kits, patterns, the most steps a pattern holds, automation lanes, bars in an arrangement, voices, engines, wavetables, values in a patch | 1 · 2, 6 · 16, 2, 8, 64, 24, 32, 16, 5, 6, 25. Firmware 1.4 and 1.5 said song format 5 and 16 steps; the `id` was 1 then too |
 | 17 | `flags`: `HasPads`, `HasEncoders` (CC 20 – 25 from its LINK page), `TakesSongSounds` (what `SendSong` sends before the song), `TakesTelemetry` (CC 10 – 17 on channel 2) | all four |
 
 ```csharp
-SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.6.0, profile 1"
+SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.7.0, profile 1"
 SfxLink.Shared.RequestIdentity();                                   // Open has asked already
 // later, any time:
 SfxDeviceInfo? device = SfxLink.Shared.Device;                      // null: it has not answered
@@ -1265,7 +1283,7 @@ The Inspector of an `SfxSong` shows the whole song ([section 5](#the-song-in-the
 
 ### Made for more than one device
 
-Today there is one device: SFX FORGE 1.x on VIBE FM. With firmware 1.6.0 the Unity side and the device hold exactly
+Today there is one device: SFX FORGE 1.x on VIBE FM. From firmware 1.6.0 on the Unity side and the device hold exactly
 the same things, and every sound and song made on one works on the other. A firmware up to 1.5.0 already holds
 less: no finer grid and no format-6 song. It will go further. The Unity side can grow past what
 a device holds, and a firmware for other hardware may hold less. Version 1.0 does not do either. It reserves what
@@ -1292,7 +1310,7 @@ Nothing in this version reads `savedBy`. The banner says that saving loses data;
 
 - **No target switch.** There is nothing to set that says "this project is for device X". A profile cannot be
   chosen anywhere, and nothing is checked against one when you edit, bake or play.
-- **No Unity-only features.** Everything the package plays, the device with firmware 1.6.0 plays. No sound or song
+- **No Unity-only features.** Everything the package plays, the device with firmware 1.6.0 or 1.7.0 plays. No sound or song
   of this version can fail to fit `SfxProfile.VibeFm1`: `Fits` only says false for bytes that are not of this
   version or out of range. `VibeFm15` is the first profile that holds less: `VibeFm15.Fits(song)` is false for a
   format-6 song, and so for every pattern of 32 or 64 steps. `Fits` checks limits only. It does not say what a
@@ -2022,7 +2040,7 @@ the one in the package.
 | patches, songs and the link's messages | packing and unpacking, the older song formats, the identity, what is newer and what is broken |
 | the finer grid and song format 6 | each pattern's grid; a format-5 song renders bit for bit as before; formats 1 to 5 as format 6 play the same samples; a pattern made finer and coarser again; where the player is in a 64-step pattern |
 | a song on the wire | both shapes of the song message through `SfxSongTransfer`: out of order, doubled, one song straight after another, the longest song in 160 pieces, a first piece that names another format than its bytes |
-| what is playable, and what is sent | `IsPlayable` and the native player agree on 28 000 songs with one to three bytes changed; `SfxLink.Refusal` for a device that said 1.6, one that said 1.5 and one that said nothing |
+| what is playable, and what is sent | `IsPlayable` and the native player agree on 28 000 songs with one to three bytes changed; `SfxLink.Refusal` for a device that said 1.6 or 1.7, one that said 1.5 and one that said nothing |
 | the engine through the native library | bakes that sound and end in silence, notes in tune, the mix, velocity, length, automation, the arrangement and cues |
 | the loop flag | on: the pattern stays; a cue changes it on the bar line and that one stays; off: the arrangement goes on ([section 5](#holding-a-pattern-looppattern)) |
 | the tools' arithmetic ([section 11](#11-tools-for-designing-sounds)) | generators, variants, the shuffle, levels and matching, the text and `.syx` forms, bake options and the resampler |
@@ -2134,7 +2152,7 @@ What this does not tell you:
 | **No song editor** | a song is made on the device. In Unity you play it, look at it and shape it; its Inspector changes TEMPO, SWING and a sound's LAYER, VOLUME and PAN, nothing else |
 | **The grid is read, not set** | a pattern's grid is chosen on the device. In Unity `SfxNative.SongRegrid` gives the bytes of a song with a pattern in another grid; no Inspector key calls it |
 | **An older device takes no format-6 song** | firmware 1.5.0 and before drops the new song message without a word, so the package refuses in words before it sends ([section 6](#when-a-song-is-not-sent)). An older package does not read a format-6 song either ([section 6](#the-song-formats-the-package-reads)) |
-| **What the engine itself cannot do** | [MANUAL section 18](MANUAL.md#18-what-it-does-not-do): no samples, at most 64 steps a bar, 8 patterns, 16 voices |
+| **What the engine itself cannot do** | [MANUAL section 19](MANUAL.md#19-what-it-does-not-do): no samples, at most 64 steps a bar, 8 patterns, 16 voices |
 
 ### The silence checklist
 
@@ -2442,7 +2460,7 @@ restarted. Nobody has called `SongRegrid` from a Unity script; `tests/dotnet` ca
 | `bool HasPads` · `HasEncoders` · `TakesSongSounds` · `TakesTelemetry` | the flags, one by one |
 | `bool IsAtLeast(int major, int minor, int patch)` | the firmware is that version or later. False for an assumed device |
 | `static SfxDeviceInfo AssumedBefore14` · `bool assumed` | what a device that does not answer is taken for: VIBE FM, profile 1 as it was then (`SfxProfile.VibeFm15`), pads, encoders, telemetry, no version. Whether it takes a song's sounds is not known (1.3.1 does), so that flag is off |
-| `string ToString()` | `"VIBE FM, firmware 1.6.0, profile 1"` |
+| `string ToString()` | `"VIBE FM, firmware 1.7.0, profile 1"` |
 | `SfxProfile`: `int id` · `patchFormat`, `songFormat` · `sounds`, `kits`, `patterns`, `steps`, `lanes`, `bars` · `voices`, `engines`, `wavetables`, `patchValues` | the formats a device speaks and how much it holds |
 | `static SfxProfile VibeFm1` | SFX FORGE 1.6 on, on VIBE FM: 1 · 2, 6 · 16, 2, 8, 64, 24, 32 · 16, 5, 6, 25. `steps` is the most a pattern holds |
 | `static SfxProfile VibeFm15` | what firmware 1.4 and 1.5 said of themselves, and what one before them is taken for: the same with song format 5 and 16 steps |
