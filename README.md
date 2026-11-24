@@ -274,16 +274,21 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   bars; with it off the arrangement goes on. The run was headless and muted: nobody heard it.
 - The link, end to end against the VIBE FM SDK's emulator over a virtual MIDI cable (loopMIDI): patches and the song
   from the device to Unity, a song and its sounds from Unity to the device, the game's messages leaving for the
-  device, and the device saying what it is. That was done with firmware 1.7.0, the one in this package, on
-  23 Nov 2026: six tests, all passed, in one run, with songs of sixteenths only (and with 1.6.0 the day before).
+  device, and the device saying what it is. That was done with firmware 1.7.0, the build in this package, on
+  24 Nov 2026: six tests, all passed, in one run, with songs of sixteenths only (on 23 Nov 2026 with the 1.7.0
+  build of that day, which did not have the beat yet, and with 1.6.0 the day before that).
   SEND and EXPORT pressed on the device arriving in a running game were seen in the recorded session of the link
-  video, run once on the same day with 1.7.0; in its pictures the device's INTENSITY follows the game's.
-- The firmware in this package (1.7.0): all 21 of its own checks pass. They run the built `.wasm` in the SDK's
+  video, run once; in its pictures the device's INTENSITY follows the game's. The session was recorded with the
+  1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display is the same. It was not
+  run again with the build in this package.
+- The firmware in this package (1.7.0): all 22 of its own checks pass. They run the built `.wasm` in the SDK's
   command-line tools and in a small host of the source repository's own (for SysEx and stored files), without the
   emulator's page and without Unity, and read its sound, its MIDI, what it stores
   and the song it sends: 27 messages, the 16 sounds and then 2487 bytes of format 6 in 11 pieces. They also hand it
-  songs in both shapes of the song message, out of order, doubled and one straight after another. One of the 21
-  presses the keys of PERFORM, the page that is new in 1.7.0; it does not look at the display.
+  songs in both shapes of the song message, out of order, doubled and one straight after another. One of the 22
+  presses the keys of PERFORM, the page that is new in 1.7.0; it does not look at the display. Another is about
+  the beat, which is new in 1.7.0 too: what FILL writes with each beat, where the click falls, that the song's
+  bytes stay as they were, and what the device stores. It does not read the display's words.
 - The finer grid and song format 6 on the Unity side, without Unity and without a device (the checks of the
   engine-independent code, below): a format-5 song renders bit for bit as it did before; the songs of formats 1 to
   5, converted to format 6, play the same samples; a pattern made finer and coarser again; where the player is in a
@@ -320,7 +325,7 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
 Tested on this package as generated, on the same machine, with the editor run headless. Most of it was done
 before the tools for designing sounds, `loopPattern` and firmware 1.5.0 were added. One run was repeated with
 them in the package: the sample's editor checks and Play mode tests, at the end of "The sample" below. The rest
-was not. **With firmware 1.7.0 and song format 6 in the package, one more run was made**, on 23 Nov 2026: the
+was not. **With firmware 1.7.0 and song format 6 in the package, one more run was made**, last on 24 Nov 2026: the
 sample's editor checks and Play mode tests, at the very end of "The sample" below. Everything else in this list was
 run on a generated package from before firmware 1.6.0, whose sample held the demo song in format 5:
 
@@ -364,12 +369,19 @@ Not tested:
 - A device that speaks another format. Refusing to send to one was only tried with identities made up by the
   tests, also for the one case that exists now: a firmware up to 1.5.0, which speaks song format 5.
 - **Firmware 1.7.0 against Unity, beyond the six link tests and the recorded session.** They passed with 1.7.0 in
-  the emulator, but every pattern of the songs that crossed has 16 steps: a song with a pattern at 1/32 or 1/64 has
+  the emulator (the recorded session with the build of 23 Nov 2026 only), but every pattern of the songs that
+  crossed has 16 steps and every bar 16 sixteenths: a song with a pattern at 1/32 or 1/64 has
   not travelled through a MIDI port, only through the firmware's checks and the package's checks, which each read
   the other's bytes. Not in the plugin, not on hardware.
 - **The PERFORM page of firmware 1.7.0, by hand.** A check in the source repository presses its keys in a host of
   its own and reads what the firmware then holds, plays and sends; it does not look at the display. Nobody has
   played the page or listened to it, and it was not open in any run of the link.
+- **The beat and the time signature of firmware 1.7.0, by hand or by ear.** A check in the source repository
+  chooses each beat and reads what FILL writes, where the click falls, the song's bytes and the store. It does not
+  read what the display says (`BAR 6/8`), and it does not try the click with swing or a bar that is not a whole
+  number of beats. Nobody has listened to the click. In Unity there is nothing of it: the beat is not in the song,
+  and the song's Inspector shades its cells in fours whatever the device's beat is. A song with a bar of 12 or 14
+  sixteenths was not played in a game.
 - **An older firmware or an older package with this one.** That a firmware up to 1.5.0 drops the new song message
   without a word, and what a package from before firmware 1.6.0 does with a format-6 song asset (the banner of a newer
   asset, then NO SONG YET and silence), is read from their code. Neither was run.
@@ -410,7 +422,7 @@ Not tested:
 - **Firmware 1.6.0 or 1.7.0 for songs.** A song of this version is in format 6. A firmware up to 1.5.0 does not
   take it; the package says so before it sends. A package from before firmware 1.6.0 does not read it.
 - Live players are not spatialized (for 3D, bake a clip); one patch per `SfxPlayer`; a song is made on the device and
-  only played and shaped in Unity: a pattern's grid too is chosen on the device. A variation set must be baked to play where the native library is not, and
+  only played and shaped in Unity: a pattern's grid too is chosen on the device. The device's beat (firmware 1.7.0) is not in the song: the package does not read or show it. A variation set must be baked to play where the native library is not, and
   nothing checks that at build time. [The manual's list of limits](Documentation~/UNITY.md#limits).
 
 ## License

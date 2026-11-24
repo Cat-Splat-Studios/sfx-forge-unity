@@ -8,13 +8,16 @@ How to play it: [the device's manual](../Documentation~/MANUAL.md). How to join 
 
 This build (1.7.0) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
 SysEx and stored files, in a small host of the source repository's own: its checks hand the built `.wasm`
-events and SysEx and read its sound, its MIDI and what it stores, and all 21 of them pass. A few of them also
+events and SysEx and read its sound, its MIDI and what it stores, and all 22 of them pass. A few of them also
 compare the display, to tell that it changed or that the LINK light is on: what a page shows and what a toast
 says is not read. Against
-Unity, the six link tests of the Unity manual and the recorded session of the link video passed with
-firmware 1.7.0 in the SDK's local emulator on 23 Nov 2026, each in one run, with songs of sixteenths only.
-It was not run in the plugin or on hardware. Nobody has played its new page, PERFORM, by hand, and nobody
-has listened to what is new in it. Its source is not in this package.
+Unity, the six link tests of the Unity manual passed with this build in the SDK's local emulator on
+24 Nov 2026, in one run, with songs of sixteenths only and the beat a quarter. The session of the link video
+was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display
+is the same, and it was not recorded again.
+It was not run in the plugin or on hardware. Nobody has played its new page, PERFORM, by hand, nobody has
+set a time signature by hand, and nobody has listened to what is new in it. Its source is not in this
+package.
 
 New in 1.7.0: PERFORM, a fourth page of the K5 key (K5 walks SEQ, SONG, AUTO, PERFORM). It shows the whole
 pattern as a grid, one row for each of the 16 sounds, and F1 to F4 choose what the pads are: the steps of
@@ -23,6 +26,21 @@ the selected sound, the kit, mutes, or the patterns and the intensity
 changes nothing in this package's code, in the messages or in the formats: a device with 1.6.0 and one with
 1.7.0 speak the same song format 6, and the package works with either. The page was tested by a script that
 presses its keys and does not look at the display.
+
+Also new in 1.7.0: a beat and a time signature. The bar's length was the song's already (encoder B on
+SONG and PERFORM, 1 to 16 sixteenths). New is the beat: SHIFT + B on SEQ, SONG and PERFORM chooses an
+eighth, three sixteenths, a quarter (as the device comes) or a dotted quarter. The click, the shades of
+the grids and FILL follow it, and the display names the bar by it: 12 sixteenths are `BAR 3/4` with a
+quarter and `BAR 6/8` with a dotted quarter ([the device's
+manual](../Documentation~/MANUAL.md#the-bar-and-the-beat-34-68-78)). The beat is the device's, not the
+song's: it is not in the packed song and in no message, a game never gets it, and it changes no note.
+The device keeps it in a file of its own, `meter.bin`. Nothing in the package's code or formats changes:
+the package has nothing to read, and a bar of 12 sixteenths plays the same in Unity whether the device
+calls it 3/4 or 6/8. With four quarters, as the device comes, nothing looks, sounds or is stored
+differently than before. Not there: a bar longer than 16 sixteenths (no 5/4, 6/4, 9/8 or 12/8),
+triplets, a length or a beat for each pattern, groupings like 2+2+3. The beat was tested by a script
+that reads what FILL writes, where the click falls, the song's bytes and the store; it does not read the
+display's words, and nobody has listened to the click.
 
 New in 1.6.0: each pattern has its own grid of 1/16, 1/32 or 1/64, which is 16, 32 or 64 steps a bar (SHIFT+F5
 and SHIFT+F6 on the SEQ and AUTO pages: coarser and finer; SHIFT+LEFT and SHIFT+RIGHT: the 16 steps before and

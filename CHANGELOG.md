@@ -73,8 +73,11 @@ and the Unity code live there) by `tools/make_unity_package.py`; nothing in it i
 - **Documentation~**: the Unity manual, the device's manual with the cheat sheet, the link's protocol, five videos.
 - **Firmware~**: the built instrument, firmware 1.7.0, without debug information. Firmware 1.7.0 adds the
   PERFORM page on the device: the whole pattern as a grid, and the pads as steps, the kit, mutes or patterns.
-  Nothing in the package's code or formats changes with it: a device with 1.6.0 and one with 1.7.0 speak the same
-  song format 6.
+  It also adds a beat and a time signature: SHIFT + B on the device chooses an eighth, three sixteenths, a quarter
+  or a dotted quarter, and the click, the grids' shades, FILL and the bar's name on the display (`BAR 3/4`,
+  `BAR 6/8`) follow it. The beat is the device's and is not in the song: a game never gets it.
+  Nothing in the package's code or formats changes with either: a device with 1.6.0 and one with 1.7.0 speak the
+  same song format 6.
 - The native library's import settings name the editor and Windows x64 only.
 
 The code is the package that was `com.catsplat.sfxforge` 0.1.0 inside the source repository. The id, the display name and the
@@ -97,9 +100,13 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
 - The identity was not asked of a device by the package's own tests, only built and read. There is one device and
   one profile id; nothing can be targeted at another, and nothing converts a newer patch, song or asset.
 - `loopPattern` is tested in the engine through the native library, and inside Unity by one Play mode test of the
-  sample, headless and muted; nobody has listened to it. Firmware 1.7.0 passes its own checks; the link was
-  last run against it in the emulator (six tests and the recorded session, songs of sixteenths only). Its PERFORM
-  page was tested by a script only: nobody has played it by hand, and it was not run on hardware or in the plugin.
+  sample, headless and muted; nobody has listened to it. Firmware 1.7.0 passes its own checks; the six link
+  tests were last run against it in the emulator (songs of sixteenths only), and the session of the link video
+  was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added. Its PERFORM page and its beat
+  were tested by scripts only: nobody has played them by hand or listened to the click, and it was not run on
+  hardware or in the plugin.
+- The device's beat and time signature (firmware 1.7.0) are not in the song. The package does not read or
+  show them, and the song's Inspector shades its cells in fours whatever the device's beat is.
 - The tools for designing sounds are measured, not heard: nobody has listened to a generated sound, a variant or
   a baked file. A variation set that is not baked plays only where the native library is, and nothing checks at
   build time that a set is baked or up to date.

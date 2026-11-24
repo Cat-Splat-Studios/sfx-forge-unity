@@ -22,6 +22,7 @@ This manual describes firmware 1.7.0.
 | keep a pattern playing and play into it | [Loop a pattern and play into it](#loop-a-pattern-and-play-into-it) |
 | write a beat and a tune | [9. Tutorial: a beat](#9-tutorial-a-beat) |
 | play faster than a sixteenth: a roll, a fill | [A finer grid](#a-finer-grid-132-and-164) |
+| write in 3/4, 6/8 or 7/8 | [The bar and the beat](#the-bar-and-the-beat-34-68-78) |
 | take something back | [UNDO](#undo) |
 | make music that follows the game | [11. Layers](#11-layers-music-that-follows-the-game) |
 | move a knob by itself | [12. Automation](#12-automation) |
@@ -63,7 +64,7 @@ This manual describes firmware 1.7.0.
 | **5** | **the 16 pads** | play the kit's sounds. On the song pages they are steps, patterns or mutes – and the display draws them as 16 tiles. On PERFORM, F1 – F4 choose which of these they are |
 | **6** | **SHIFT** | the second meaning of a key, and fast encoders |
 | **7** | **K1 – K6** | the pages. Press a K key again for its next page |
-| **8** | **A · B** | A: the output volume (on SEQ, SONG, AUTO and PERFORM, the tempo). B: the scale on SEQ, the bar's length on SONG and PERFORM. On LINK both send a controller to the game |
+| **8** | **A · B** | A: the output volume (on SEQ, SONG, AUTO and PERFORM, the tempo). B: the scale on SEQ, the bar's length on SONG and PERFORM – and with SHIFT, on these three pages, the beat ([section 9](#the-bar-and-the-beat-34-68-78)). On LINK both send a controller to the game |
 | **9** | **LEFT · MENU · RIGHT** | the page before and after – on SEQ, SONG, AUTO and PERFORM the pattern (with SHIFT on SEQ, AUTO and PERFORM: the 16 steps the pads show) · the tour |
 | **10** | **REC · STOP · PLAY** | PLAY plays one pattern round and round (LOOP) or the song in its order (SONG): the top line of the song's pages says which. With REC lit, what you play is recorded |
 | **11** | **the keys** | play the selected sound as an instrument, in tune |
@@ -321,10 +322,11 @@ reverb, not a recording of a string section.
 
 ## 9. Tutorial: a beat
 
-A **pattern** is one bar, for each of the MUSIC kit's 16 sounds. As it comes, the bar has 16 steps: sixteenth
-notes. A pattern that needs faster notes gets 32 or 64 steps
-([A finer grid](#a-finer-grid-132-and-164)). There are eight patterns, A – H. The SEQ page (**K5**) is where a
-pattern is made.
+A **pattern** is one bar, for each of the MUSIC kit's 16 sounds. As it comes, the bar has 16 steps: sixteenth notes,
+four to a beat – four quarters. A pattern that needs faster notes gets 32 or 64 steps ([A finer
+grid](#a-finer-grid-132-and-164)). A bar can be shorter and its beat another one: 3/4, 6/8, 7/8 ([The bar and the
+beat](#the-bar-and-the-beat-34-68-78)). There are eight patterns, A – H. The SEQ page (**K5**) is where a pattern is
+made.
 
 ### Loop a pattern and play into it
 
@@ -422,8 +424,8 @@ Anything you do here **F2 UNDO** takes back ([below](#undo)).
 |---|---|
 | **1** | what PLAY plays: **LOOP** (this pattern, round and round) or **SONG** (the song in its order) |
 | **2** | playing (a green triangle) or stopped (a square) – or, while REC is lit, a red dot in their place, playing or not · the pattern that plays · the tempo. `A>C` while C waits for the bar line |
-| **3** | the page, the pattern you see and its grid: `PATTERN A  1/16` – or `EDIT B - PLAYS A  1/16`, in orange, while another one plays. `layer off` beside it: the selected sound is silent at the current intensity |
-| **4** | the 16 steps of the selected sound, as the 16 pads: **a row is a beat** (at 1/32 a row is half a beat, at 1/64 a quarter of one). A step that is on shows its **note**; its **height** is how hard it plays; `>3` in its corner means it holds 3 steps. The frame is the step the encoders edit; the white tile is the step playing now |
+| **3** | the page, the pattern you see and its grid: `PATTERN A  1/16` – or `EDIT B - PLAYS A  1/16`, in orange, while another one plays. When the bar is not four quarters, its name follows the grid: `PATTERN A  1/16  BAR 3/4` ([The bar and the beat](#the-bar-and-the-beat-34-68-78)). `layer off` beside it: the selected sound is silent at the current intensity |
+| **4** | the 16 steps of the selected sound, as the 16 pads: **a row is a quarter note** – a beat, as the device comes (at 1/32 a row is an eighth note, at 1/64 a sixteenth). The empty tiles have two shades, beat by beat: with a beat of a quarter that is row by row; with another beat (SHIFT + B) it is not. A step that is on shows its **note**; its **height** is how hard it plays; `>3` in its corner means it holds 3 steps. The frame is the step the encoders edit; the white tile is the step playing now |
 | **5** | STEP · NOTE · VELOCITY · LENGTH of the framed step. At a finer grid STEP reads `17/32`: the step, and how many the pattern has |
 | **6** | what the pads do: `PADS: THE 16 STEPS`. With REC lit: `REC READY: PRESS PLAY`, then `REC: PLAY IT IN - F4 ERASE`. `ITS LAYER IS OFF NOW` warns that you will not hear the selected sound. At 1/32 and 1/64 the bar strip stands here instead |
 | **7** | the eight patterns, and the scale NOTE moves in (with REC lit: `REC off: steps`) |
@@ -451,12 +453,13 @@ The page shows one sound at a time. To see every sound's steps at once, press K5
 | give a step a note | hold its pad and play a key – or turn encoder 2 NOTE (it stays in the scale, which B chooses) |
 | make it louder or softer | encoder 3 VELOCITY, 1 – 8 |
 | make a held note shorter | encoder 4 LENGTH: AUTO, or 1 – 15 steps (at 1/32 up to 31, at 1/64 up to 63) |
-| the sound on every quarter note, every eighth, every sixteenth, none | F3 FILL, again and again: `EVERY 1/4`, `EVERY 1/8`, `EVERY 1/16`, `SOUND CLEARED`. It fills the bar, not what lies beyond a short one |
+| the sound on every beat, every eighth, every sixteenth, none | F3 FILL, again and again: `EVERY 1/4`, `EVERY 1/8`, `EVERY 1/16`, `SOUND CLEARED`. With another beat than a quarter the first press is that beat: `EVERY 3/8`, `EVERY 3/16` or `EVERY 1/8` ([The bar and the beat](#the-bar-and-the-beat-34-68-78)). It fills the bar, not what lies beyond a short one |
 | notes faster than a sixteenth | SHIFT + F6: a finer grid for this pattern – see [A finer grid](#a-finer-grid-132-and-164) |
 | take the selected sound out of the pattern | F4 CLEAR. `NOTHING TO CLEAR` if it has no steps |
 | try a variation | F5 COPY: the pattern is copied into the next empty one, with its grid, and you are on the copy (`COPIED A > G`). While it plays the copy starts on the bar line. `NO EMPTY PATTERN` if all eight hold something |
 | play a part in, live | **REC, then PLAY** – see below |
 | change the tempo | A. SHIFT + A is the swing (the top line says it: `SWING 20%`) |
+| another beat: 6/8 where it was 3/4 | SHIFT + B: `BEAT 3/8: BAR 6/8` ([The bar and the beat](#the-bar-and-the-beat-34-68-78)). B without SHIFT is the scale here; the bar's length is B on SONG and PERFORM |
 
 A step **without a note** plays the sound as designed – right for drums. **LENGTH AUTO** holds a note until the sound
 plays again or the bar ends; LENGTH is for held sounds, a one-shot always plays to its own end.
@@ -472,7 +475,7 @@ Press **REC**, then **PLAY** – or PLAY first and REC when you are ready. On th
 | **the tiles follow you** | they show the steps of the sound you played last, so you see each hit land |
 | **the pattern repeats** | switching REC on sets LOOP (`REC ON: PATTERN LOOPS` if it was SONG). What you play is laid on top of what is there, round after round |
 | **the display stays with the sound** | LEFT and RIGHT still choose another pattern, on the bar line. Until then the display stays on the pattern that plays, so every hit lands in what you see |
-| **a metronome keeps time** | a click on every beat, higher on the bar line, while REC is lit and it plays. The red dot in the top line beats with it. **SHIFT + REC** turns the click off and on (`CLICK OFF`, `CLICK ON`). It is the device's own: it is not recorded and a game never hears it. There is no count-in: the first round of the loop is one |
+| **a metronome keeps time** | a click on every beat – a quarter note, unless SHIFT + B chose another beat –, higher on the bar line, while REC is lit and it plays. The red dot in the top line beats with it. **SHIFT + REC** turns the click off and on (`CLICK OFF`, `CLICK ON`). It is the device's own: it is not recorded and a game never hears it. There is no count-in: the first round of the loop is one |
 | **F4 is ERASE** | held, it erases the selected sound's steps as the bar passes them, in the pattern that plays. A tap erases the step under the playhead |
 | **F2 takes the take back** | all of it, from the first hit to STOP, PLAY or REC – with whatever you erased, filled or turned in between |
 
@@ -589,16 +592,21 @@ takes back.
 knob has further to go, so SHIFT turns it 8 steps a click there.
 
 **FILL** has one more press at a finer grid: `EVERY 1/4`, `EVERY 1/8`, `EVERY 1/16`, `EVERY 1/32`, then
-`SOUND CLEARED`. It never fills every 1/64 – put those in by hand, or play them in.
+`SOUND CLEARED`. It never fills every 1/64 – put those in by hand, or play them in. With another beat than a
+quarter the first press is that beat, here too.
+
+**The two shades** of the empty tiles stay the rows of pads at 1/32 and 1/64, whatever the beat: a row is an
+eighth or a sixteenth there. The beat is in the bar strip: its lines stand at each beat.
 
 **COPY** copies the pattern with its grid. **CLR PAT** on the SONG page empties a pattern and keeps its grid.
 **NEW** sets every pattern to 1/16.
 
 #### A short bar
 
-Encoder B on the SONG page – and on PERFORM – sets the bar's length in sixteenths (`BAR: 12/16`), for the whole song.
-A pattern at 1/32 then plays 24 steps, one at 1/64 plays 48. The empty tiles beyond the bar are dark and the strip is
-dark there.
+Encoder B on the SONG page – and on PERFORM – sets the bar's length in sixteenths (`BAR: 12/16 = 3/4`), for the whole
+song. A pattern at 1/32 then plays 24 steps, one at 1/64 plays 48. The empty tiles beyond the bar are dark and the
+strip is dark there. What such a bar is as a time signature, and the beat that goes with it: [The bar and the
+beat](#the-bar-and-the-beat-34-68-78).
 
 SHIFT + LEFT and RIGHT go only through the sets of 16 that hold a step of the bar: three of them for a bar of 12/16
 at 1/64. If the whole bar fits on the pads there is nothing to move, and it says so: `BAR ENDS AT STEP 8`. Encoder 1
@@ -609,8 +617,8 @@ play; the strip leaves it out.
 
 Recording is as in [Playing it in](#playing-it-in): REC, PLAY, the pads and the keys. **A hit lands on the nearest
 step of the grid of the pattern that plays** – at 1/64 that is nearly where you played it. A hit just before the bar
-line lands on step 1. A hit can land a few milliseconds early. The click stays on the beat, whatever the grid: four in a whole bar, three
-in a bar of 12/16.
+line lands on step 1. A hit can land a few milliseconds early. The click stays on the beat, whatever the grid: with a
+beat of a quarter, four in a whole bar, three in a bar of 12/16.
 
 ![A take at 1/64](img/grid-take.png)
 
@@ -642,6 +650,171 @@ has 16 columns, one for each sixteenth. The title line names the grid of the pat
 | **You can change it while the song plays** | a change of grid, a COPY or an UNDO rewrites a whole pattern at once. The player takes the pattern whole, between two moments of sound: it plays the pattern as it was or as it is now, never half of each. The playhead stays where it is, no step sounds twice or is missed for it, and a held note ends where it would have – on a coarser grid, on the next step that grid has |
 | **An older firmware does not take such a song** | a song from firmware 1.6.0 is in a new format, whether a pattern has a finer grid or not ([section 16](#songs-formats-and-older-firmware)) |
 
+### The bar and the beat: 3/4, 6/8, 7/8
+
+**Two knobs make a time signature: B is how long the bar is, SHIFT + B is what a beat is.** The bar's length was
+always there. The beat is new with firmware 1.7.0.
+
+| | Turn | On | It is | It belongs to |
+|---|---|---|---|---|
+| **the bar** | B | SONG, PERFORM | 1 – 16 sixteenths. As it comes: 16 | the song |
+| **the beat** | SHIFT + B | SEQ, SONG, PERFORM | an eighth (1/8), three sixteenths (3/16), a quarter (1/4) or a dotted quarter (3/8). As it comes: a quarter | the device |
+
+One click of B with SHIFT held is one beat further: 1/8, 3/16, 1/4, 3/8. It stops at both ends. On SEQ, B without
+SHIFT is the scale: for the bar's length go to SONG or PERFORM. AUTO shows the bar and the beat and has no knob for
+them.
+
+As the device comes – 16 sixteenths, a beat of a quarter: four quarters – nothing looks, sounds or is stored
+differently than before.
+
+#### Common time signatures
+
+| For | B | SHIFT + B | The click counts | The title says |
+|---|---|---|---|---|
+| **4/4** | 16, as it comes | 1/4, as it comes | four quarters | nothing |
+| **3/4** | 12 | 1/4 | three quarters | `BAR 3/4` |
+| **2/4** | 8 | 1/4 | two quarters | `BAR 2/4` |
+| **6/8** | 12 | one click up: 3/8 | two dotted quarters | `BAR 6/8` |
+| **3/8** | 6 | 3/8 | one dotted quarter | `BAR 3/8` |
+| **7/8** | 14 | 1/4 | three quarters and an eighth | `BAR 7/8` |
+| **5/8** | 10 | 1/4 | two quarters and an eighth | `BAR 5/8` |
+| **7/8, every eighth counted** | 14 | two clicks down: 1/8 | seven eighths | `BAR 7/8 IN 1/8` |
+| **12/16** | 12 | one click down: 3/16 | four times three sixteenths | `BAR 12/16` |
+| **7/16** | 7 | 1/4 | a quarter and three sixteenths | `BAR 7/16` |
+
+"Up" is a click to the right, "down" a click to the left.
+
+#### A bar of 3/4, and the same bar as 6/8
+
+**1. Press K5 twice**, for the SONG page, and turn **B** four clicks to the left. The top line says
+`BAR: 12/16 = 3/4`: the bar has 12 sixteenths now, and with a beat of a quarter that is three quarters.
+
+**2. Press K5 three times more**, for SEQ, and **RIGHT** until you are on an empty pattern – G in the demo song.
+Turn **DATA** to KICK and press **F3 FILL** once.
+
+![A bar of 3/4 on the SEQ page](img/meter-34.png)
+
+| | What it is |
+|---|---|
+| **1** | what FILL said: a kick on every beat, and the beat is a quarter |
+| **2** | the title names the bar: `BAR 3/4` |
+| **3** | the 16 tiles: the kick stands on steps 1, 5 and 9, the first tile of each of the three rows – the three beats |
+| **4** | the fourth row lies beyond the bar: its tiles are dark, and nothing there plays |
+
+**3. Hold SHIFT and turn B one click to the right.** The beat is a dotted quarter now, and the same 12 sixteenths
+are two of them: 6/8.
+
+![The same bar as 6/8](img/meter-beat.png)
+
+| | What it is |
+|---|---|
+| **1** | what SHIFT + B said: the beat, and what the bar is called with it |
+| **2** | the title: `BAR 6/8` |
+| **3** | the second beat begins at step 7: the empty tiles 1 – 6 have one shade, 7 – 12 the other. A moment ago the rows had them |
+
+The kick still stands on steps 1, 5 and 9: **the beat changes no note.** Press **F3 FILL** once more. The row is
+none of FILL's own now, so FILL begins again, with the beat: `EVERY 3/8`, a kick on steps 1 and 7.
+
+**4. On PERFORM** the whole bar is on one page. Here it is in 6/8 while it plays: the kick on the two beats (F5
+FILL once), the hi-hat on every eighth (F5 FILL twice: `EVERY 1/8`).
+
+![PERFORM in 6/8](img/meter-68.png)
+
+| | What it is |
+|---|---|
+| **1** | the title: `BAR 6/8` |
+| **2** | where the second beat begins: the empty cells change their shade here, after six sixteenths |
+| **3** | the bar ends after step 12. The cells beyond it are dark |
+
+**5. A bar of 7/8.** Turn the beat back to a quarter (SHIFT + B one click to the left), and turn B to 14. Here the
+kick was filled on every quarter while the bar was still whole: steps 1, 5, 9 and 13.
+
+![PERFORM in 7/8](img/meter-78.png)
+
+| | What it is |
+|---|---|
+| **1** | what B said: 14 sixteenths, and that is seven eighths |
+| **2** | the title: `BAR 7/8` |
+| **3** | the fourth beat is a short one: two sixteenths, then the bar line. The click on it is the last of the bar |
+| **4** | beyond the bar |
+
+#### What follows the beat
+
+| | With a quarter, as it comes | With another beat |
+|---|---|---|
+| **the click** (REC lit, playing) | on every quarter, higher on the bar line | on every beat, higher on the bar line. A bar that is not a whole number of beats ends with a short beat |
+| **the red REC dot** | beats with the click | the same |
+| **the empty cells on PERFORM** and in the stage's rows | change their shade every quarter | every beat |
+| **the empty tiles on SEQ and AUTO**, at 1/16 | row by row: a row is a quarter | beat by beat. At 1/32 and 1/64 they stay row by row |
+| **the lines in the bar strip**, at 1/32 and 1/64 | at each quarter | at each beat |
+| **FILL** | `EVERY 1/4` first | the beat first |
+| **the bar's name** | `BAR 3/4`, `BAR 7/8` | `BAR 6/8`, `BAR 12/16` |
+
+Nothing else follows it: no note, not the tempo, not the swing, not the song, not what a game plays.
+
+**FILL** begins with the beat, then goes to the eighth where the beat is made of eighths, then to the sixteenth:
+
+| Beat | F3 FILL (on PERFORM: F5), press after press |
+|---|---|
+| **1/8** | `EVERY 1/8` · `EVERY 1/16` · `SOUND CLEARED` |
+| **3/16** | `EVERY 3/16` · `EVERY 1/16` · `SOUND CLEARED` |
+| **1/4** | `EVERY 1/4` · `EVERY 1/8` · `EVERY 1/16` · `SOUND CLEARED` |
+| **3/8** | `EVERY 3/8` · `EVERY 1/8` · `EVERY 1/16` · `SOUND CLEARED` |
+
+At 1/32 and 1/64, `EVERY 1/32` comes before `SOUND CLEARED`. A fill counts from the bar line and stays in the bar.
+
+#### What the display says
+
+| It says | When | It means |
+|---|---|---|
+| `BAR: 12/16 = 3/4` | B is turned | the bar in sixteenths, and its name with the beat the device has. With a dotted quarter the same turn says `BAR: 12/16 = 6/8` |
+| `BAR: 7/16` | B is turned | a bar that is counted in sixteenths anyway is said once |
+| `BEAT 3/8: BAR 6/8` | SHIFT + B is turned | the beat, and what the bar is called with it. Also `BEAT 1/8: BAR 6/8`, `BEAT 3/16: BAR 12/16`, `BEAT 1/4: BAR 3/4` |
+| `PATTERN A  1/16  BAR 6/8` | always, in the second line of SEQ, SONG, AUTO and PERFORM | the bar is not four quarters. With four quarters the line does not name the bar |
+| `PATTERN A  1/16  BAR 6/8 IN 1/8` | the same, with a beat of an eighth | the beat is said after the name: `BAR 6/8` alone would be read as two dotted quarters |
+
+If the line has no room before the six marks of the K keys, `IN 1/8` is left out, and then the bar's name.
+
+**How the bar gets its name.** The bar is counted in the beat's kind of note. If that does not come out whole, in
+the next finer one.
+
+| Beat | Counted in | 12 sixteenths | 14 | 7 | 16 |
+|---|---|---|---|---|---|
+| **1/4** | quarters, else eighths, else sixteenths | 3/4 | 7/8 | 7/16 | 4/4: not shown |
+| **1/8** or **3/8** | eighths, else sixteenths | 6/8 | 7/8 | 7/16 | 8/8 |
+| **3/16** | sixteenths | 12/16 | 14/16 | 7/16 | 16/16 |
+
+#### The beat is the device's, not the song's
+
+The bar's length is part of the song. The beat is not: it is a setting of this device, as the click is.
+
+| | |
+|---|---|
+| **SAVE keeps it** | F6 SAVE keeps the beat beside the kits and the song, in a file of its own ([section 17](#the-files)). Without a SAVE, the next start has the beat that was saved last |
+| **NEW, DEMO and a song from a game leave it** | another song, the same beat |
+| **F2 does not take it back** | nor F6 on PERFORM. Turn SHIFT + B back |
+| **Only the factory reset puts the quarter back** | SHIFT + MENU, twice |
+| **A game never gets it** | it is not in the song that SEND sends, and the Unity package has no beat. A game does not need one: the beat changes no note. A song with a bar of 12 sixteenths sounds the same in the game, whether the device called it 3/4 or 6/8 |
+| **Two devices can name one song differently** | the same song reads `BAR 3/4` on a device whose beat is a quarter and `BAR 6/8` on one whose beat is a dotted quarter. It plays the same on both; only the click and the shades differ |
+
+#### Swing and a beat of 3/16
+
+Swing holds back every other sixteenth. A quarter, an eighth and a dotted quarter always begin on a sixteenth that
+swing leaves alone. A beat of three sixteenths does not: every second beat begins on one that is held back, and its
+click comes late, with the notes of that step. So with swing a beat of 3/16 gives an uneven click. This is read from
+the code; nobody has measured or heard it.
+
+#### What it does not do
+
+| | |
+|---|---|
+| **Longer bars** | a bar is 16 sixteenths at most: no 5/4, no 6/4, no 9/8, no 12/8 |
+| **Triplets** | a step is a sixteenth, or a half or a quarter of one |
+| **A bar or a beat for each pattern** | one bar's length for the whole song, one beat for the device |
+| **Groupings like 2+2+3** | the beats are all the same length; only the last of a bar may be short. For 7/8 as 2+2+3 use a beat of an eighth and place the accents yourself |
+
+What is tested of all this, and what is not: [section 19](#19-what-it-does-not-do).
+
 ### UNDO
 
 **F2** on SEQ, SONG and AUTO takes back the last thing you did to the song. Pressed again, it brings it back. On
@@ -661,7 +834,7 @@ nothing to take back the key is dim and says `NOTHING TO UNDO`.
 |---|---|
 | **One step only** | the next thing you do replaces what F2 holds |
 | **The notes** | F2 brings back patterns, automation and the arrangement. After NEW, DEMO and LOAD it brings back the whole song, with tempo and mix |
-| **Not the knobs** | tempo, swing, the scale, CHAIN, the bar's length, layers and the mixer are not taken back by F2. A pattern's grid is |
+| **Not the knobs** | tempo, swing, the scale, CHAIN, the bar's length, the beat, layers and the mixer are not taken back by F2. A pattern's grid is |
 | **Not the sounds** | a sound has its own UNDO, F3 on the sound pages. After a game's LOAD, F2 brings back the song, not the sounds that came with it |
 | **Not kept** | switching off, or a factory reset, forgets it |
 
@@ -675,7 +848,7 @@ Press **K5 again** for the SONG page.
 
 | | What it is |
 |---|---|
-| **1** | what PLAY plays: **SONG** here, or LOOP. On this page too the line under it says `EDIT A - PLAYS B` while you look at one pattern and another plays |
+| **1** | what PLAY plays: **SONG** here, or LOOP. On this page too the line under it says `EDIT A - PLAYS B` while you look at one pattern and another plays, and names a bar that is not four quarters: `BAR 3/4` |
 | **2** | the eight patterns on pads 1 – 8, each with a sketch of what is in it – and a small `32` or `64` in the corner of one with a finer grid. White: playing. Blue: the one you edit. Blinking yellow: chosen, it starts on the next bar line |
 | **3** | INTENSITY on pads 9 – 16: the tiles light up to the current level |
 | **4** | PATTERN · CHAIN · INTENSITY · the selected sound's LAYER |
@@ -741,13 +914,14 @@ In **LOOP** the chosen pattern repeats. In **SONG** it depends on the arrangemen
 | no arrangement (the chain plays again) | SHIFT + pad 16, **twice**: it asks `PRESS AGAIN: CLEAR ARR` |
 | A, B, C, D in a row, a bar each, without an arrangement | CHAIN (encoder 2) at A – D. While there is an arrangement the chain is not used, and the knob says `ARRANGEMENT IN USE` |
 | one pattern, round and round | LOOP – F1 |
-| a shorter bar | encoder B (`BAR: 12/16`). It is the bar's length in sixteenths, for the whole song. A pattern at 1/32 plays 2 steps for each of them, one at 1/64 plays 4 |
+| a shorter bar | encoder B (`BAR: 12/16 = 3/4`). It is the bar's length in sixteenths, 1 – 16, for the whole song. A pattern at 1/32 plays 2 steps for each of them, one at 1/64 plays 4 |
+| another beat: 6/8 where it was 3/4 | SHIFT + B (`BEAT 3/8: BAR 6/8`). The beat is the device's, not the song's: [The bar and the beat](#the-bar-and-the-beat-34-68-78) |
 | to empty the pattern you see | F3 CLR PAT. It keeps its grid |
-| an empty song | F4 NEW, **twice**: it asks `PRESS AGAIN: NEW SONG`. Tempo 120, no swing, no arrangement, every fader at 100, every layer at 0, every pattern at 1/16. Your sounds stay |
+| an empty song | F4 NEW, **twice**: it asks `PRESS AGAIN: NEW SONG`. Tempo 120, no swing, no arrangement, a bar of 16 sixteenths, every fader at 100, every layer at 0, every pattern at 1/16. Your sounds stay, and so does the beat |
 | the demo song again | SHIFT + F4, **twice**: `PRESS AGAIN: DEMO` |
 
 A key that asks twice counts the second press while its question is in the top line, about two seconds. All of
-these F2 takes back.
+these F2 takes back, except what a knob set: CHAIN and the two turns of B.
 
 ---
 
@@ -785,8 +959,8 @@ pattern here (LOOP) – so a lane can be drawn while it goes round.
 
 | | What it is |
 |---|---|
-| **1** | the pattern, and the knob this lane moves |
-| **2** | the lane, as the 16 pads: a bar for each step (at 1/32 and 1/64: for each of the 16 steps shown). Bright with a white edge: a point. Dim: the value still held from the last point. The dot in a corner: the sound plays on that step |
+| **1** | the pattern, and the knob this lane moves. Between them, the bar's name when it is not four quarters: `BAR 6/8` |
+| **2** | the lane, as the 16 pads: a bar for each step (at 1/32 and 1/64: for each of the 16 steps shown). The empty tiles have two shades, beat by beat, as on SEQ. Bright with a white edge: a point. Dim: the value still held from the last point. The dot in a corner: the sound plays on that step |
 | **3** | STEP · VALUE (in the knob's own unit) · TARGET (which knob). The orange dot says this knob has a lane |
 | **4** | the eight patterns, as on SEQ, and how many of the song's 24 lanes are in use |
 | **5** | TO SONG (or TO LOOP) · UNDO · RAMP joins the points with straight lines · CLEAR empties the lane · COPY the pattern · SAVE |
@@ -817,7 +991,8 @@ For a second lane on the same sound, turn TARGET to another knob and put points 
 LEFT and RIGHT choose the pattern, as on SEQ. **F2 UNDO** takes back points, a RAMP or a CLEAR
 ([section 9](#undo)). The grid's keys are here too: SHIFT + F5 and F6 change the pattern's grid, SHIFT + LEFT and
 RIGHT move the 16 steps the pads show, and the bar strip shows the lane's points
-([A finer grid](#a-finer-grid-132-and-164)). CLEAR on a lane without points says `NOTHING TO CLEAR`.
+([A finer grid](#a-finer-grid-132-and-164)). CLEAR on a lane without points says `NOTHING TO CLEAR`. B has no job
+on AUTO: the bar's length is B on SONG and PERFORM, the beat is SHIFT + B on SEQ, SONG and PERFORM.
 
 On a sound page, an orange dot beside a value says a lane moves that knob:
 
@@ -858,9 +1033,9 @@ The same, after PLAY: pattern A repeats.
 | | What it is |
 |---|---|
 | **1** | what PLAY plays: **LOOP** or **SONG**. SHIFT + F1 changes it |
-| **2** | the page, the pattern you see and its grid: `PATTERN A  1/16` – or `EDIT B - PLAYS A  1/16`, in orange, while another one plays |
+| **2** | the page, the pattern you see and its grid: `PATTERN A  1/16` – or `EDIT B - PLAYS A  1/16`, in orange, while another one plays. When the bar is not four quarters, its name follows: `PATTERN A  1/16  BAR 6/8` |
 | **3** | the 16 sounds of the MUSIC kit, a row each, pad 1 at the top. A name is white while its sound plays. It is **grey when the sound is not heard**: muted, another one solo, or its layer off at the current intensity. A red **M** or a yellow **S** beside it: muted, solo |
-| **4** | the pattern: **a row is a sound, a cell is a step** – 16, 32 or 64 cells across, by the pattern's grid. A step that is on has the colour of its sound, brighter the harder it plays, and is grey when the sound is not heard. The empty cells change their shade beat by beat; beyond the end of a short bar they are dark |
+| **4** | the pattern: **a row is a sound, a cell is a step** – 16, 32 or 64 cells across, by the pattern's grid. A step that is on has the colour of its sound, brighter the harder it plays, and is grey when the sound is not heard. The empty cells change their shade beat by beat – every quarter note, or the beat SHIFT + B chose; beyond the end of a short bar they are dark |
 | **5** | the selected sound: its row is lit. While the pads are STEPS a white frame stands round the 16 steps they are |
 | **6** | the playhead: the column that plays now. It is there while the pattern you see is the one that plays |
 | **7** | encoders 1 – 4, in one line: VOLUME and PAN of the selected sound, INTENSITY, the selected sound's LAYER |
@@ -944,7 +1119,7 @@ While SHIFT is held, the six keys on the display show their second names.
 
 | Key | What it does |
 |---|---|
-| **F5 FILL** | the selected sound on every quarter note, every eighth, every sixteenth (at a finer grid also every thirty-second), then cleared: `EVERY 1/4` … `SOUND CLEARED`. It is F3 of SEQ |
+| **F5 FILL** | the selected sound on every beat, every eighth, every sixteenth (at a finer grid also every thirty-second), then cleared: `EVERY 1/4` … `SOUND CLEARED`. With another beat than a quarter it begins with that beat: `EVERY 3/8`, `EVERY 3/16` or `EVERY 1/8`. It is F3 of SEQ |
 | **F6 UNDO** | takes back the last thing done to the song. Again: redo. It is F2 of SEQ, and holds the same one step ([UNDO](#undo)) |
 | **SHIFT + F1** | TO SONG or TO LOOP: what PLAY plays (`SONG: PLAYS IN ORDER`, `LOOP: PATTERN REPEATS`) |
 | **SHIFT + F2 CLEAR** | takes the selected sound out of this pattern: `CLEARED - F6: UNDO`. `NOTHING TO CLEAR` if it has no steps |
@@ -966,7 +1141,8 @@ While SHIFT is held, the six keys on the display show their second names.
 | **3** | INTENSITY | the song's intensity: which layers play ([section 11](#11-layers-music-that-follows-the-game)) |
 | **4** | LAYER | the selected sound's mark. It plays while INTENSITY is at or above it |
 | **A** | | the tempo. SHIFT + A: the swing |
-| **B** | | the bar's length in sixteenths (`BAR: 12/16`) |
+| **B** | | the bar's length in sixteenths, 1 – 16 (`BAR: 12/16 = 3/4`) |
+| **SHIFT + B** | | the beat: 1/8, 3/16, 1/4 or 3/8 (`BEAT 3/8: BAR 6/8`). The click, the grid's shades and FILL follow it ([The bar and the beat](#the-bar-and-the-beat-34-68-78)) |
 
 A step's velocity and length are not on this page: they are encoders 3 and 4 of SEQ.
 
@@ -1103,9 +1279,11 @@ In the Playground and the plugin, **Stage** opens a bigger picture of the whole 
 
 SHIFT-click does the same as right-click everywhere.
 
-The picture shows pattern A repeating: LOOP is lit, and no bar of the arrangement moves. ERASE, the click's switch
-and the swing are on the device only. The stage has no tab for PERFORM: its right half already shows every sound's
-steps. While PERFORM is open on the device, the stage's REC makes the pads the kit, as the REC key does.
+The picture shows pattern A repeating: LOOP is lit, and no bar of the arrangement moves. ERASE, the click's switch,
+the swing, the bar's length and the beat are on the device only. The empty cells of the stage's rows change their
+shade beat by beat, by the beat the device has; beyond the end of a short bar they are dark. The stage has no tab for
+PERFORM: its right half already shows every sound's steps. While PERFORM is open on the device, the stage's REC makes
+the pads the kit, as the REC key does.
 
 ### Automation on the stage
 
@@ -1196,6 +1374,10 @@ something, so a song is as long as what is in it:
 Before, in format 5, every song was 7 699 bytes and SEND was 55 messages. A song piece now holds up to 240 bytes
 and says which format the song has.
 
+The bar's length is in the song, as it always was. **The beat is not**: SHIFT + B changes no byte of the song,
+and a game never gets it. It does not need it: the beat moves the click and the display's shades, and no note
+([The bar and the beat](#the-bar-and-the-beat-34-68-78)).
+
 | Who meets what | What happens |
 |---|---|
 | firmware 1.6.0 or 1.7.0 gets a song in an older format, or in the older message shape | it is taken, with every pattern at 1/16: `SONG LOADED` |
@@ -1240,10 +1422,10 @@ The protocol, byte by byte, is in [LINK-PROTOCOL.md](LINK-PROTOCOL.md). The Unit
 
 | | |
 |---|---|
-| **F6 SAVE** | keeps both kits and the song – patterns with their grids, arrangement, layers, mix, automation. A DAW project keeps them too. It says `SAVED` – or `NOT SAVED: STORE FULL` when the device's store did not take it: then do not count on it. The kits and the song are two files, and the next start finds of each what was last written whole – it can be the new sounds with the song from before |
+| **F6 SAVE** | keeps both kits and the song – patterns with their grids, arrangement, layers, mix, automation – and the device's beat. A DAW project keeps them too. It says `SAVED` – or `NOT SAVED: STORE FULL` when the device's store did not take it: then do not count on it. The kits and the song are two files, and the next start finds of each what was last written whole – it can be the new sounds with the song from before |
 | **F4 NEW** (SONG page), twice | an empty song. It replaces your song, not your sounds. F2 UNDO brings the song back |
 | **SHIFT + F4** (SONG page), twice | the demo song again. It replaces your song, not your sounds. F2 UNDO brings the song back |
-| **SHIFT + MENU, twice** | factory reset: both kits and the song as they came, and saved so (`FACTORY RESET`; `RESET - NOT SAVED` if the store did not take it). Press it once and it asks; twice within three seconds does it |
+| **SHIFT + MENU, twice** | factory reset: both kits and the song as they came, the beat a quarter again, and saved so (`FACTORY RESET`; `RESET - NOT SAVED` if the store did not take it). Press it once and it asks; twice within three seconds does it |
 
 The game and the device read songs from every earlier version of the format, at 1/16. The same does not hold the
 other way: a sound or song from a *newer* version is not taken by this firmware (it keeps what it has), and a kit or
@@ -1251,13 +1433,27 @@ song stored by a newer firmware is not read. The next SAVE then writes over it. 
 the sounds is not read either; the factory kits appear instead.
 
 Switching off forgets a few things that are not part of the song: after switching on, PLAY plays the song (SONG),
-the click is on, REC is off and F2 has nothing to take back.
+the click is on, REC is off and F2 has nothing to take back. The beat is not forgotten, if it was saved: the next
+start has the beat of the last SAVE.
+
+### The files
+
+| File | What is in it |
+|---|---|
+| `kits.bin` | both kits |
+| `song6.bin` | the song, in format 6 |
+| `meter.bin` | the beat: one byte. It is there only while the beat is not a quarter. SAVE with a beat of a quarter takes the file away, and so does the factory reset. (From firmware 1.7.0) |
+| `song.bin` | the song of the firmwares up to 1.5.0: read, never written ([below](#the-song-and-older-firmware)) |
 
 ### The song and older firmware
 
 Firmware 1.6.0 stores the kits as 1.4.0 and 1.5.0 did, in `kits.bin`. The song has a new file, `song6.bin`.
 `song.bin`, the song's file up to firmware 1.5.0, is still read and never written again. Firmware 1.7.0 stores both
 as 1.6.0 does: in the table, 1.6.0 stands for 1.7.0 too, and between those two nothing of it applies.
+
+`meter.bin`, the beat's file, is new with 1.7.0. Firmware 1.6.0 and older do not know the file: they do not read
+it, do not write it and do not remove it, and their beat is always a quarter. Back on 1.7.0 the beat is the one
+last saved there. This is read from the code, not tried.
 
 | This happens | What you find |
 |---|---|
@@ -1287,6 +1483,9 @@ F2 holds one step only: the first edit after switching on takes the other song's
 | **a hi-hat roll** | SEQ page, SHIFT + F6 for 1/32, SHIFT + RIGHT for the second half of the bar, HI-HAT on pads 9 – 16 |
 | **a fill only every fourth bar** | F5 COPY the pattern, SHIFT + F6 on the copy, write the fill there. Put the copy in the arrangement as every fourth bar |
 | **a snare rush that gets louder** | at 1/32 or 1/64: FILL the snare to `EVERY 1/32`, then encoder 1 from step to step and encoder 3 VELOCITY up |
+| **a waltz** | SONG or PERFORM: B to 12 (`BAR: 12/16 = 3/4`). KICK: FILL once, a kick on the three beats – or pad 1 only, and the snare on pads 5 and 9 |
+| **a 6/8 loop** | B to 12, then SHIFT + B one click up (`BEAT 3/8: BAR 6/8`). KICK: FILL once (`EVERY 3/8`: steps 1 and 7). HI-HAT: FILL twice (`EVERY 1/8`) |
+| **a bar of 7/8** | B to 14 (`BAR: 14/16 = 7/8`). The click counts three quarters and a short beat |
 | **one pattern, round and round, while I work on it** | K5 for the SEQ page, PLAY. The top line says LOOP |
 | **to play a part in** | SEQ page, REC, PLAY, then the pads or the keys. A bad take: F2 |
 | **one wrong sound out of a take** | SHIFT + its pad selects it. Hold F4 ERASE for one round |
@@ -1305,18 +1504,19 @@ F2 holds one step only: the first edit after switching on takes the other song's
 |---|---|
 | **Samples** | it cannot play recorded audio: no voice lines, no recorded foley, no real orchestra |
 | **Timing** | a bar is 16 sixteenths at most, each cut in 1, 2 or 4: 1/64 is the finest. No triplets, no notes between steps; swing is the only timing change, and it moves sixteenths |
+| **Time signatures** | whatever fits in 16 sixteenths: 4/4, 3/4, 2/4, 6/8, 7/8, 5/8, 12/16 … No longer bar: no 5/4, 6/4, 9/8 or 12/8. One bar's length for the whole song and one beat for the device: none for a pattern. The beats are all the same length, and the last may be short: no groupings like 2+2+3. The beat is not in the song, and a game does not get it |
 | **The grid** | one for a pattern, not one for each sound. The pads show 16 steps at a time. FILL goes to 1/32, not to 1/64 |
 | **Size** | 8 patterns, 32 bars of arrangement, 16 voices – with long reverberant sounds the oldest note is cut to make room |
 | **Automation** | 24 lanes a song, moving in steps, not glides |
 | **Chords** | one note per step for each sound. A chord needs several sounds, or the keys |
 | **Recording** | onto the pattern's steps: a hit is moved to the step of its grid nearest to it, and can land a few milliseconds early. No count-in. The MUSIC kit only |
-| **Undo** | one step back for the song, and forth again. Not for tempo, swing or the mixer; a sound has its own |
+| **Undo** | one step back for the song, and forth again. Not for tempo, swing, the bar's length, the beat or the mixer; a sound has its own |
 | **Older firmware** | 1.5.0 and before drop a song from 1.6.0 or 1.7.0 without a word, and do not see what those saved on the device ([section 16](#songs-formats-and-older-firmware), [section 17](#the-song-and-older-firmware)) |
 | **Platforms** | the Unity package runs on Windows x64 so far. Its MIDI link is tested against the emulator over a virtual cable, not against the hardware |
 | **PERFORM** | has no ERASE and no SAVE: both are on SEQ. It shows that a step is on and how hard it plays, not its note or its length; a pad held and a key gives a step its note, the velocity and the length are set on SEQ |
-| **The stage** | has no control for the swing, the click or ERASE, and no tab for PERFORM; they are on the device |
+| **The stage** | has no control for the swing, the click, the bar's length, the beat or ERASE, and no tab for PERFORM; they are on the device |
 | **SHIFT + K1 – K6, SHIFT + RETURN** | have no job in SFX FORGE. On the VIBE itself they are the VIBE's: SHIFT + K1 – K6 play notes and SHIFT + RETURN locks that ([section 2](#2-the-device)). That is read from the SDK, not tried on hardware |
-| **What is tested** | firmware 1.7.0 passes all 23 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. The 23rd check is PERFORM's: a script presses the page's keys, pads and encoders, and the check reads the song and measures how loud it plays. It does not look at the display; the pictures of the page in this manual are taken from the firmware. Nobody has played PERFORM by hand or listened to it, and the stage's REC on PERFORM is read from the code, not tried. Firmware 1.7.0 has not been run on the hardware or in the plugin. The link was last tested against the emulator with firmware 1.7.0 (23 Nov 2026: the six link tests of the Unity manual and the recorded session with SEND and EXPORT pressed on the device, each in one run, with songs of sixteenths only); PERFORM was not open in those runs. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 or 1.7.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
+| **What is tested** | firmware 1.7.0 passes all 24 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. The 23rd check is PERFORM's: a script presses the page's keys, pads and encoders, and the check reads the song and measures how loud it plays. It does not look at the display; the pictures of the page in this manual are taken from the firmware. Nobody has played PERFORM by hand or listened to it, and the stage's REC on PERFORM is read from the code, not tried. The 24th check is the beat's: a script turns B and SHIFT + B, and the check reads which steps FILL wrote with each beat, measures when the click sounds in a bar of 12 sixteenths with a quarter and with a dotted quarter, compares the song byte by byte before and after SHIFT + B, looks at `meter.bin` after SAVE with a dotted quarter and with a quarter, and reads the beat – by what FILL writes – after the device is switched on again, after NEW and after the factory reset. It sees that the display changes with the beat, not what it writes: the words and the shades in this manual are taken from pictures of the firmware. It does not look at the stage, and not at what swing does to the click: that is read from the code. Nobody has listened to the click with another beat or set a time signature by hand. Firmware 1.7.0 has not been run on the hardware or in the plugin. The link was last tested against the emulator on 24 Nov 2026, with firmware 1.7.0 as it is now: the six link tests of the Unity manual passed, in one run, with songs of sixteenths only and the beat a quarter. The recorded session with SEND and EXPORT pressed on the device was run once, on 23 Nov 2026, with the 1.7.0 build of that day, which had PERFORM and not yet the beat, and not again; with four quarters the display is the same. PERFORM was not open in those runs. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 or 1.7.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
 
 ---
 
@@ -1357,6 +1557,7 @@ click · MENU the tour · HOME this page's controls · A the output volume (not 
 | **A · B** | LINK | send CC 24 and 25 |
 | **B** | SEQ | the scale NOTE moves in |
 | **B** | SONG, PERFORM | the bar's length in sixteenths, 1 – 16 |
+| **SHIFT + B** | SEQ, SONG, PERFORM | the beat: 1/8, 3/16, 1/4 (as it comes) or 3/8. One click, one beat further; it stops at both ends |
 
 | Other key | Where | What it does |
 |---|---|---|
@@ -1381,14 +1582,16 @@ click · MENU the tour · HOME this page's controls · A the output volume (not 
 | `NOTHING TO CLEAR` | CLEAR or CLR PAT with nothing there. What F2 holds is kept |
 | `ALL ON` | F4 on MIX and MASTER, SHIFT + F3 on PERFORM: no mute, no solo |
 | `COPIED A > G` · `NO EMPTY PATTERN` | F5 COPY |
-| `EVERY 1/4` · `EVERY 1/8` · `EVERY 1/16` · `EVERY 1/32` · `SOUND CLEARED` | F3 FILL: where the sound stands now |
+| `EVERY 1/4` · `EVERY 1/8` · `EVERY 1/16` · `EVERY 1/32` · `SOUND CLEARED` | F3 FILL – on PERFORM F5: where the sound stands now |
+| `EVERY 3/8` · `EVERY 3/16` | FILL's first press with a beat of a dotted quarter · of three sixteenths |
 | `GRID 1/32` · `GRID 1/64` | SHIFT + F6: the pattern's grid is finer |
 | `GRID 1/16 - F2: UNDO` · `GRID 1/32 - F2: UNDO` | SHIFT + F5: the grid is coarser. On PERFORM they name F6: `GRID 1/16 - F6: UNDO`, `GRID 1/32 - F6: UNDO` |
 | `AGAIN: G DROPS 4` | SHIFT + F5 would drop 4 steps or points of pattern G: press it again while this stands |
 | `FINEST: 1/64` · `COARSEST: 1/16` | the grid cannot go further |
 | `STEPS 17-32` | SHIFT + LEFT or RIGHT: the steps the pads show now |
 | `1/16: ALL STEPS SHOWN` · `BAR ENDS AT STEP 8` | SHIFT + LEFT or RIGHT with nothing to move to |
-| `BAR: 12/16` | B on SONG and PERFORM: the bar's length |
+| `BAR: 12/16 = 3/4` · `BAR: 7/16` | B on SONG and PERFORM: the bar's length in sixteenths, and the time signature it makes with the beat. A bar that is counted in sixteenths anyway is said once |
+| `BEAT 3/8: BAR 6/8` | SHIFT + B on SEQ, SONG and PERFORM: the beat, and what the bar is called with it. The four: `BEAT 1/8`, `BEAT 3/16`, `BEAT 1/4`, `BEAT 3/8` |
 | `SAVED` · `NOT SAVED: STORE FULL` | F6 SAVE |
 | `OLDER FIRMWARE'S SONG` | at the start: an older firmware saved a song later than this one did. F2 brings this one's back |
 | `SONG LOADED` · `BAD SONG` · `NEWER SONG: UPDATE` | a song came from a game: taken · damaged · from a later format |

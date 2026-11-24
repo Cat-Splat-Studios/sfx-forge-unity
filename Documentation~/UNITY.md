@@ -720,6 +720,42 @@ light, not for timing a sound to the sample.
 > in a Unity test, only from the engine underneath; the demo song and the showcase use sixteenths only; the two
 > snippets above were not compiled; and nobody has listened to a finer pattern in Unity.
 
+### The bar and the beat
+
+From firmware 1.7.0 on the device has a **beat**. SHIFT + B on its SEQ, SONG and PERFORM pages chooses it: an eighth,
+three sixteenths, a quarter (as the device comes) or a dotted quarter. The device's click, the shades of its grids
+and its FILL key follow the beat, and its display names the bar by it: a bar of 12 sixteenths is `BAR 3/4` with a
+quarter and `BAR 6/8` with a dotted quarter
+([the device's manual](MANUAL.md#the-bar-and-the-beat-34-68-78)).
+
+**The bar's length is the song's. The beat is the device's.** The package reads the first and never gets the second.
+
+| | Whose it is | In Unity |
+|---|---|---|
+| **the bar's length** | the song's: 1 … 16 sixteenths, encoder B on the device. It is in the packed song and arrives with it, as ever | `SfxSong.StepsPerPattern` · STEPS in the song's Inspector |
+| **the beat** | the device's own. It is not in the packed song and in no message of the link; the device keeps it in a file of its own (`meter.bin`) | nothing. No member reads it, and nothing in the package's code or formats changed for it |
+
+What follows from that:
+
+- **A game plays the song the same whatever the beat is.** The beat changes no note. A bar of 12 sixteenths sounds
+  the same in Unity whether the device it came from calls it 3/4 or 6/8.
+- **The same song can be 3/4 on one device and 6/8 on another.** Sending it to a device, or fetching it, leaves that
+  device's beat as it is.
+- **`Bpm` counts quarters**, whatever the beat: a sixteenth lasts 15 / `Bpm` seconds. `Step`, `GridStep` and `Bar`
+  are as before.
+- **A game that wants the beat counts sixteenths itself.** In 6/8, `music.Step % 6 == 0` is true on each of the two
+  beats; in 3/4, `music.Step % 4 == 0` on each of the three.
+
+**A limit: the song's Inspector knows no beat.** It names no time signature, and it shades the empty cells of its
+STEPS rows and AUTO lanes in groups of four cells, whatever the device's beat is: at 16 steps that is a quarter. A
+bar of 12 sixteenths shows as three groups of four also when the device counts it as 6/8.
+
+> **What is tested, and what is not.** That the beat is not in the song is tested on the firmware's side
+> (`tests/check-meter.mjs` in the source repository): the packed song is the same bytes after the beat changed. On
+> the Unity side there is nothing to test, and nothing was added. The demo song and the showcase have bars of 16
+> sixteenths. **Not done:** the snippet above was not compiled or run, a song with a bar of 12 or 14 sixteenths was
+> not fetched from a device with another beat, and nobody has listened to one in Unity.
+
 ### Intensity and layers
 
 > **Every sound of the song has a LAYER mark. A sound plays only while `intensity` is at or above its mark.**
@@ -908,12 +944,16 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > **What is tested, and what is not.** MIDI is implemented for Windows only (winmm).
 >
 > **Firmware 1.7.0 was run against the emulator.** Firmware 1.7.0 adds a page to the device, PERFORM
-> ([the device's manual, section 13](MANUAL.md#13-perform-the-whole-pattern-and-the-pads-four-ways)), and changes
-> nothing on the wire: no message and no format. The song is in format 6 as before. For the package a device with
-> 1.6.0 and one with 1.7.0 differ in one thing only: the version the identity says. On 23 Nov 2026 the six link
-> tests of `Tests/LinkTakes.cs` in the showcase were run with firmware 1.7.0 in the SDK's emulator
+> ([the device's manual, section 13](MANUAL.md#13-perform-the-whole-pattern-and-the-pads-four-ways)), and a beat
+> with a time signature ([section 5](#the-bar-and-the-beat)). It changes
+> nothing on the wire: no message and no format. The song is in format 6 as before, and the beat is not in it. For
+> the package a device with
+> 1.6.0 and one with 1.7.0 differ in one thing only: the version the identity says. On 24 Nov 2026 the six link
+> tests of `Tests/LinkTakes.cs` in the showcase were run with firmware 1.7.0 as it is now, with PERFORM and the
+> beat, in the SDK's emulator
 > (`tests/emulator-link.mjs`) and this package, over two loopMIDI ports, with Unity 6000.3 on Windows 11, headless,
-> in a copy of the demo project. All six passed, in one run. What the log said:
+> in a copy of the demo project. All six passed, in one run. The day before they had passed, in one run too, with
+> the 1.7.0 build of that day, which had PERFORM and not yet the beat; the log said the same. What the log said:
 > - A patch came from the device when Unity asked for one: pad 1.
 > - The device said what it is: VIBE FM, firmware 1.7.0, profile 1, song format 6, 8 patterns of 64 steps, flags 15
 >   (all four).
@@ -927,8 +967,9 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > - Pads, intensity, a cue and text were sent to the device. Nothing comes back for these, so the test only says
 >   that every message left.
 >
-> **The recorded session** (`Tests/LinkSession.cs`, the link video) was run with 1.7.0 on the same day, once, and
-> passed:
+> **The recorded session** (`Tests/LinkSession.cs`, the link video) was run once, on 23 Nov 2026, and passed. It
+> was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display is
+> the same. It was not run again with the build that has the beat, and the link video is the one recorded then:
 > - SEND was pressed on the device's SONG page and the song arrived in the running game: 2487 bytes and 16 sounds
 >   in 27 messages. The game's music player was given it.
 > - A sound was mutated on the device and EXPORT was pressed: the patch of pad 1 arrived, and the game played it.
@@ -950,9 +991,11 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > **Not done with 1.7.0, and not with 1.6.0:**
 > - PERFORM over the link. The page sends and takes nothing of its own, and it was not open in any of these runs:
 >   the six tests press no key of the device, and the recorded session opens SONG and a sound page.
+> - Another beat than a quarter over the link. The beat is in no message, so there is nothing of it to cross. In
+>   every run the device's beat was the quarter it comes with, and every song had bars of 16 sixteenths.
 > - A song with a pattern at 1/32 or 1/64. Every pattern of the songs that crossed has 16 steps, the demo song's
 >   and the test's own alike. A finer pattern has not travelled over a MIDI port. What was done instead:
->   - The firmware's own checks (`sh build.sh` in the source repository, 23 of them with 1.7.0) hand the built
+>   - The firmware's own checks (`sh build.sh` in the source repository, 24 of them with 1.7.0) hand the built
 >     firmware the identity request and read its answer, and read the song it sends: 16 sounds, then the factory
 >     song in 11 pieces, 27 messages and 2487 bytes of format 6, byte for byte the demo project's song file. They
 >     also send it songs in both shapes of the message, doubled, out of order and one straight after another, and
@@ -961,7 +1004,8 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 >     the song arrives whole. It also runs both shapes of the message through that receiver, and checks what
 >     `SendSong` would send to a device that said 1.6 or 1.7, to one that said 1.5 and to one that said nothing.
 >
-> Firmware 1.7.0 was not run on hardware or in the plugin, and nobody has played its new page by hand. No firmware
+> Firmware 1.7.0 was not run on hardware or in the plugin, and nobody has played its new page by hand or listened
+> to its click. No firmware
 > older than 1.6.0 was run against this package: what is said below about an older firmware is reasoned from its
 > code.
 >
@@ -2151,6 +2195,7 @@ What this does not tell you:
 | **`volume` is not smoothed** | on either player. Fade a sound with `level`; ramp the music's `volume` yourself |
 | **No song editor** | a song is made on the device. In Unity you play it, look at it and shape it; its Inspector changes TEMPO, SWING and a sound's LAYER, VOLUME and PAN, nothing else |
 | **The grid is read, not set** | a pattern's grid is chosen on the device. In Unity `SfxNative.SongRegrid` gives the bytes of a song with a pattern in another grid; no Inspector key calls it |
+| **No beat, no time signature** | the device's beat (firmware 1.7.0, SHIFT + B) is not in the song, so the package cannot read it. The song's Inspector names no time signature and shades its cells in groups of four, whatever the device's beat is ([section 5](#the-bar-and-the-beat)) |
 | **An older device takes no format-6 song** | firmware 1.5.0 and before drops the new song message without a word, so the package refuses in words before it sends ([section 6](#when-a-song-is-not-sent)). An older package does not read a format-6 song either ([section 6](#the-song-formats-the-package-reads)) |
 | **What the engine itself cannot do** | [MANUAL section 19](MANUAL.md#19-what-it-does-not-do): no samples, at most 64 steps a bar, 8 patterns, 16 voices |
 

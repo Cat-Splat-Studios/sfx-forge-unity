@@ -86,9 +86,12 @@ The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 07 00 01 02 06 10 02 08 
   `NewerReceived` for a patch or a song that arrives in a higher format, the SFX Forge window writes it to the
   Console, a song asset that holds one says A NEWER SONG, and the music player warns instead of staying silent
   without a word. A game that got an identity knows the formats a device takes (bytes 5 and 6) before it sends.
-- **What the device stores** (`kits.bin`, `song6.bin`) has no format number of its own: the kits are 32 patches, each
-  with its format byte and checksum, and the song is a packed song with its format byte. A stored patch of another
-  format keeps its pad's factory sound, and the next SAVE writes this firmware's format over it.
+- **What the device stores** (`kits.bin`, `song6.bin`, `meter.bin`) has no format number of its own: the kits are 32
+  patches, each with its format byte and checksum, and the song is a packed song with its format byte. A stored
+  patch of another format keeps its pad's factory sound, and the next SAVE writes this firmware's format over it.
+  `meter.bin` (firmware 1.7.0) is one byte, the beat in sixteenths: 2, 3 or 6. It is there only while the beat is
+  not a quarter: SAVE with a quarter removes it, and any other byte in it leaves the quarter. It is the device's
+  and never crosses the link.
 - **Two song files.** From firmware 1.6.0 on the song is saved to `song6.bin`: the format-6 song and two check bytes of the
   `song.bin` beside it. `song.bin`, the file of the firmwares up to 1.5.0, is read and never written, so an older
   firmware put back on the device still finds its song. If that older firmware then saves, its `song.bin` is the
@@ -97,5 +100,5 @@ The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 07 00 01 02 06 10 02 08 
   factory reset deletes `song.bin` and saves.
 
 `tests/check-identity.mjs`, `check-wire.mjs` and `check-store.mjs` (run by `build.sh`) send these messages into the
-built firmware, read what it sends and look at what it stores. A firmware up to 1.5.0 was not run against any of
+built firmware, read what it sends and look at what it stores; `check-meter.mjs` looks at `meter.bin`. A firmware up to 1.5.0 was not run against any of
 this: what is said of it is read from its code.
