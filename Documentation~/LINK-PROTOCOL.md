@@ -31,6 +31,52 @@ Plain MIDI, so it works over USB, the plugin's MIDI ports and Web MIDI. SysEx us
 `<slot>` is 0–15, a pad of the kit the device shows. SEND and the request `06` always give the MUSIC kit: the song's
 sounds. A game plays sound effects beside the song with slots 16–31 of the player (`sfx_player_note_on`). Telemetry also arrives as the DAW parameters Mod Pitch / Cutoff / FM / Level and Intensity.
 
+### The host's parameters
+
+What the host (the plugin in a DAW, a mixer controller) sees of the device: 71 parameters, in this order. The first
+six are as they were before firmware 1.7.1; the mixer's 65 came with 1.7.1 and follow the VIBE FM SDK's mixer
+convention (SDK 11; the SDK's `CONTROLLERS.md`, section 2).
+
+| Parameter (id) | Name | Group | Range |
+|---|---|---|---|
+| `volume` | Volume | OUTPUT | 0…1 |
+| `mod_pitch` | Mod Pitch | TELEMETRY | 0…24 st |
+| `mod_cutoff` | Mod Cutoff | TELEMETRY | −4…+4 oct |
+| `mod_fm` | Mod Timbre | TELEMETRY | 0…1 |
+| `mod_level` | Mod Level | TELEMETRY | 0…1 |
+| `intensity` | Intensity | MUSIC | 0…1 |
+| `mix_<n>_level`, n = 1…16 | Level n | MIX n | 0…1: the fader of sound n, the song's 0–127 divided by 127 |
+| `mix_<n>_pan` | Pan n | MIX n | −1…+1: all left, 0 the middle, all right (the song's 0, 64 and 127) |
+| `mix_<n>_mute` | Mute n | MIX n | 0 or 1 (two steps): 1 is muted |
+| `mix_<n>_solo` | Solo n | MIX n | 0 or 1 (two steps): 1 is solo |
+| `mix_select` | Selected sound | MIX | 1…16 (16 steps): the selected sound |
+
+The mixer's parameters stand four a sound (level, pan, mute, solo: sound 1's, then sound 2's, up to sound 16's), then
+`mix_select`. There is no `mix_<n>_arm`: REC is one key for the whole song, not one for each sound.
+
+- **Nothing new is kept for them.** The values are the song's own mix and the selected sound, as the MIX page shows
+  them.
+- **To the host.** After every event and every draw the firmware compares each value with what the host was told
+  last and tells it those that differ; at the start, on every init, it tells all 65. So it does not matter what
+  moved a value: a fader turned on MIX, a pad that mutes, ALL ON, UNDO, NEW, a song from a game. (The SDK's text
+  suggests comparing once per audio block; it is done in the control flow instead, and the comment over `mix_report`
+  in `sfx-forge/fw_pages.h` says why.) A pad played, or a note 36–51 from outside, selects that sound, so
+  `mix_select` is told with it.
+- **From the host.** A value the host sets goes into the song (`mix_select`: it selects the sound) and is not said
+  back to the host. A level is rounded to the song's 0–127 and a pan to 0–127 with 64 the middle; a mute or a solo
+  is on from 0.5. No undo step is made for it, as none is made for the MIX page's own faders and mutes. A value
+  between two steps is rounded and not said back, so the host and the device can differ by up to half a step of 127.
+- **Not taken.** A value that is no number (NaN or an infinity), and `mix_select` while the tour runs. The host is
+  then told what the value really is; in the tour's case that is when the tour is over. The tour's own selections are
+  not told to the host.
+- **Which sounds.** Levels, pans, mutes and solos are always the song's sounds (the MUSIC kit). `mix_select` is the
+  selected pad's number in whichever kit is chosen, as on the MIX page.
+
+Tested by `tests/check-mixer.mjs` on the built firmware, through the SDK's own host functions (`vibe_wasm_param_set`,
+`_value`, `_changed`). Not tried: a real mixer controller, the VIBE FM plugin, a DAW, the Playground. In the
+plugin's Editor view the mixer is 17 more groups, and a mute or a solo is a plain value of two steps: that is read
+from the list, nobody has seen it on a screen.
+
 **Patch bytes** (28, each 0–127): `version(2) engine(0–4)`, then 25 parameters, then `checksum` = the sum of the
 first 27 bytes `& 0x7F`. The parameters, in order: `base_freq pitch_env_amt pitch_env_time a b noise_mix filter_cutoff
 filter_res decay bitcrush attack sustain release filter_env filter_env_time lfo_rate lfo_pitch lfo_filter lfo_timbre
@@ -51,7 +97,7 @@ version wrote it. Nothing about the sound or the messages above changes.
 | Byte | | Today |
 |---|---|---|
 | 0 | hardware: 0 unknown, 1 VIBE FM (the SDK's host – emulator, plugin, VIBE Box; the firmware cannot tell them apart) | 1 |
-| 1 2 3 | firmware version: major, minor, patch | 1 7 0 |
+| 1 2 3 | firmware version: major, minor, patch | 1 7 1 |
 | 4 | profile: 1 = what SFX FORGE 1.x offers on VIBE FM | 1 |
 | 5 | patch format (`SFX_PATCH_VERSION`) | 2 |
 | 6 | song format (`SFX_SONG_VERSION`) | 6 (firmware 1.4 and 1.5: 5) |
@@ -62,7 +108,7 @@ version wrote it. Nothing about the sound or the messages above changes.
 | 16 | values in a patch (`SFX_P_COUNT`) | 25 |
 | 17 | flags: bit 0 has pads, bit 1 has encoders for the game (LINK page), bit 2 takes a song's sounds (`02` with slot 16–31), bit 3 takes telemetry (CC 10–17, ch 2) | 15 |
 
-The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 07 00 01 02 06 10 02 08 40 18 20 10 05 06 19 0F F7`.
+The whole answer today, 24 bytes: `F0 7D 56 42 08 01 01 07 01 01 02 06 10 02 08 40 18 20 10 05 06 19 0F F7`.
 
 - **Fields are only ever added at the end.** A reader takes the first 18 bytes and ignores what follows. A message
   with fewer than 18, or with a byte above 127, is not an identity.

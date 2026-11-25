@@ -1,4 +1,4 @@
-# The device's side: SFX FORGE 1.7.0 for VIBE FM
+# The device's side: SFX FORGE 1.7.1 for VIBE FM
 
 `sfx-forge.zip` is the built instrument (a "Vibe"). Drop the zip onto the window of the VIBE FM plugin; or unzip it
 and drop `sfx-forge.wasm` onto the VIBE FM Playground, <https://play.thefirmwarehub.com/>, in Chrome or Edge.
@@ -6,20 +6,47 @@ and drop `sfx-forge.wasm` onto the VIBE FM Playground, <https://play.thefirmware
 How to play it: [the device's manual](../Documentation~/MANUAL.md). How to join it to Unity:
 [section 6 of the Unity manual](../Documentation~/UNITY.md#6-from-the-device-to-the-game).
 
-This build (1.7.0) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
+This build (1.7.1) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
 SysEx and stored files, in a small host of the source repository's own: its checks hand the built `.wasm`
-events and SysEx and read its sound, its MIDI and what it stores, and all 22 of them pass. A few of them also
+events and SysEx and read its sound, its MIDI and what it stores, and all 24 of them pass, as does the SDK's
+own `vibe-check` (25 Nov 2026). A few of them also
 compare the display, to tell that it changed or that the LINK light is on: what a page shows and what a toast
-says is not read. Against
-Unity, the six link tests of the Unity manual passed in the SDK's local emulator on 24 Nov 2026, in one run,
-with songs of sixteenths only and the beat a quarter. That was the build before this one: this one differs
-in one text of the display, the LINK page's footer (`CC 20-23` became `CC 20-25`), and the link tests were
-not run again with it. The session of the link video
+says is not read.
+
+This build was not run against Unity. The package's checks without Unity were run with it and pass
+(25 Nov 2026). What was run against Unity is firmware 1.7.0: the six link tests of
+the Unity manual passed in the SDK's local emulator on 24 Nov 2026, in one run,
+with songs of sixteenths only and the beat a quarter. That was the 1.7.0 build before one text of the
+display was corrected, the LINK page's footer (`CC 20-23` became `CC 20-25`), and the link tests were
+not run again after that, nor with 1.7.1. The session of the link video
 was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display
 is the same, and it was not recorded again.
-It was not run in the plugin or on hardware. Nobody has played its new page, PERFORM, by hand, nobody has
-set a time signature by hand, and nobody has listened to what is new in it. Its source is not in this
-package.
+No build was run in the plugin or on hardware. Nobody has played the PERFORM page by hand, nobody has
+set a time signature by hand, and nobody has listened to what came with 1.7.0. Nobody has tried the mixer
+of 1.7.1 with a mixer controller, in the VIBE FM plugin, in a DAW or in the Playground. The source is not in
+this package.
+
+New in 1.7.1: the device reports its mixer to the host as parameters, as the VIBE FM SDK's mixer convention
+asks of an instrument with tracks. After the six parameters of before (`volume`, `mod_pitch`, `mod_cutoff`,
+`mod_fm`, `mod_level`, `intensity`, unchanged and in the same order) there are 65 more, 71 in all: for each
+of the song's 16 sounds `mix_<n>_level` (0 to 1), `mix_<n>_pan` (-1 to +1), `mix_<n>_mute` and
+`mix_<n>_solo` (0 or 1), with n from 1 to 16, and then `mix_select` (1 to 16, the selected sound). There is
+no `mix_<n>_arm`: REC is one key for the whole song, not one for each sound. Nothing new is stored. The
+values are the song's own, as the MIX page shows them: a level is the song's volume of 0 to 127 divided by
+127, and a pan's middle is the song's 64. The host is told whatever changes them: a fader turned on MIX, a
+pad that mutes, ALL ON, UNDO, NEW, a song from a game. A value the host sets goes into the song or selects
+the sound, is not said back to the host and makes no undo step (the MIX page's own faders and mutes make none
+either). Not taken from the host: a value that is no number, and `mix_select` while the device's tour
+runs; the host is then told what the value really is. The tour's own selections are not told to the host,
+and when it is over the host is told the sound that is selected then. A bug older than 1.7.1 is fixed with
+it: the tour now changes only the sound it selected itself and puts that one back, also when another sound
+was selected while it ran.
+1.7.1 changes nothing in this package's code, in the messages or in the formats: the song is in
+format 6 and a patch in format 2 as before, no SysEx message changed, and only the identity's version says
+1.7.1. It was tested by a script that works the SDK's own host functions for parameters in the source
+repository's small host: the list, both directions, that a mute and a fader set from the host are
+heard in the measured output, what is not taken, and that the tour leaves every sound as it was. No real
+host or controller was tried.
 
 New in 1.7.0: PERFORM, a fourth page of the K5 key (K5 walks SEQ, SONG, AUTO, PERFORM). It shows the whole
 pattern as a grid, one row for each of the 16 sounds, and F1 to F4 choose what the pads are: the steps of

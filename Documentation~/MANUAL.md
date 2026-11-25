@@ -6,12 +6,12 @@ plays the result with the same engine, so what you hear here is what the player 
 Everything is synthesized. There are no samples and no recordings in it.
 
 > **In the Unity package.** This is the manual of the instrument, as it is in the repository the package is
-> generated from. The built instrument (firmware 1.7.0) is in the package's `Firmware~` folder:
+> generated from. The built instrument (firmware 1.7.1) is in the package's `Firmware~` folder:
 > `sfx-forge.zip`, with `sfx-forge.wasm` inside it. The game's side is [the Unity manual](UNITY.md). The
 > instrument's and the engine's C source (`sfx-forge/`, `core/`) and the scripts under `tests/` and `docs/` are
 > in that repository, not in the package; here the engine is the compiled `Runtime/Plugins/x86_64/sfxforge.dll`.
 
-This manual describes firmware 1.7.0.
+This manual describes firmware 1.7.1.
 
 | I want to … | Go to |
 |---|---|
@@ -1236,6 +1236,57 @@ MUTES there ([section 13](#13-perform-the-whole-pattern-and-the-pads-four-ways))
 The top line says LOOP or SONG here too, and **F5 PLAY** plays that: the pattern you were on, round and round, or
 the song. F1 on SEQ, SONG or AUTO changes it, or SHIFT + F1 on PERFORM.
 
+#### The mixer for a host: a mixer controller, a DAW
+
+(From firmware 1.7.1.)
+
+The firmware reports this mixer to its host – the plugin in a DAW, the Playground – as parameters, the way the
+VIBE FM SDK's mixer convention asks. A mixer controller's faders and keys, and a DAW's automation, can then work
+the mix and show it. They come after the six parameters the firmware had before (`volume`, `mod_pitch`,
+`mod_cutoff`, `mod_fm`, `mod_level`, `intensity`), which are as they were: 71 parameters in all.
+
+| Parameter | Range | What it is |
+|---|---|---|
+| `mix_1_level` … `mix_16_level` | 0 … 1 | the sound's fader. The song keeps it as 0 – 127, so 1 is 127 and the mark at 100 is 100/127 |
+| `mix_1_pan` … `mix_16_pan` | −1 … +1 | its pan: −1 all left, 0 the middle, +1 all right (the song's 0, 64 and 127) |
+| `mix_1_mute` … `mix_16_mute` | 0 or 1 | muted: what a pad does on MIX |
+| `mix_1_solo` … `mix_16_solo` | 0 or 1 | solo: what SHIFT + a pad does on MIX |
+| `mix_select` | 1 … 16 | the selected sound: the frame on MIX |
+
+The number in the name is the sound's pad, 1 – 16. The host has them in groups: `MIX 1` … `MIX 16` for the sounds
+and `MIX` for `mix_select`.
+
+- **Nothing new is kept for it.** The values are the song's own and the selected sound, as the MIX page shows
+  them. They are saved with the song and travel with it as before; the song's format did not change.
+- **The host follows the device.** Whatever changes the mix is told to the host, and only what changed: a fader
+  or a pan turned on MIX, a pad that mutes or solos, ALL ON, UNDO, NEW, another sound selected, a song that came
+  from a game. At the start the host is told all 65. A pad played, or a note 36 – 51 from outside, selects its
+  sound, so `mix_select` is told with it.
+- **The device follows the host.** A value the host sets goes into the song, or selects the sound, and the MIX
+  page shows it. It is not said back to the host. It is rounded to what the song holds: a fader set to 0.5 is 64
+  of 127. So the host and the device can differ by up to half a step of 127.
+- **What is not taken.** A value that is no number is not taken. While the tour runs (MENU), `mix_select` from the
+  host is not taken, and the sounds the tour selects are not told to the host. In both cases the host is then told
+  what the value really is; in the tour's case, when the tour is over.
+- **`mix_select` follows the kit, the rest does not.** `mix_select` is the selected pad's number in whichever kit
+  is chosen. Levels, pans, mutes and solos are always the song's sounds, the MUSIC kit. The MIX page works the same
+  way.
+- **No undo step** is made for a value from the host. The page's own faders and mutes make none either.
+- **There is no arm.** The convention also has a record-arm key for each track; this firmware has no
+  `mix_<n>_arm`, because REC is one key for the whole song and not one for each sound.
+- OUTPUT of this page is the parameter `volume`, as it was. DRIVE and the MASTER page's values are not among the
+  parameters.
+
+**Not tried with a controller.** A scripted check sets and reads these parameters through the SDK's own host
+functions ([section 19](#19-what-it-does-not-do), What is tested). Nobody has tried them with a real mixer
+controller, in the VIBE FM plugin, in a DAW or in the Playground. In the plugin's Editor view the mixer is 17 more
+groups, and mute and solo are plain two-step values there: that is read from the SDK, and nobody has seen it on a
+screen.
+
+**The tour, fixed with 1.7.1.** If DATA was turned while the tour ran and selected another sound,
+older firmware let the tour change that sound and did not put it back. Now the tour changes only the sound it
+selected itself, and puts it back.
+
 ### MASTER – press K4 a third time
 
 ![The MASTER page](img/page-master.png)
@@ -1383,13 +1434,13 @@ and a game never gets it. It does not need it: the beat moves the click and the 
 
 | Who meets what | What happens |
 |---|---|
-| firmware 1.6.0 or 1.7.0 gets a song in an older format, or in the older message shape | it is taken, with every pattern at 1/16: `SONG LOADED` |
-| firmware 1.6.0 or 1.7.0 gets a song from a format after 6 | nothing of it is kept: `NEWER SONG: UPDATE` |
-| firmware 1.6.0 or 1.7.0 gets a damaged song | `BAD SONG`, and its own song stays |
-| **firmware 1.5.0 or older gets a song from 1.6.0 or 1.7.0** | **it drops it without a word.** Nothing shows on its display and its song stays as it was. It does not know the new message |
+| firmware 1.6.0 or later gets a song in an older format, or in the older message shape | it is taken, with every pattern at 1/16: `SONG LOADED` |
+| firmware 1.6.0 or later gets a song from a format after 6 | nothing of it is kept: `NEWER SONG: UPDATE` |
+| firmware 1.6.0 or later gets a damaged song | `BAD SONG`, and its own song stays |
+| **firmware 1.5.0 or older gets a song from 1.6.0 or later** | **it drops it without a word.** Nothing shows on its display and its song stays as it was. It does not know the new message |
 
-Firmware 1.7.0 packs and sends a song as 1.6.0 does: the format is still 6. So update the device before a game, or
-anything else, sends it songs from 1.6.0 or later. The Unity package asks the device
+"Later" is 1.7.0 and 1.7.1: both pack and send a song as 1.6.0 does, and the format is still 6. So update the
+device before a game, or anything else, sends it songs from 1.6.0 or later. The Unity package asks the device
 what it is and refuses in words before it sends ([UNITY.md](UNITY.md)); a tool that just sends gets silence.
 The same song sent a second time within two seconds loads nothing; another song that follows it at once is taken
 as the next one. Later than two seconds the same song loads again, and it replaces what you changed since.
@@ -1408,9 +1459,9 @@ Linked over MIDI, the game drives the device while you listen and adjust. The **
 
 From firmware 1.4.0 a game can also ask the device what it is. The device answers with its **identity**: the
 hardware, the firmware's version, the formats of its sounds and songs, and what it holds – 16 sounds in each of 2
-kits, 8 patterns of up to 64 steps, 24 automation lanes, 32 bars, 16 voices, 5 engines, 6 wavetables. Firmware 1.7.0
-answers version 1.7.0, song format 6 and 64 steps; 1.6.0 answered the same with its own version; 1.4.0 and 1.5.0
-answered song format 5 and 16 steps. Every VIBE FM
+kits, 8 patterns of up to 64 steps, 24 automation lanes, 32 bars, 16 voices, 5 engines, 6 wavetables. Firmware 1.7.1
+answers version 1.7.1, song format 6 and 64 steps; 1.7.0 and 1.6.0 answered the same with their own versions;
+1.4.0 and 1.5.0 answered song format 5 and 16 steps. Every VIBE FM
 with the same firmware answers the same; the question is there so that later firmwares for other hardware, and a Unity side that can do
 more than a device, can be told apart without breaking what is made now. An older firmware does not answer, and the
 game takes that for a VIBE FM with a firmware before 1.4. Nothing shows on the device when it is asked, except that
@@ -1451,12 +1502,12 @@ start has the beat of the last SAVE.
 ### The song and older firmware
 
 Firmware 1.6.0 stores the kits as 1.4.0 and 1.5.0 did, in `kits.bin`. The song has a new file, `song6.bin`.
-`song.bin`, the song's file up to firmware 1.5.0, is still read and never written again. Firmware 1.7.0 stores both
-as 1.6.0 does: in the table, 1.6.0 stands for 1.7.0 too, and between those two nothing of it applies.
+`song.bin`, the song's file up to firmware 1.5.0, is still read and never written again. Firmware 1.7.0 and 1.7.1 store
+both as 1.6.0 does: in the table, 1.6.0 stands for them too, and between those three nothing of it applies.
 
 `meter.bin`, the beat's file, is new with 1.7.0. Firmware 1.6.0 and older do not know the file: they do not read
-it, do not write it and do not remove it, and their beat is always a quarter. Back on 1.7.0 the beat is the one
-last saved there. This is read from the code, not tried.
+it, do not write it and do not remove it, and their beat is always a quarter. Back on 1.7.0 or 1.7.1 the beat is
+the one last saved there. This is read from the code, not tried.
 
 | This happens | What you find |
 |---|---|
@@ -1514,12 +1565,13 @@ F2 holds one step only: the first edit after switching on takes the other song's
 | **Chords** | one note per step for each sound. A chord needs several sounds, or the keys |
 | **Recording** | onto the pattern's steps: a hit is moved to the step of its grid nearest to it, and can land a few milliseconds early. No count-in. The MUSIC kit only |
 | **Undo** | one step back for the song, and forth again. Not for tempo, swing, the bar's length, the beat or the mixer; a sound has its own |
-| **Older firmware** | 1.5.0 and before drop a song from 1.6.0 or 1.7.0 without a word, and do not see what those saved on the device ([section 16](#songs-formats-and-older-firmware), [section 17](#the-song-and-older-firmware)) |
+| **The mixer for a host** | level, pan, mute, solo and the selected sound, and no arm for a sound: REC is one key for the song. Not tried with a mixer controller, in the plugin or in a DAW ([section 14](#the-mixer-for-a-host-a-mixer-controller-a-daw)) |
+| **Older firmware** | 1.5.0 and before drop a song from 1.6.0 or later without a word, and do not see what those saved on the device ([section 16](#songs-formats-and-older-firmware), [section 17](#the-song-and-older-firmware)) |
 | **Platforms** | the Unity package runs on Windows x64 so far. Its MIDI link is tested against the emulator over a virtual cable, not against the hardware |
 | **PERFORM** | has no ERASE and no SAVE: both are on SEQ. It shows that a step is on and how hard it plays, not its note or its length; a pad held and a key gives a step its note, the velocity and the length are set on SEQ |
 | **The stage** | has no control for the swing, the click, the bar's length, the beat or ERASE, and no tab for PERFORM; they are on the device |
 | **SHIFT + K1 – K6, SHIFT + RETURN** | have no job in SFX FORGE. On the VIBE itself they are the VIBE's: SHIFT + K1 – K6 play notes and SHIFT + RETURN locks that ([section 2](#2-the-device)). That is read from the SDK, not tried on hardware |
-| **What is tested** | firmware 1.7.0 passes all 24 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. The 23rd check is PERFORM's: a script presses the page's keys, pads and encoders, and the check reads the song and measures how loud it plays. It does not look at the display; the pictures of the page in this manual are taken from the firmware. Nobody has played PERFORM by hand or listened to it, and the stage's REC on PERFORM is read from the code, not tried. The 24th check is the beat's: a script turns B and SHIFT + B, and the check reads which steps FILL wrote with each beat, measures when the click sounds in a bar of 12 sixteenths with a quarter and with a dotted quarter, compares the song byte by byte before and after SHIFT + B, looks at `meter.bin` after SAVE with a dotted quarter and with a quarter, and reads the beat – by what FILL writes – after the device is switched on again, after NEW and after the factory reset. It sees that the display changes with the beat, not what it writes: the words and the shades in this manual are taken from pictures of the firmware. It does not look at the stage, and not at what swing does to the click: that is read from the code. Nobody has listened to the click with another beat or set a time signature by hand. Firmware 1.7.0 has not been run on the hardware or in the plugin. The link was last tested against the emulator on 24 Nov 2026, with the 1.7.0 build before the LINK page's footer was corrected to `CC 20-25` (that text is all the build of now differs in; the link was not run again with it): the six link tests of the Unity manual passed, in one run, with songs of sixteenths only and the beat a quarter. The recorded session with SEND and EXPORT pressed on the device was run once, on 23 Nov 2026, with the 1.7.0 build of that day, which had PERFORM and not yet the beat, and not again; with four quarters the display is the same. PERFORM was not open in those runs. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 or 1.7.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
+| **What is tested** | firmware 1.7.1 passes all 25 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. The 23rd check is PERFORM's: a script presses the page's keys, pads and encoders, and the check reads the song and measures how loud it plays. It does not look at the display; the pictures of the page in this manual are taken from the firmware. Nobody has played PERFORM by hand or listened to it, and the stage's REC on PERFORM is read from the code, not tried. The 24th check is the beat's: a script turns B and SHIFT + B, and the check reads which steps FILL wrote with each beat, measures when the click sounds in a bar of 12 sixteenths with a quarter and with a dotted quarter, compares the song byte by byte before and after SHIFT + B, looks at `meter.bin` after SAVE with a dotted quarter and with a quarter, and reads the beat – by what FILL writes – after the device is switched on again, after NEW and after the factory reset. It sees that the display changes with the beat, not what it writes: the words and the shades in this manual are taken from pictures of the firmware. It does not look at the stage, and not at what swing does to the click: that is read from the code. Nobody has listened to the click with another beat or set a time signature by hand. The 25th check is the mixer's, new with 1.7.1: it reads the list of the 71 parameters, sets the mixer's through the SDK's own host functions and reads what the firmware tells the host – all 65 at the start; a fader, a pan, a mute, a solo and the selected sound set from the host, which the page's encoders and pads then go on from and which are not said back; a pad, SHIFT + a pad, the encoders, ALL ON, NEW and UNDO on the device, of which the host is told what moved; and it measures that the song is silent with every sound muted from the host, sounds again unmuted, and is silent with every fader down; that a value from the host that is no number is not taken and the host is told the real one; and that after the tour, with `mix_select` from the host and DATA turned while it ran, every sound is as it was and the sound of before is selected. It does not look at the display. Nobody has tried the mixer with a real mixer controller, in the VIBE FM plugin, in a DAW or in the Playground. Firmware 1.7.1 has not been run on the hardware or in the plugin, and 1.7.0 was not either. The link was last tested against the emulator on 24 Nov 2026, with the 1.7.0 build before the LINK page's footer was corrected to `CC 20-25`. The build of now differs from it in that text and in what 1.7.1 brought, the mixer's parameters, the tour's fix and the version the identity says; 1.7.1 changed no message and no format, and the link was not run again (so not with 1.7.1): the six link tests of the Unity manual passed, in one run, with songs of sixteenths only and the beat a quarter. The recorded session with SEND and EXPORT pressed on the device was run once, on 23 Nov 2026, with the 1.7.0 build of that day, which had PERFORM and not yet the beat, and not again; with four quarters the display is the same. PERFORM was not open in those runs. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 or later is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
 
 ---
 

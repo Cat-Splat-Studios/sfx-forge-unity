@@ -75,13 +75,16 @@ permissions under its section 7 (the Unity engine; the hosts of VIBE FM firmware
 - **Sample** "Showcase": a one-level game whose every sound is SFX FORGE, with its own song, editor checks, Play
   mode tests, a Windows build command and a self-check in the built game.
 - **Documentation~**: the Unity manual, the device's manual with the cheat sheet, the link's protocol, five videos.
-- **Firmware~**: the built instrument, firmware 1.7.0, without debug information. Firmware 1.7.0 adds the
+- **Firmware~**: the built instrument, firmware 1.7.1, without debug information. Firmware 1.7.0 adds the
   PERFORM page on the device: the whole pattern as a grid, and the pads as steps, the kit, mutes or patterns.
   It also adds a beat and a time signature: SHIFT + B on the device chooses an eighth, three sixteenths, a quarter
   or a dotted quarter, and the click, the grids' shades, FILL and the bar's name on the display (`BAR 3/4`,
   `BAR 6/8`) follow it. The beat is the device's and is not in the song: a game never gets it.
   Nothing in the package's code or formats changes with either: a device with 1.6.0 and one with 1.7.0 speak the
   same song format 6.
+  Firmware 1.7.1 reports the device's mixer to its host as parameters: level, pan, mute and solo of each of the
+  16 sounds and the selected sound, 65 parameters after the six of before. Nothing in the package's code or
+  formats changes with it either, and no message of the link changed.
 - The native library's import settings name the editor and Windows x64 only.
 
 The code is the package that was `com.catsplat.sfxforge` 0.1.0 inside the source repository. The id, the display name and the
@@ -104,12 +107,16 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
 - The identity was not asked of a device by the package's own tests, only built and read. There is one device and
   one profile id; nothing can be targeted at another, and nothing converts a newer patch, song or asset.
 - `loopPattern` is tested in the engine through the native library, and inside Unity by one Play mode test of the
-  sample, headless and muted; nobody has listened to it. Firmware 1.7.0 passes its own checks; the six link
-  tests were last run in the emulator against the build before one text of its LINK page was corrected (songs of
-  sixteenths only), and the session of the link video
-  was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added. Its PERFORM page and its beat
-  were tested by scripts only: nobody has played them by hand or listened to the click, and it was not run on
+  sample, headless and muted; nobody has listened to it. Firmware 1.7.1 passes its own checks. It was not run
+  against Unity: the six link
+  tests were last run in the emulator against firmware 1.7.0, the build before one text of its LINK page was
+  corrected (songs of sixteenths only), and the session of the link video
+  was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added. The PERFORM page and the beat
+  were tested by scripts only: nobody has played them by hand or listened to the click, and no build was run on
   hardware or in the plugin.
+- The mixer that firmware 1.7.1 reports to its host was tested by a script that works the SDK's own host functions
+  for parameters. Nobody has tried it with a mixer controller, in the VIBE FM plugin, in a DAW or in the
+  Playground.
 - The device's beat and time signature (firmware 1.7.0) are not in the song. The package does not read or
   show them, and the song's Inspector shades its cells in fours whatever the device's beat is.
 - The tools for designing sounds are measured, not heard: nobody has listened to a generated sound, a variant or

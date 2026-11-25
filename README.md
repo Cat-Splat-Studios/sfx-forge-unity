@@ -284,21 +284,29 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   from the device to Unity, a song and its sounds from Unity to the device, the game's messages leaving for the
   device, and the device saying what it is. That was done with firmware 1.7.0 on 24 Nov 2026: six tests, all
   passed, in one run, with songs of sixteenths only (on 23 Nov 2026 with the 1.7.0 build of that day, which did
-  not have the beat yet, and with 1.6.0 the day before that). The build in this package differs from the one of
-  that run in one text of the display, the LINK page's footer (`CC 20-23` became `CC 20-25`); the six tests were
-  not run again with it.
+  not have the beat yet, and with 1.6.0 the day before that). After that run one text of the display was
+  corrected in 1.7.0, the LINK page's footer (`CC 20-23` became `CC 20-25`), and the six tests were not run again.
+  **The firmware in this package is 1.7.1, and it was not run against Unity**: not in the link tests, not in the
+  recorded session, not in the sample's runs below. It adds the mixer as parameters for the host and changes no
+  message and no format.
   SEND and EXPORT pressed on the device arriving in a running game were seen in the recorded session of the link
   video, run once; in its pictures the device's INTENSITY follows the game's. The session was recorded with the
   1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display is the same. It was not
-  run again with the build in this package.
-- The firmware in this package (1.7.0): all 22 of its own checks pass. They run the built `.wasm` in the SDK's
+  run again with a later build.
+- The firmware in this package (1.7.1): all 24 of its own checks pass, and the SDK's `vibe-check` with them
+  (25 Nov 2026). They run the built `.wasm` in the SDK's
   command-line tools and in a small host of the source repository's own (for SysEx and stored files), without the
   emulator's page and without Unity, and read its sound, its MIDI, what it stores
   and the song it sends: 27 messages, the 16 sounds and then 2487 bytes of format 6 in 11 pieces. They also hand it
-  songs in both shapes of the song message, out of order, doubled and one straight after another. One of the 22
+  songs in both shapes of the song message, out of order, doubled and one straight after another. One of the 24
   presses the keys of PERFORM, the page that is new in 1.7.0; it does not look at the display. Another is about
   the beat, which is new in 1.7.0 too: what FILL writes with each beat, where the click falls, that the song's
-  bytes stay as they were, and what the device stores. It does not read the display's words.
+  bytes stay as they were, and what the device stores. It does not read the display's words. A third is about
+  the mixer that 1.7.1 reports to the host: the list of 71 parameters, a level, a pan, a mute, a solo and the
+  selected sound set from the host and changed on the device, and that every sound muted or every fader down from
+  the host is silent in the measured output; that a value that is no number is not taken; and that the device's
+  tour, with the selected sound set from the host and DATA turned while it runs, leaves every sound as it was. It
+  works the SDK's own host functions for parameters in that small host, not a real host.
 - The finer grid and song format 6 on the Unity side, without Unity and without a device (the checks of the
   engine-independent code, below): a format-5 song renders bit for bit as it did before; the songs of formats 1 to
   5, converted to format 6, play the same samples; a pattern made finer and coarser again; where the player is in a
@@ -315,7 +323,7 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   arithmetic in 32-bit floats. They also render the pictures of the editor UI on this page and
   in the manual; those are not photographs of the editor.
 - The engine-independent code, with plain .NET and without Unity: 205 checks, all passing with the native library
-  that is in this package. Among them the loop switch of the music player's engine (`loopPattern`): on, the
+  that is in this package (last run on 25 Nov 2026, with the identity of firmware 1.7.1). Among them the loop switch of the music player's engine (`loopPattern`): on, the
   pattern stays; a cue changes it on the bar line and that one stays; off, the arrangement goes on.
 - The tools for designing sounds. Without Unity: every kind of generated sound over 300 seeds is a valid patch
   inside its ranges, and 100 of each bake audible and unclipped; variants, locks and the shuffle; levels, the LEVEL
@@ -384,6 +392,14 @@ Not tested:
   crossed has 16 steps and every bar 16 sixteenths: a song with a pattern at 1/32 or 1/64 has
   not travelled through a MIDI port, only through the firmware's checks and the package's checks, which each read
   the other's bytes. Not in the plugin, not on hardware.
+- **Firmware 1.7.1, the one in this package, against Unity.** The link tests, the sample's runs, the editor UI's
+  tests and the videos were made with 1.7.0 and not again. 1.7.1 changes no message and no format, and that is read
+  from its code, from its own checks and from the checks with plain .NET, not from a run with Unity.
+- **The mixer of firmware 1.7.1 in a host.** The device reports the levels, pans, mutes and solos of its 16 sounds
+  and the selected sound to the host as parameters. A check in the source repository works the SDK's own host
+  functions for parameters in a host of its own. Nobody has tried it with a mixer controller, in the VIBE FM
+  plugin, in a DAW or in the Playground. The package has no part in it: the parameters are for the device's host,
+  not for the link.
 - **The PERFORM page of firmware 1.7.0, by hand.** A check in the source repository presses its keys in a host of
   its own and reads what the firmware then holds, plays and sends; it does not look at the display. Nobody has
   played the page or listened to it, and it was not open in any run of the link.
@@ -430,7 +446,7 @@ Not tested:
   warning (`SfxNative.Available` is false); that was not tried.
 - **MIDI on Windows only** (winmm), and only needed for the link. Playing sounds and songs needs no device.
 - **Unity 6000.3**: developed and tested with 6000.3.8f1, nothing older.
-- **Firmware 1.6.0 or 1.7.0 for songs.** A song of this version is in format 6. A firmware up to 1.5.0 does not
+- **Firmware 1.6.0, 1.7.0 or 1.7.1 for songs.** A song of this version is in format 6. A firmware up to 1.5.0 does not
   take it; the package says so before it sends. A package from before firmware 1.6.0 does not read it.
 - Live players are not spatialized (for 3D, bake a clip); one patch per `SfxPlayer`; a song is made on the device and
   only played and shaped in Unity: a pattern's grid too is chosen on the device. The device's beat (firmware 1.7.0) is not in the song: the package does not read or show it. A variation set must be baked to play where the native library is not, and
