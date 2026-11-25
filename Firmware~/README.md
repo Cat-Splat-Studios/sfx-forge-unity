@@ -1,4 +1,4 @@
-# The device's side: SFX FORGE 1.7.1 for VIBE FM
+# The device's side: SFX FORGE 1.7.2 for VIBE FM
 
 `sfx-forge.zip` is the built instrument (a "Vibe"). Drop the zip onto the window of the VIBE FM plugin; or unzip it
 and drop `sfx-forge.wasm` onto the VIBE FM Playground, <https://play.thefirmwarehub.com/>, in Chrome or Edge.
@@ -6,10 +6,10 @@ and drop `sfx-forge.wasm` onto the VIBE FM Playground, <https://play.thefirmware
 How to play it: [the device's manual](../Documentation~/MANUAL.md). How to join it to Unity:
 [section 6 of the Unity manual](../Documentation~/UNITY.md#6-from-the-device-to-the-game).
 
-This build (1.7.1) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
+This build (1.7.2) was run without the emulator's page, in the VIBE FM SDK's command-line tools and, for
 SysEx and stored files, in a small host of the source repository's own: its checks hand the built `.wasm`
-events and SysEx and read its sound, its MIDI and what it stores, and all 24 of them pass, as does the SDK's
-own `vibe-check` (25 Nov 2026). A few of them also
+events and SysEx and read its sound, its MIDI and what it stores, and all 24 of them pass, as do the SDK's
+own `vibe-check` and a short run of the new stress test (25 Nov 2026). A few of them also
 compare the display, to tell that it changed or that the LINK light is on: what a page shows and what a toast
 says is not read.
 
@@ -18,13 +18,27 @@ This build was not run against Unity. The package's checks without Unity were ru
 the Unity manual passed in the SDK's local emulator on 24 Nov 2026, in one run,
 with songs of sixteenths only and the beat a quarter. That was the 1.7.0 build before one text of the
 display was corrected, the LINK page's footer (`CC 20-23` became `CC 20-25`), and the link tests were
-not run again after that, nor with 1.7.1. The session of the link video
+not run again after that, nor with 1.7.1 or 1.7.2. The session of the link video
 was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display
 is the same, and it was not recorded again.
 No build was run in the plugin or on hardware. Nobody has played the PERFORM page by hand, nobody has
 set a time signature by hand, and nobody has listened to what came with 1.7.0. Nobody has tried the mixer
 of 1.7.1 with a mixer controller, in the VIBE FM plugin, in a DAW or in the Playground. The source is not in
 this package.
+
+New in 1.7.2: hardening, and no new feature. A host that hands over a value that is no number or without
+end no longer breaks the device: a tempo or a song position like that is not followed (as an infinity it
+crashed the audio while the song played), a host parameter like that reads as its start value (as NaN it
+made the sound NaN until a restart), a velocity is kept within 0 to 1, and an event's value, an encoder's
+turn and a SysEx event's length are kept within bounds. The output is now always within -1..+1: it could be
+one float step over full scale on single samples of a loud mix, with a correct host too.
+1.7.2 changes nothing in this package's code, in the messages or in the formats, and only the identity's
+version says 1.7.2. It was found and tested by stress tests in the source repository that run the built
+`.wasm` in a host of their own and the firmware's source built natively in two threads. Nobody has run it
+in the plugin, a DAW, the Playground or on hardware. Known and not fixed: with SHIFT held, a DATA turn of
+more than about 16 million detents never returns, a loop in the VIBE FM SDK's own runtime that no real
+control reaches; and the mixing of two songs' pieces after a broken transfer that the package's changelog
+names.
 
 New in 1.7.1: the device reports its mixer to the host as parameters, as the VIBE FM SDK's mixer convention
 asks of an instrument with tracks. After the six parameters of before (`volume`, `mod_pitch`, `mod_cutoff`,

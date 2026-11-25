@@ -970,12 +970,16 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > in a copy of the demo project. All six passed, in one run. The day before they had passed, in one run too, with
 > the 1.7.0 build of that day, which had PERFORM and not yet the beat; the log said the same.
 >
-> **Firmware 1.7.1 was not run against Unity.** It is the firmware the package carries now. It reports the
-> device's mixer to its host as parameters ([the device's manual, section 14](MANUAL.md#the-mixer-for-a-host-a-mixer-controller-a-daw)),
-> which is nothing the link carries: 1.7.1 changed no message and no format, and its identity says 1.7.1. The
-> package's code is unchanged. The runs recorded here were made with 1.7.0 and keep their version and date. What
-> was run with 1.7.1, on 25 Nov 2026: the firmware's own checks (`sh build.sh`, 25 lines `PASSED`) and
-> `tests/dotnet`, without Unity (`PASSED`, 205 checks; its identity test expects 1.7.1).
+> **Firmware 1.7.1 and 1.7.2 were not run against Unity.** 1.7.2 is the firmware the package carries now. 1.7.1
+> reports the device's mixer to its host as parameters ([the device's manual, section 14](MANUAL.md#the-mixer-for-a-host-a-mixer-controller-a-daw)),
+> which is nothing the link carries. 1.7.2 hardens the firmware against values no host should send (a tempo, a
+> parameter or a velocity that is no number) and keeps the output within full scale. Neither changed a message or
+> a format, and the identity now says 1.7.2. The package's code is unchanged. The runs recorded here were made
+> with 1.7.0 and keep their version and date. What
+> was run with 1.7.2, on 25 Nov 2026: the firmware's own checks (`sh build.sh`, 26 lines `PASSED`: `vibe-check`,
+> 24 checks and a short run of a fuzzer) and `tests/dotnet`, without Unity (`PASSED`, 205 checks; its identity
+> test expects 1.7.2). The Unity EditMode and PlayMode suites, the showcase's Verify and the link tests were not
+> run with it.
 >
 > What the log of 24 Nov 2026 said:
 > - A patch came from the device when Unity asked for one: pad 1.
@@ -1014,14 +1018,14 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > above, but for the version (1.6.0) and for Unity's count of the song's messages: 31, 32, 31 and 32. The recorded
 > session was run with 1.6.0 that day too, and passed.
 >
-> **Not done with 1.7.0 or 1.7.1, and not with 1.6.0:**
+> **Not done with 1.7.0, 1.7.1 or 1.7.2, and not with 1.6.0:**
 > - PERFORM over the link. The page sends and takes nothing of its own, and it was not open in any of these runs:
 >   the six tests press no key of the device, and the recorded session opens SONG and a sound page.
 > - Another beat than a quarter over the link. The beat is in no message, so there is nothing of it to cross. In
 >   every run the device's beat was the quarter it comes with, and every song had bars of 16 sixteenths.
 > - A song with a pattern at 1/32 or 1/64. Every pattern of the songs that crossed has 16 steps, the demo song's
 >   and the test's own alike. A finer pattern has not travelled over a MIDI port. What was done instead:
->   - The firmware's own checks (`sh build.sh` in the source repository, 25 of them with 1.7.1) hand the built
+>   - The firmware's own checks (`sh build.sh` in the source repository, 26 lines `PASSED` with 1.7.2) hand the built
 >     firmware the identity request and read its answer, and read the song it sends: 16 sounds, then the factory
 >     song in 11 pieces, 27 messages and 2487 bytes of format 6, byte for byte the demo project's song file. They
 >     also send it songs in both shapes of the message, doubled, out of order and one straight after another, and
@@ -1032,7 +1036,8 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 >
 > Firmware 1.7.0 was not run on hardware or in the plugin, and nobody has played its new page by hand or listened
 > to its click. Firmware 1.7.1 was not run there either, and nobody has tried its mixer with a mixer controller
-> or in a DAW. No firmware
+> or in a DAW. Nor was 1.7.2: a tool that sends hard MIDI to the plugin exists (`tests/midi-torture` in the source
+> repository) and has not yet sent a byte. No firmware
 > older than 1.6.0 was run against this package: what is said below about an older firmware is reasoned from its
 > code.
 >
@@ -1130,7 +1135,7 @@ The 18 bytes, each 0 … 127, become an `SfxDeviceInfo`:
 | 17 | `flags`: `HasPads`, `HasEncoders` (CC 20 – 25 from its LINK page), `TakesSongSounds` (what `SendSong` sends before the song), `TakesTelemetry` (CC 10 – 17 on channel 2) | all four |
 
 ```csharp
-SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.7.1, profile 1"
+SfxLink.Shared.IdentityReceived += said => Debug.Log(said);         // "VIBE FM, firmware 1.7.2, profile 1"
 SfxLink.Shared.RequestIdentity();                                   // Open has asked already
 // later, any time:
 SfxDeviceInfo? device = SfxLink.Shared.Device;                      // null: it has not answered
@@ -2540,7 +2545,7 @@ restarted. Nobody has called `SongRegrid` from a Unity script; `tests/dotnet` ca
 | `bool HasPads` · `HasEncoders` · `TakesSongSounds` · `TakesTelemetry` | the flags, one by one |
 | `bool IsAtLeast(int major, int minor, int patch)` | the firmware is that version or later. False for an assumed device |
 | `static SfxDeviceInfo AssumedBefore14` · `bool assumed` | what a device that does not answer is taken for: VIBE FM, profile 1 as it was then (`SfxProfile.VibeFm15`), pads, encoders, telemetry, no version. Whether it takes a song's sounds is not known (1.3.1 does), so that flag is off |
-| `string ToString()` | `"VIBE FM, firmware 1.7.1, profile 1"` |
+| `string ToString()` | `"VIBE FM, firmware 1.7.2, profile 1"` |
 | `SfxProfile`: `int id` · `patchFormat`, `songFormat` · `sounds`, `kits`, `patterns`, `steps`, `lanes`, `bars` · `voices`, `engines`, `wavetables`, `patchValues` | the formats a device speaks and how much it holds |
 | `static SfxProfile VibeFm1` | SFX FORGE 1.6 on, on VIBE FM: 1 · 2, 6 · 16, 2, 8, 64, 24, 32 · 16, 5, 6, 25. `steps` is the most a pattern holds |
 | `static SfxProfile VibeFm15` | what firmware 1.4 and 1.5 said of themselves, and what one before them is taken for: the same with song format 5 and 16 steps |

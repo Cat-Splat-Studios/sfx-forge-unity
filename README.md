@@ -286,15 +286,19 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   passed, in one run, with songs of sixteenths only (on 23 Nov 2026 with the 1.7.0 build of that day, which did
   not have the beat yet, and with 1.6.0 the day before that). After that run one text of the display was
   corrected in 1.7.0, the LINK page's footer (`CC 20-23` became `CC 20-25`), and the six tests were not run again.
-  **The firmware in this package is 1.7.1, and it was not run against Unity**: not in the link tests, not in the
-  recorded session, not in the sample's runs below. It adds the mixer as parameters for the host and changes no
-  message and no format.
+  **The firmware in this package is 1.7.2, and it was not run against Unity**: not in the link tests, not in the
+  recorded session, not in the sample's runs below. Neither was 1.7.1. 1.7.1 adds the mixer as parameters for the
+  host; 1.7.2 is hardening against a host that sends values that are no numbers or out of range. Neither changes a
+  message or a format.
   SEND and EXPORT pressed on the device arriving in a running game were seen in the recorded session of the link
   video, run once; in its pictures the device's INTENSITY follows the game's. The session was recorded with the
   1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display is the same. It was not
   run again with a later build.
-- The firmware in this package (1.7.1): all 24 of its own checks pass, and the SDK's `vibe-check` with them
-  (25 Nov 2026). They run the built `.wasm` in the SDK's
+- The firmware in this package (1.7.2): all 24 of its own checks pass, and the SDK's `vibe-check` and a short run
+  of a stress test with them (25 Nov 2026). The stress test is new in 1.7.2: a seeded fuzzer that plays the host and
+  hands the built `.wasm` events, parameters, a transport, SysEx and stored files, right and wrong, with values that
+  are no numbers too; it looks for a crash, a hang and a sample that is no number or over full scale, not at whether
+  it sounds right. The 24 checks run the built `.wasm` in the SDK's
   command-line tools and in a small host of the source repository's own (for SysEx and stored files), without the
   emulator's page and without Unity, and read its sound, its MIDI, what it stores
   and the song it sends: 27 messages, the 16 sounds and then 2487 bytes of format 6 in 11 pieces. They also hand it
@@ -323,7 +327,7 @@ Tested, on one machine (Windows 11, Unity 6000.3.8f1), in the repository this pa
   arithmetic in 32-bit floats. They also render the pictures of the editor UI on this page and
   in the manual; those are not photographs of the editor.
 - The engine-independent code, with plain .NET and without Unity: 205 checks, all passing with the native library
-  that is in this package (last run on 25 Nov 2026, with the identity of firmware 1.7.1). Among them the loop switch of the music player's engine (`loopPattern`): on, the
+  that is in this package (last run on 25 Nov 2026, with the identity of firmware 1.7.2). Among them the loop switch of the music player's engine (`loopPattern`): on, the
   pattern stays; a cue changes it on the bar line and that one stays; off, the arrangement goes on.
 - The tools for designing sounds. Without Unity: every kind of generated sound over 300 seeds is a valid patch
   inside its ranges, and 100 of each bake audible and unclipped; variants, locks and the shuffle; levels, the LEVEL
@@ -392,9 +396,13 @@ Not tested:
   crossed has 16 steps and every bar 16 sixteenths: a song with a pattern at 1/32 or 1/64 has
   not travelled through a MIDI port, only through the firmware's checks and the package's checks, which each read
   the other's bytes. Not in the plugin, not on hardware.
-- **Firmware 1.7.1, the one in this package, against Unity.** The link tests, the sample's runs, the editor UI's
-  tests and the videos were made with 1.7.0 and not again. 1.7.1 changes no message and no format, and that is read
-  from its code, from its own checks and from the checks with plain .NET, not from a run with Unity.
+- **Firmware 1.7.2, the one in this package, against Unity.** The link tests, the sample's runs, the editor UI's
+  tests and the videos were made with 1.7.0 and not again, not with 1.7.1 either. 1.7.1 and 1.7.2 change no message
+  and no format, and that is read from the code, from the firmware's own checks and from the checks with plain .NET,
+  not from a run with Unity.
+- **Firmware 1.7.2 in a real host.** Its hardening was found and tested by stress tests in the source repository,
+  in hosts of their own. A tool that sends heavy and hostile MIDI to the real plugin was written and built, and
+  nothing was ever sent with it. Nobody has run 1.7.2 in the VIBE FM plugin, a DAW, the Playground or on hardware.
 - **The mixer of firmware 1.7.1 in a host.** The device reports the levels, pans, mutes and solos of its 16 sounds
   and the selected sound to the host as parameters. A check in the source repository works the SDK's own host
   functions for parameters in a host of its own. Nobody has tried it with a mixer controller, in the VIBE FM
@@ -446,7 +454,7 @@ Not tested:
   warning (`SfxNative.Available` is false); that was not tried.
 - **MIDI on Windows only** (winmm), and only needed for the link. Playing sounds and songs needs no device.
 - **Unity 6000.3**: developed and tested with 6000.3.8f1, nothing older.
-- **Firmware 1.6.0, 1.7.0 or 1.7.1 for songs.** A song of this version is in format 6. A firmware up to 1.5.0 does not
+- **Firmware 1.6.0 or 1.7.0 to 1.7.2 for songs.** A song of this version is in format 6. A firmware up to 1.5.0 does not
   take it; the package says so before it sends. A package from before firmware 1.6.0 does not read it.
 - Live players are not spatialized (for 3D, bake a clip); one patch per `SfxPlayer`; a song is made on the device and
   only played and shaped in Unity: a pattern's grid too is chosen on the device. The device's beat (firmware 1.7.0) is not in the song: the package does not read or show it. A variation set must be baked to play where the native library is not, and
