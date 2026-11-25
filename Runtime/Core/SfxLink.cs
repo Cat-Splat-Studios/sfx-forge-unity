@@ -527,7 +527,9 @@ namespace CatSplat.SfxForge
         public bool SendSysEx(byte[] message) =>
             output != null && message != null && message.Length > 1 && output.SendSysEx(message);
 
-        /// <summary>Text for the device's top line (a level's name, a state): 24 ASCII characters.</summary>
+        /// <summary>
+        /// Text for the bottom line of the device's LINK page (a level's name, a state): 24 ASCII characters.
+        /// </summary>
         public bool SendText(string text) => output != null && output.SendSysEx(SfxProtocol.BuildText(text));
 
         /// <summary>

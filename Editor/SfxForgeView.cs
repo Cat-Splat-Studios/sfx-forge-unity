@@ -68,7 +68,7 @@ namespace CatSplat.SfxForge.Editor
         /// <summary>The pad touched last, here or on the device (the number at the top left).</summary>
         public int lastPad;
 
-        /// <summary>The text for the device's top line.</summary>
+        /// <summary>The text for the bottom line of the device's LINK page.</summary>
         public string text = "";
 
         /// <summary>What the device's knobs sent last on its LINK page (CC 20..25): 0..127, -1 = nothing yet.</summary>
@@ -269,7 +269,7 @@ namespace CatSplat.SfxForge.Editor
             link.Add(side);
             root.Add(link);
 
-            // the device: its pads, a text for its top line
+            // the device: its pads, a text for the bottom line of its LINK page
             padTabs.changed += i =>
             {
                 model.padMode = i;
@@ -282,7 +282,10 @@ namespace CatSplat.SfxForge.Editor
             padCap = SfxUI.Text("", "sfx-song-cap");
             root.Add(padCap);
             var textRow = SfxUI.Box("sfx-field-row");
-            Field(textField, "A text for the device's top line: a level's name, a state (24 characters).");
+            Field(
+                textField,
+                "A text for the bottom line of the device's LINK page: a level's name, a state (24 characters)."
+            );
             textField.maxLength = 24;
             textField.RegisterValueChangedCallback(e => model.text = e.newValue);
             textField.RegisterCallback<KeyDownEvent>(e =>
@@ -292,7 +295,11 @@ namespace CatSplat.SfxForge.Editor
                     SendText();
                 }
             });
-            showTextKey = new SoftKey("SHOW ON DEVICE", SendText, "Shows the text on the device's top line.");
+            showTextKey = new SoftKey(
+                "SHOW ON DEVICE",
+                SendText,
+                "Shows the text in the bottom line of the device's LINK page."
+            );
             showTextKey.AddToClassList("sfx-field-key");
             showTextKey.style.marginLeft = 4;
             textRow.Add(textField);

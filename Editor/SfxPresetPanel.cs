@@ -408,7 +408,8 @@ namespace CatSplat.SfxForge.Editor
                 );
             }
 
-            // (ten keys: twelve places make rows of six, four or three)
+            // (ten keys: twelve places make rows of six, four or three. The two blanks are for ten kinds: an eleventh
+            // kind in SfxGenerator needs one blank here, not two)
             kinds.AddBlank();
             kinds.AddBlank();
             toolBoxes[ToolNew].Add(kinds);

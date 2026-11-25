@@ -26,7 +26,8 @@ namespace SfxShowcase.Tests
     /// of every frame, what went over the ports.
     ///
     /// What happens, in the order of the take:
-    ///  • the game names itself and every section it enters on the device's top line (<c>SfxLink.SendText</c>);
+    ///  • the game names itself and every section it enters in the bottom line of the device's LINK page
+    ///    (<c>SfxLink.SendText</c>);
     ///  • the game's intensity moves the device's music, every frame (<c>SfxLink.SendIntensity</c>);
     ///  • SEND is pressed on the device's SONG page: the song arrives (<c>SfxLink.SongReceived</c>) and the game's
     ///    music player is given it;

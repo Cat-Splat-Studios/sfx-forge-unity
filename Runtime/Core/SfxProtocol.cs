@@ -101,7 +101,7 @@ namespace CatSplat.SfxForge
         /// <summary>The status byte of telemetry: a control change on channel 2.</summary>
         public const byte TelemetryStatus = 0xB1;
 
-        /// <summary>The most characters of a text for the device's top line.</summary>
+        /// <summary>The most characters of a text for the bottom line of the device's LINK page.</summary>
         public const int MaxText = 24;
 
         /// <summary>SysEx command: the device sends a patch (EXPORT, or the answer to Request).</summary>
@@ -110,7 +110,7 @@ namespace CatSplat.SfxForge
         /// <summary>SysEx command: a patch for the device to take.</summary>
         public const byte Load = 0x02;
 
-        /// <summary>SysEx command: a text for the device's top line.</summary>
+        /// <summary>SysEx command: a text for the bottom line of the device's LINK page.</summary>
         public const byte Text = 0x03;
 
         /// <summary>SysEx command: asks the device for the patch of a pad.</summary>
@@ -277,7 +277,9 @@ namespace CatSplat.SfxForge
             return new byte[] { 0xF0, 0x7D, 0x56, 0x42, Request, (byte)slot, 0xF7 };
         }
 
-        /// <summary>Text for the device's top line: printable ASCII, 24 characters at most.</summary>
+        /// <summary>
+        /// Text for the bottom line of the device's LINK page: printable ASCII, 24 characters at most.
+        /// </summary>
         public static byte[] BuildText(string text)
         {
             text = text ?? "";

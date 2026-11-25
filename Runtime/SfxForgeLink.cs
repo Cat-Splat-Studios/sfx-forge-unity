@@ -26,7 +26,7 @@ namespace CatSplat.SfxForge
         [Tooltip("Part of the MIDI output's name. Empty: the port chosen in Window > SFX Forge.")]
         public string outputPort = "";
 
-        [Tooltip("Shown on the device's top line when the game starts (24 characters).")]
+        [Tooltip("Shown in the bottom line of the device's LINK page when the game starts (24 characters).")]
         public string textOnStart = "";
 
         /// <summary>The event of a pad: pad 0..15, velocity 0..1.</summary>
@@ -94,7 +94,7 @@ namespace CatSplat.SfxForge
 
         void OnEncoder(int encoder, float value) => onEncoder.Invoke(encoder, value);
 
-        /// <summary>Text for the device's top line: a level, a state.</summary>
+        /// <summary>Text for the bottom line of the device's LINK page: a level, a state.</summary>
         public void SendText(string text) => SfxLink.Shared.SendText(text);
     }
 }

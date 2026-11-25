@@ -111,7 +111,7 @@ namespace CatSplat.SfxForge
 
         void OnDisable()
         {
-            // back to rest: no pitch, no FM, the filter and the level as they are
+            // back to rest: no pitch, no FM, the filter where it changes nothing (64/127), the level full (1)
             // the music stays as it is
             if (channel == SfxTelemetry.Intensity || channel == SfxTelemetry.Pattern)
             {

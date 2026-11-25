@@ -4,8 +4,9 @@ using UnityEngine;
 namespace CatSplat.SfxForge
 {
     /// <summary>
-    /// A piece of music made on SFX FORGE: its 16 sounds and its song (8 patterns, a chain, a layer threshold per
-    /// sound). Captured from the device in Window > SFX Forge; played in the game by SfxMusicPlayer.
+    /// A piece of music made on SFX FORGE: its 16 sounds and its song (8 patterns, each with its own grid of 16, 32
+    /// or 64 steps a bar, a chain, an arrangement of bars, the mix and the master effects, automation lanes, a layer
+    /// threshold per sound). Captured from the device in Window > SFX Forge; played in the game by SfxMusicPlayer.
     /// </summary>
     [CreateAssetMenu(menuName = "SFX Forge/Song", fileName = "New Song", order = 221)]
     public class SfxSong : ScriptableObject, ISerializationCallbackReceiver

@@ -101,7 +101,8 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
   one profile id; nothing can be targeted at another, and nothing converts a newer patch, song or asset.
 - `loopPattern` is tested in the engine through the native library, and inside Unity by one Play mode test of the
   sample, headless and muted; nobody has listened to it. Firmware 1.7.0 passes its own checks; the six link
-  tests were last run against it in the emulator (songs of sixteenths only), and the session of the link video
+  tests were last run in the emulator against the build before one text of its LINK page was corrected (songs of
+  sixteenths only), and the session of the link video
   was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added. Its PERFORM page and its beat
   were tested by scripts only: nobody has played them by hand or listened to the click, and it was not run on
   hardware or in the plugin.
@@ -110,7 +111,7 @@ version are new; namespaces, assembly names and asset GUIDs are unchanged.
 - The tools for designing sounds are measured, not heard: nobody has listened to a generated sound, a variant or
   a baked file. A variation set that is not baked plays only where the native library is, and nothing checks at
   build time that a set is baked or up to date.
-- The Inspectors and the two windows were tested as elements in a test panel (169 EditMode tests in the source
+- The Inspectors and the two windows were tested as elements in a test panel (171 EditMode tests in the source
   repository), and the pictures of them in these pages were rendered there. Nobody has opened them in the editor
   itself; their menus, typing into a value, and their keys against a device were not tried. No keys: the arrow
   keys on a tile, ENTER in the window's text field and the double-click that opens a value's field were never

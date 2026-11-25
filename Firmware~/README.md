@@ -11,8 +11,10 @@ SysEx and stored files, in a small host of the source repository's own: its chec
 events and SysEx and read its sound, its MIDI and what it stores, and all 22 of them pass. A few of them also
 compare the display, to tell that it changed or that the LINK light is on: what a page shows and what a toast
 says is not read. Against
-Unity, the six link tests of the Unity manual passed with this build in the SDK's local emulator on
-24 Nov 2026, in one run, with songs of sixteenths only and the beat a quarter. The session of the link video
+Unity, the six link tests of the Unity manual passed in the SDK's local emulator on 24 Nov 2026, in one run,
+with songs of sixteenths only and the beat a quarter. That was the build before this one: this one differs
+in one text of the display, the LINK page's footer (`CC 20-23` became `CC 20-25`), and the link tests were
+not run again with it. The session of the link video
 was recorded with the 1.7.0 build of 23 Nov 2026, before the beat was added; with four quarters the display
 is the same, and it was not recorded again.
 It was not run in the plugin or on hardware. Nobody has played its new page, PERFORM, by hand, nobody has

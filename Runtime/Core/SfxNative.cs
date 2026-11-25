@@ -6,7 +6,7 @@ namespace CatSplat.SfxForge
 {
     /// <summary>
     /// The device's own engine as a native library (native/sfx_native.c): a patch or a song sounds here as it does
-    /// there. Windows x64 for now.
+    /// there. The package ships it for Windows x64 only; where it is missing, Available is false.
     /// </summary>
     public static class SfxNative
     {
@@ -114,7 +114,9 @@ namespace CatSplat.SfxForge
         static volatile bool noLoop;
 
         /// <summary>
-        /// False where the library is missing (another platform): nothing plays locally, the link still works.
+        /// False where the library is missing or is another version: nothing plays or bakes locally. The MIDI link
+        /// does not need the library, but it has its own limit: it works on Windows only (MidiPorts.Supported), so on
+        /// another platform neither works.
         /// </summary>
         public static bool Available
         {

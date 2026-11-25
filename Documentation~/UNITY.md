@@ -262,7 +262,8 @@ cells, and the tiles of B, C and F carry `32` or `64` in their corner. Rendered 
 ![The SFX Forge window, shown with a filled-in model](img/unity-inspector-window.png)
 
 *Window > SFX Forge at 700 pixels, rendered by the tests from a model they filled in: the port names, the knob
-values, the patches and the messages in it are the test's, and no device was connected.
+values, the patches and the messages in it are the test's, and no device was connected. The model holds no
+identity, so the line under LINKED that says what the device is does not show in this picture.
 [Section 6](#the-sfx-forge-window) describes its parts.*
 
 ![The Inspector of a sound at 340 pixels](img/unity-inspector-sound-narrow.png)
@@ -370,7 +371,7 @@ words (FM RATIO, ARP STEP, GRAIN AMT, POSITION …).
 | Engine | Useful numbers |
 |---|---|
 | `Impact`, `SciFiFm` | FM Ratio 21 = 1:2 (a growl), 42 = 1:1 (round), 64 = 2:1; higher is bells and metal |
-| `UiBlip` | Arp Step 0 is a plain square wave, 37 = a fifth, 64 = an octave. The arpeggio takes three steps and stays on the last |
+| `UiBlip` | Arp Step 0 is a plain square wave, 37 = a fifth, 64 = an octave. The arpeggio plays four notes – the note itself, then three steps up – and stays on the last |
 | `Foley` | set `noiseMix` to 127. `filterCutoff` is the band. `pitchEnvAmount` sweeps the band: a whoosh |
 | `Wavetable` | `table` picks one of `SfxPatch.TableNames`: Saw to Square, Pulse, Peak, Vowel, Organ, Glass |
 
@@ -553,6 +554,12 @@ player.Release();                                          // let go: it fades o
 | `fm` | 0 … 1 | the timbre: FM depth, or a wavetable's position |
 | `level` | 0 … 1 | the loudness. 1 = as designed |
 
+The ranges of the first three are the Inspector's sliders, not limits. A script may write any value, and the engine
+takes `pitchSemitones` (a negative one plays lower), `cutoffOctaves` and `fm` as they are. It limits only what
+comes of them: the pitch and the filter's cutoff stay below 0.45 of the sample rate, the cutoff above 30 Hz, a
+wavetable's position inside its table, the FM depth with `fm` added at twice the knob's top. `level` is limited
+to 0 … 1.
+
 The player glides to each value over 30 ms, as the device does. You can write them every frame without clicks.
 
 `volume` (0 … 1, default 0.8) is the player's place in your mix. It is **not** smoothed: fade with `level`, not
@@ -609,6 +616,7 @@ Three words from the device, used below:
 | move the mix | `SetTrackVolume` · `SetTrackPan` · `SetTrackMute` · `SetMaster` · `volume` |
 | know where the song is | `IsPlaying` · `Step` (the sixteenth, 0 … 15) · `GridStep` (the step in the pattern's own grid) · `Pattern` (0 = A) · `Bar` (bars since `Play`) |
 | take a changed song asset | `Reload()`. It also puts the song's own mix back |
+| play another song asset | assign `song`, then call `Play()`: it takes the asset that was assigned and starts it on `startPattern`. `Reload()` takes it without starting again. Until one of the two is called the player keeps the song it took |
 
 ```csharp
 music.intensity = danger01;            // every frame
@@ -912,7 +920,7 @@ pad on the device minus one. `midiNote` 0 plays it as designed (a drum, an effec
 | Rule | |
 |---|---|
 | **It is not quantised** | the note sounds at once. To land on the beat, wait until `Step` or `Bar` changes, then play ([recipe 7](#7-a-stinger-on-the-bar-line)) |
-| **A held instrument must be released** | brass, strings, organ, choir: call `ReleaseSound(sound, midiNote)` with the same two numbers, or it never stops |
+| **A held instrument must be released** | brass, strings, organ, choir, sweep: call `ReleaseSound(sound, midiNote)` with the same two numbers, or it never stops |
 | **Layers do not apply** | a note by hand sounds whatever the intensity is |
 | **Same note, two instruments** | a note by hand is named by its MIDI note alone. If a **held** instrument is sounding a note and you play the same `midiNote` on another instrument, the held one is let go; `ReleaseSound` for that note releases every instrument holding it |
 
@@ -949,8 +957,9 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > nothing on the wire: no message and no format. The song is in format 6 as before, and the beat is not in it. For
 > the package a device with
 > 1.6.0 and one with 1.7.0 differ in one thing only: the version the identity says. On 24 Nov 2026 the six link
-> tests of `Tests/LinkTakes.cs` in the showcase were run with firmware 1.7.0 as it is now, with PERFORM and the
-> beat, in the SDK's emulator
+> tests of `Tests/LinkTakes.cs` in the showcase were run with firmware 1.7.0, with PERFORM and the
+> beat (the build before one text of the LINK page's footer was corrected from `CC 20-23` to `CC 20-25`; that text
+> is all the build of now differs in, and the tests were not run again with it), in the SDK's emulator
 > (`tests/emulator-link.mjs`) and this package, over two loopMIDI ports, with Unity 6000.3 on Windows 11, headless,
 > in a copy of the demo project. All six passed, in one run. The day before they had passed, in one run too, with
 > the 1.7.0 build of that day, which had PERFORM and not yet the beat; the log said the same. What the log said:
@@ -975,8 +984,10 @@ MIDI ports. Without the hardware you need a virtual MIDI cable with two ports, o
 > - A sound was mutated on the device and EXPORT was pressed: the patch of pad 1 arrived, and the game played it.
 > - The device followed the game, as far as pictures show it: in the frames of the video that were looked at, the
 >   INTENSITY on the device's SONG page reads 43 %, 69 % and 70 % where the game's value is 0.43, 0.68 and 0.70.
-> - Text was sent in the same session. In the frames that were looked at the device's top line shows the sound's
->   name or the device's own words (SONG SENT, EXPORTED), so nobody saw a text arrive.
+> - Text was sent in the same session. The device draws a text in one place only, the bottom line of its LINK
+>   page, and only while that page is open – not in its top line, which in the frames that were looked at shows
+>   the sound's name or the device's own words (SONG SENT, EXPORTED). Nobody looked for a frame with the LINK page
+>   open, so nobody saw a text arrive.
 >
 > The session ran headless: nobody heard it, and nobody has listened to the video.
 >
@@ -1066,12 +1077,12 @@ From the top:
 | **FROM THE DEVICE** | six bars: what the device's knobs 1 – 4, A and B sent last on its LINK page (CC 20 – 25). `-` until one has sent |
 | **FROM DEVICE** · **TO DEVICE** | the two MIDI ports, as tiles. A click on one opens a menu of the ports there are (not while connected). The choice is remembered, and the editor reconnects after scripts reload. Under them the state: LINKED with the two port names, NOT CONNECTED, NO MIDI PORTS (and what to install), or NO MIDI HERE (not Windows). While linked, one more line says what the device is, as it answered: `VIBE FM, firmware 1.7.0, profile 1`. If nothing answered within a second it reads `no identity: firmware before 1.4, or nothing answers` ([below](#what-the-device-is-the-identity)) |
 | **PADS PLAY** · **PADS FETCH THEIR PATCH** | two tabs over 16 pad tiles. On the first, a pad plays on the device for as long as the mouse holds it. On the second, a click asks the device for that pad's patch. A pad whose patch has come carries its engine's short name and colour. The pads need the port TO DEVICE |
-| **The text field** · **SHOW ON DEVICE** | writes up to 24 characters on the device's top line. ENTER in the field does the same |
+| **The text field** · **SHOW ON DEVICE** | writes up to 24 characters into the bottom line of the device's LINK page; they show only while that page is open. ENTER in the field does the same |
 | **PATCHES FROM THE DEVICE** | what arrived, newest first (the last 32), each a tile: pad number, engine, time, the sound's waveform, **PLAY** and **SAVE** (**SHOW** once it is an asset). With **SAVE AS THEY ARRIVE** on (green; it is on at first), a patch is saved as soon as it arrives, into **FOLDER** (default `Assets/SfxForge`), named like `Pad03_SciFiFm` |
 | **LAST MESSAGES IN** | the last six MIDI messages, as hex |
 | **CONNECT** / **DISCONNECT** | opens or closes the two ports |
 | **REFRESH PORTS** | reads the list of ports again |
-| **FETCH SONG** | asks for the 16 sounds and the song; they arrive as an `SfxSong` asset named `Song` in the folder |
+| **FETCH SONG** | asks for the 16 sounds and the song; they arrive as an `SfxSong` asset named `Song` in the folder (`Song 1` when there is one), whether SAVE AS THEY ARRIVE is on or not. The 16 sounds also arrive as 16 patches: each gets a tile, and with SAVE AS THEY ARRIVE on each is saved as a preset too, `Pad01_…` to `Pad16_…`. So a fetched song leaves 17 assets, and so does SEND on the device while the window is open |
 | **SHOW SONG** | points at the song fetched last, while the window is open |
 
 ![The SFX Forge window, not connected](img/unity-inspector-window-off.png)
@@ -1170,7 +1181,7 @@ What that comes to:
 | On the device | In Unity |
 |---|---|
 | **F5 EXPORT** on a sound page | `SfxLink.PatchReceived(slot, patch)`. The window, while it is open, saves it as an `SfxPreset` (with SAVE AS THEY ARRIVE on, as it is at first; otherwise SAVE on its tile) |
-| **F5 SEND** on the SONG page | 16 patches, then the song in pieces of up to 240 bytes (11 for the factory song): `SfxLink.SongReceived(song, sounds)`. The window saves an `SfxSong`. A firmware up to 1.5.0 sends 39 pieces of 200 bytes, a format-5 song; both are taken |
+| **F5 SEND** on the SONG page | 16 patches, then the song in pieces of up to 240 bytes (11 for the factory song): `SfxLink.SongReceived(song, sounds)`, after `PatchReceived` for each of the 16. The window, while it is open, saves an `SfxSong` named `Song` in its folder – and 16 presets beside it, `Pad01_…` to `Pad16_…`, with SAVE AS THEY ARRIVE on, since each of the patches is saved as any patch that arrives. A firmware up to 1.5.0 sends 39 pieces of 200 bytes, a format-5 song; both are taken |
 
 In your own code:
 
@@ -1191,7 +1202,7 @@ update. In a scene, `SfxForgeLink` polls every frame.
 | `SendPatch(slot, patch)` | loads the patch into that pad and selects it |
 | `SendSong(sounds, song.data)` | replaces its song and the 16 sounds of its MUSIC kit, which the song plays. The kit that is shown is left alone. To a device that said song format 6 the song goes in the message of firmware 1.6.0, whatever its format; to any other in the message of before, which carries a format-5 song only ([above](#when-a-song-is-not-sent)). Needs firmware 1.3.1: an older one takes the song and ignores the sounds |
 | `PlayPad(slot, velocity)` · `ReleasePad(slot)` | plays a pad |
-| `SendText("LEVEL 2")` | shows up to 24 ASCII characters on its top line |
+| `SendText("LEVEL 2")` | shows up to 24 ASCII characters in the bottom line of its LINK page, while that page is open |
 | `SendTelemetry(channel, value01)` | moves the held sound, or the music (below) |
 | `SendIntensity(value01)` · `CuePattern(0 … 7)` | the same as the music player's two, on the device |
 
@@ -1215,7 +1226,7 @@ while it follows. `SfxTelemetrySender` sends one value; add one component per va
 | `Level` | 13 | the level, 0 … 1 |
 | `Intensity` | 14 | the music's intensity |
 | `Pattern` | 15 | pattern A … H from the next bar line |
-| `Aux3`, `Aux4` | 16, 17 | shown on the device's LINK page, not mapped |
+| `Aux3`, `Aux4` | 16, 17 | not mapped. The device keeps them and its link light comes on; its LINK page draws CC 10 – 15 only |
 
 | `SfxTelemetrySender` field | |
 |---|---|
@@ -1563,7 +1574,11 @@ Every `AudioSource` is 2D, has no clip and has `playOnAwake` off.
 **Taking the folder.** From `Scripts/Core` the audio needs exactly these ten files: `GameEvents`, `PlayerBase` with
 `IPlayerState`, `IPlayerActor`, `IPlayerInput` and `TerrainPlane`, `GameSessionBase` with `IGameSession`, `GamePhase`
 and `SectionId`. The audio's `.asmdef` references the assembly `SfxShowcase.Core` by name: point it at the assembly
-you copied them into. Then raise the events from your game. Or replace the subscriptions in each `OnEnable` with your
+you copied them into. Both `.asmdef` files have `"autoReferenced": false`: scripts that are in no assembly
+definition of their own (Unity compiles those into `Assembly-CSharp`) do not see `AudioInstaller`, `PlayerBase`
+or `GameEvents` after the copy. Either set `"autoReferenced": true` in the two copied `.asmdef` files, or put
+the code that calls them into an assembly definition that references `SfxShowcase.Audio` and `SfxShowcase.Core`.
+Then raise the events from your game. Or replace the subscriptions in each `OnEnable` with your
 own events, and the reads of speed, rolling, grounded and charge with your own values, and take nothing from Core.
 
 **The song belongs to the folder.** `MusicKit.cs` names the demo song's instruments by index (bells 13, brass 5,
@@ -2093,8 +2108,8 @@ They are numbers read from rendered samples. Nobody listened.
 
 ### The inspectors are tested in a project of their own
 
-The editor UI has its own tests: 169 EditMode tests in a small Unity project in the source repository,
-`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 169 passed
+The editor UI has its own tests: 171 EditMode tests in a small Unity project in the source repository,
+`tests/unity-inspectors`, which uses the package's folder directly. They are not in the package. All 171 passed
 with Unity 6000.3.8f1 on Windows x64. 45 of them are about the tools of
 [section 11](#11-tools-for-designing-sounds), which lists what they cover tool by tool.
 
@@ -2122,6 +2137,7 @@ with Unity 6000.3.8f1 on Windows x64. 45 of them are about the tools of
 | the tools of a sound: NEW, VARY, LEVEL, SHARE | 21 tests: what each key does to the asset, its note, and Undo ([section 11](#11-tools-for-designing-sounds)) |
 | a variation set, its BAKE and its player | 16 tests, on asset files the tests make and delete again |
 | the batch bake and its window | 8 tests: the files a run writes, their names, the same bytes twice, and the window over a model |
+| `SfxMusicPlayer.Play()` takes a song that was assigned from a script | 2 tests, not of the editor UI, with the native library: a player enabled without a song and then given one, and one given another song, render the same samples as a player enabled with that song; without a song `Play()` is silent |
 
 **The pictures.** The same run writes 90 pictures to `out/inspector-shots` in the source repository: the sound
 inspector on every page and with each of its four tools open, the song inspector on every page and with patterns
@@ -2296,7 +2312,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 | `SfxPreset preset` | what `Play()` plays |
 | `float volume = 0.8f` | 0 … 1; not smoothed |
 | `bool playOnEnable` | start when enabled: for a held sound |
-| `float pitchSemitones` (0 … 24), `cutoffOctaves` (−4 … 4), `fm` (0 … 1), `level` (0 … 1, default 1) | the live values; they glide over 30 ms |
+| `float pitchSemitones` (0 … 24), `cutoffOctaves` (−4 … 4), `fm` (0 … 1), `level` (0 … 1, default 1) | the live values; they glide over 30 ms. The ranges are the Inspector's sliders: a script may write a value outside them, and only `level` is limited ([route 3](#route-3-held-and-bent-while-it-plays)) |
 | `void Play(float velocity = 1f, float semitones = 0f, int midiNote = 0)` | plays the preset |
 | `void Play(SfxPatch patch, float velocity = 1f, float semitones = 0f, int midiNote = 0)` | plays a patch |
 | `void Release()` | lets go of every held note |
@@ -2307,7 +2323,7 @@ Namespace `CatSplat.SfxForge`. Only what a game needs; the source has the rest.
 
 | Member | |
 |---|---|
-| `SfxSong song` | |
+| `SfxSong song` | read when the player is enabled, by `Reload()`, and by `Play()` when another asset was assigned since. Assigning it does nothing by itself |
 | `float volume = 0.6f` | 0 … 1; not smoothed |
 | `bool playOnEnable = true` · `int startPattern` (0 … 7) | |
 | `float intensity = 1f` | 0 … 1: which layers play |
@@ -2518,7 +2534,7 @@ restarted. Nobody has called `SongRegrid` from a Unity script; `tests/dotnet` ca
 | Member | |
 |---|---|
 | `string inputPort`, `outputPort` | a part of each port's name. Empty: the ports chosen in the window |
-| `string textOnStart` | shown on the device when the game starts |
+| `string textOnStart` | shown on the device when the game starts: in the bottom line of its LINK page |
 | `PadEvent onPad` | `UnityEvent<int, float>`: pad 0 … 15, velocity |
 | `EncoderEvent onEncoder` | `UnityEvent<int, float>`: encoder 0 … 5, value 0 … 1 |
 | `void SendText(string text)` | |

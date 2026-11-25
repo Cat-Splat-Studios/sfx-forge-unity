@@ -15,7 +15,10 @@ namespace CatSplat.SfxForge
     [RequireComponent(typeof(AudioSource))]
     public class SfxMusicPlayer : MonoBehaviour
     {
-        /// <summary>The song it plays.</summary>
+        /// <summary>
+        /// The song it plays. Play() takes it when another asset was assigned since the player took its song; Reload()
+        /// takes it at once, also when the same asset's contents changed.
+        /// </summary>
         public SfxSong song;
 
         /// <summary>The music's volume, 0..1.</summary>
@@ -82,6 +85,9 @@ namespace CatSplat.SfxForge
 
         // what the player was told last (the audio thread's)
         bool loopApplied;
+
+        // the asset Load saw last (the game thread's): Play compares the song field with it
+        SfxSong loaded;
         static bool warned;
 
         /// <summary>The sequencer runs.</summary>
@@ -157,6 +163,7 @@ namespace CatSplat.SfxForge
 
         void Load() // (inside the lock)
         {
+            loaded = song;
             if (song != null && song.IsNewer) // newer is not broken, and not silence without a word
             {
                 Debug.LogWarning(
@@ -204,11 +211,19 @@ namespace CatSplat.SfxForge
             }
         }
 
-        /// <summary>Starts the song on startPattern.</summary>
+        /// <summary>
+        /// Starts the song on startPattern. When another song asset was assigned since the player took its song, it
+        /// takes that one first (as Reload does).
+        /// </summary>
         public void Play()
         {
             if (memory != IntPtr.Zero)
             {
+                if (!ReferenceEquals(song, loaded))
+                {
+                    Reload();
+                }
+
                 commands.Enqueue(new Command { kind = CmdStart, a = startPattern });
             }
         }

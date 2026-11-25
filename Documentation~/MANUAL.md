@@ -126,7 +126,7 @@ sends.)
 |---|---|
 | **1** | the selected sound: its pad number, its name, its engine |
 | **2** | the kit it belongs to: SFX or MUSIC. On SEQ, SONG, AUTO, PERFORM, MIX and MASTER this place says **LOOP** or **SONG** instead: what PLAY plays |
-| **3** | the song: playing or stopped – or a red dot while REC is lit, playing or not – the pattern that plays, the tempo – `A>C` while pattern C waits for the bar line – and a dot that is green while a game is linked |
+| **3** | the song: playing or stopped – or a red dot while REC is lit, playing or not – the pattern that plays, the tempo – `A>C` while pattern C waits for the bar line – and the link dot: green once a game has sent telemetry or a SysEx message, and green from then on. It says that a game was there, not that it still is: it goes dark again only when the device is switched off |
 | **4** | the page's name |
 | **5** | six marks for K1 – K6. The bright one is the key you are on; the dots under it are that key's pages |
 | **6** | the picture: the sound's whole shape – and over it, in white, what this page's knobs shape (the wave, the envelope, the filter, the LFO) |
@@ -289,7 +289,7 @@ ENGINE is the first knob of the OSC page. The two knobs **A** and **B** on the T
 | Engine | Try this |
 |---|---|
 | IMPACT | PITCH ENV high with a short ENV TIME is a kick. A small fall over a long time is a tom. NOISE adds the crack |
-| UI BLIP | ARP STEP 7 (a fifth) at a high ARP SPEED is the classic coin. At 0 it is a plain square wave |
+| UI BLIP | ARP STEP 37 (a fifth) at a high ARP SPEED is the classic coin. The display shows the knob's value, 0 – 127, not semitones: 35 – 39 is a fifth, 64 an octave, 127 two octaves. The arpeggio plays four notes – the note itself, then three steps up – and stays on the last. At 0 it is a plain square wave |
 | SCI-FI FM | FM RATIO around 42 is round (a bass, an electric piano); higher is bells and metal. Its brightness falls over ENV TIME – that is the pluck |
 | FOLEY | CUTOFF is called BAND: it is where the noise sits. PITCH ENV sweeps the band – a whoosh. GRAIN AMT chops it: crackle, gravel, rain |
 | WAVETABLE | Turn POSITION and watch the wave morph. `> TIMBRE` on the LFO page moves it by itself. SPREAD makes it wide |
@@ -347,8 +347,10 @@ TIMPANI, with no steps; turn DATA two clicks to the right for the kick, as in th
 
 **2. Press PLAY.** Pattern A repeats until you press STOP. Nothing moves on to B.
 
-**3. Another pattern: LEFT or RIGHT.** It does not cut in. It starts on the next bar line, and then it is the one
-that repeats. While it waits, the display says so in three places:
+**3. Another pattern: LEFT or RIGHT.** One press goes to the pattern before or after: RIGHT from A to B, LEFT
+from A round to H. It does not cut in. It starts on the next bar line, and then it is the one that repeats. For
+the picture RIGHT was pressed six times within the bar, from A to G. While a pattern waits, the display says so in
+three places:
 
 ![A pattern that waits for the bar line](img/loop-2.png)
 
@@ -383,7 +385,8 @@ press. F2 again brings it back.
 | **1** | what was taken back: `TAKE`, all you played in |
 | **2** | **F2 UNDO**. Pressed again it is redo |
 
-**6. Press REC again** and the pads are the 16 steps once more, to add a hit by hand or fix a note. **STOP** ends it.
+**6. Press REC again** and the pads are the 16 steps once more, to add a hit by hand or fix a note. **STOP** stops
+the pattern. (STOP does not put REC out: pressed while REC is lit, it leaves REC lit, and PLAY starts a take again.)
 
 **7. The song in its order again?** Press **F1 TO SONG** – or go to the SONG page while it is stopped and REC is
 off ([section 10](#what-play-plays-loop-or-song)).
@@ -1400,8 +1403,8 @@ Linked over MIDI, the game drives the device while you listen and adjust. The **
 | | What it is |
 |---|---|
 | **1** | what the game sends: pitch, cutoff, timbre, level, intensity, pattern |
-| **2** | encoders 1 – 4 send CC 20 – 23 to the game: tune a game value from here |
-| **3** | green while a game is linked, with any text it sent |
+| **2** | encoders 1 – 4 send CC 20 – 23 to the game: tune a game value from here. On this page A and B send too: CC 24 and 25 |
+| **3** | `WAITING FOR A GAME` until something comes from a game – telemetry (CC 10 – 17 on channel 2) or one of the SysEx messages; notes alone do not count. Then `LINKED`, in green, and it stays so until the device is switched off, also when the game has gone. Under it `the knobs send CC 20-25 to it` – or the text a game sent: up to 24 characters, shown here and nowhere else, so only while this page is open |
 
 From firmware 1.4.0 a game can also ask the device what it is. The device answers with its **identity**: the
 hardware, the firmware's version, the formats of its sounds and songs, and what it holds – 16 sounds in each of 2
@@ -1411,7 +1414,7 @@ answered song format 5 and 16 steps. Every VIBE FM
 with the same firmware answers the same; the question is there so that later firmwares for other hardware, and a Unity side that can do
 more than a device, can be told apart without breaking what is made now. An older firmware does not answer, and the
 game takes that for a VIBE FM with a firmware before 1.4. Nothing shows on the device when it is asked, except that
-the LINK light comes on as for any message from a game.
+the LINK light comes on as for any SysEx message or telemetry from a game (notes alone do not light it).
 
 The protocol, byte by byte, is in [LINK-PROTOCOL.md](LINK-PROTOCOL.md). The Unity side is this package:
 [the Unity manual](UNITY.md) explains it, and its sample, the showcase game, shows all of it in one level.
@@ -1516,7 +1519,7 @@ F2 holds one step only: the first edit after switching on takes the other song's
 | **PERFORM** | has no ERASE and no SAVE: both are on SEQ. It shows that a step is on and how hard it plays, not its note or its length; a pad held and a key gives a step its note, the velocity and the length are set on SEQ |
 | **The stage** | has no control for the swing, the click, the bar's length, the beat or ERASE, and no tab for PERFORM; they are on the device |
 | **SHIFT + K1 – K6, SHIFT + RETURN** | have no job in SFX FORGE. On the VIBE itself they are the VIBE's: SHIFT + K1 – K6 play notes and SHIFT + RETURN locks that ([section 2](#2-the-device)). That is read from the SDK, not tried on hardware |
-| **What is tested** | firmware 1.7.0 passes all 24 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. The 23rd check is PERFORM's: a script presses the page's keys, pads and encoders, and the check reads the song and measures how loud it plays. It does not look at the display; the pictures of the page in this manual are taken from the firmware. Nobody has played PERFORM by hand or listened to it, and the stage's REC on PERFORM is read from the code, not tried. The 24th check is the beat's: a script turns B and SHIFT + B, and the check reads which steps FILL wrote with each beat, measures when the click sounds in a bar of 12 sixteenths with a quarter and with a dotted quarter, compares the song byte by byte before and after SHIFT + B, looks at `meter.bin` after SAVE with a dotted quarter and with a quarter, and reads the beat – by what FILL writes – after the device is switched on again, after NEW and after the factory reset. It sees that the display changes with the beat, not what it writes: the words and the shades in this manual are taken from pictures of the firmware. It does not look at the stage, and not at what swing does to the click: that is read from the code. Nobody has listened to the click with another beat or set a time signature by hand. Firmware 1.7.0 has not been run on the hardware or in the plugin. The link was last tested against the emulator on 24 Nov 2026, with firmware 1.7.0 as it is now: the six link tests of the Unity manual passed, in one run, with songs of sixteenths only and the beat a quarter. The recorded session with SEND and EXPORT pressed on the device was run once, on 23 Nov 2026, with the 1.7.0 build of that day, which had PERFORM and not yet the beat, and not again; with four quarters the display is the same. PERFORM was not open in those runs. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 or 1.7.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
+| **What is tested** | firmware 1.7.0 passes all 24 scripted checks (`sh build.sh`): scripts press its keys and the checks look at what it then plays, sends, stores and holds – the loop, a take over several bars, ERASE, UNDO, the keys that ask twice, COPY, and for the grid: a pattern raised and lowered, a take at 1/64, the keys of the grid, the song's messages in both shapes, the two song files. The 23rd check is PERFORM's: a script presses the page's keys, pads and encoders, and the check reads the song and measures how loud it plays. It does not look at the display; the pictures of the page in this manual are taken from the firmware. Nobody has played PERFORM by hand or listened to it, and the stage's REC on PERFORM is read from the code, not tried. The 24th check is the beat's: a script turns B and SHIFT + B, and the check reads which steps FILL wrote with each beat, measures when the click sounds in a bar of 12 sixteenths with a quarter and with a dotted quarter, compares the song byte by byte before and after SHIFT + B, looks at `meter.bin` after SAVE with a dotted quarter and with a quarter, and reads the beat – by what FILL writes – after the device is switched on again, after NEW and after the factory reset. It sees that the display changes with the beat, not what it writes: the words and the shades in this manual are taken from pictures of the firmware. It does not look at the stage, and not at what swing does to the click: that is read from the code. Nobody has listened to the click with another beat or set a time signature by hand. Firmware 1.7.0 has not been run on the hardware or in the plugin. The link was last tested against the emulator on 24 Nov 2026, with the 1.7.0 build before the LINK page's footer was corrected to `CC 20-25` (that text is all the build of now differs in; the link was not run again with it): the six link tests of the Unity manual passed, in one run, with songs of sixteenths only and the beat a quarter. The recorded session with SEND and EXPORT pressed on the device was run once, on 23 Nov 2026, with the 1.7.0 build of that day, which had PERFORM and not yet the beat, and not again; with four quarters the display is the same. PERFORM was not open in those runs. A DAW's clock with a finer grid is not tested. What an older firmware does with a song from 1.6.0 or 1.7.0 is read from its code, not tried. `NOT SAVED: STORE FULL` was only seen in a test that makes the store fail. Nobody has listened to the new features yet |
 
 ---
 
@@ -1549,7 +1552,7 @@ click · MENU the tour · HOME this page's controls · A the output volume (not 
 | **SONG** | K5 ×2 | 1 – 8 pattern · 9 – 16 intensity · SHIFT: arrangement | PATTERN · CHAIN · INTENSITY · LAYER | TO SONG / TO LOOP · UNDO · CLR PAT · NEW (SHIFT: DEMO), both twice · SEND · SAVE |
 | **AUTO** | K5 ×3 | a point on / off, on 16 steps of the bar · SHIFT: select a sound | STEP · VALUE · TARGET (it opens on the knob turned last) | TO SONG / TO LOOP · UNDO · RAMP · CLEAR · COPY · SAVE · SHIFT + F5 / F6: the grid coarser / finer |
 | **PERFORM** | K5 ×4 | what F1 – F4 choose. STEPS: 16 steps of the selected sound (SHIFT: select a sound) · SOUNDS: the kit (REC playing: recorded) · MUTES: mute (SHIFT: solo) · PATTERN: 1 – 8 pattern, 9 – 16 intensity | VOLUME · PAN · INTENSITY · LAYER | STEPS · SOUNDS · MUTES · PATTERN · FILL · UNDO · with SHIFT: TO SONG / TO LOOP · CLEAR · ALL ON · COPY · the grid coarser / finer |
-| **LINK** | K6 | play | send CC 20 – 23 | as the sound pages |
+| **LINK** | K6 | play | send CC 20 – 23 (A and B: CC 24 and 25, below) | as the sound pages |
 
 | Other encoder | Where | What it does |
 |---|---|---|
@@ -1577,10 +1580,17 @@ click · MENU the tour · HOME this page's controls · A the output volume (not 
 | `ERASE: HOLD F4` | F4 while REC plays: held, it erases the selected sound |
 | `MUSIC KIT ONLY: K5 SEQ` | a hit of the SFX kit was not recorded |
 | `UNDO: …` · `REDO: …` · `NOTHING TO UNDO` | F2 – on PERFORM F6 |
-| `PRESS AGAIN: …` | a key that asks twice: press it again while this stands |
+| `PRESS AGAIN: NEW SONG` · `PRESS AGAIN: DEMO` · `PRESS AGAIN: CLEAR ARR` | a key that asks twice – F4 NEW and SHIFT + F4 DEMO on SONG, SHIFT + pad 16 on SONG: press it again while this stands |
+| `NEW SONG - F2: UNDO` · `DEMO SONG - F2: UNDO` | the second press of NEW · of DEMO: the song is replaced, and F2 brings the one before back |
+| `AGAIN: FACTORY RESET` | SHIFT + MENU: press it again within three seconds |
+| `FACTORY RESET` · `RESET - NOT SAVED` | the second SHIFT + MENU: everything as it came, and saved so · as it came, but the store did not take it |
 | `CLEARED - F2: UNDO` · `CLEARED - F6: UNDO` | CLEAR took the selected sound's steps out of the pattern: F4 on SEQ, SHIFT + F2 on PERFORM. The key it names takes that back |
 | `NOTHING TO CLEAR` | CLEAR or CLR PAT with nothing there. What F2 holds is kept |
+| `PAT CLEARED - F2: UNDO` | F3 CLR PAT on SONG: the pattern shown is empty |
+| `LANE CLEARED` | F4 CLEAR on AUTO: the points of the lane shown are gone from this pattern. F2 brings them back |
 | `ALL ON` | F4 on MIX and MASTER, SHIFT + F3 on PERFORM: no mute, no solo |
+| `MUTED` · `UNMUTED` · `SOLO` · `SOLO OFF` | F1 MUTE · F2 SOLO on MIX and MASTER: the selected sound |
+| `FADER RESET` · `MASTER RESET` | F3 RESET: on MIX the selected sound's volume and pan · on MASTER the master's values – faders, pans, mutes and solos stay |
 | `COPIED A > G` · `NO EMPTY PATTERN` | F5 COPY |
 | `EVERY 1/4` · `EVERY 1/8` · `EVERY 1/16` · `EVERY 1/32` · `SOUND CLEARED` | F3 FILL – on PERFORM F5: where the sound stands now |
 | `EVERY 3/8` · `EVERY 3/16` | FILL's first press with a beat of a dotted quarter · of three sixteenths |
@@ -1592,8 +1602,25 @@ click · MENU the tour · HOME this page's controls · A the output volume (not 
 | `1/16: ALL STEPS SHOWN` · `BAR ENDS AT STEP 8` | SHIFT + LEFT or RIGHT with nothing to move to |
 | `BAR: 12/16 = 3/4` · `BAR: 7/16` | B on SONG and PERFORM: the bar's length in sixteenths, and the time signature it makes with the beat. A bar that is counted in sixteenths anyway is said once |
 | `BEAT 3/8: BAR 6/8` | SHIFT + B on SEQ, SONG and PERFORM: the beat, and what the bar is called with it. The four: `BEAT 1/8`, `BEAT 3/16`, `BEAT 1/4`, `BEAT 3/8` |
+| `SWING 20%` | SHIFT + A on SEQ, SONG, AUTO and PERFORM |
+| `CHROMATIC` · `MAJOR` · `MINOR` · `PENTATONIC` | B on SEQ: the scale NOTE moves in |
+| `CLICK ON` · `CLICK OFF` | SHIFT + REC |
+| `TURN TARGET FIRST` | AUTO: a pad or VALUE while the lane has no target yet. On the stage a click in the lane says `CHOOSE A TARGET FIRST` |
+| `SET TWO POINTS FIRST` · `RAMP` | F3 RAMP on AUTO: fewer than two points in the lane · done |
+| `ALL 24 LANES IN USE` | AUTO: a first point for a new target, with every lane of the song taken |
+| `BAR ADDED` · `32 BARS: FULL` | SHIFT + pad 1 – 8 on SONG: a bar more · the arrangement holds no more |
+| `BAR REMOVED` | SHIFT + pad 9 – 15 on SONG: the last bar is gone |
+| `NO ARRANGEMENT` | SHIFT + pad 16 on SONG with no bars to clear |
+| `ARR CLEARED - F2: UNDO` | the second SHIFT + pad 16: no arrangement. Also on the stage, when the arrangement is cut before its first bar |
+| `BARS REMOVED` | on the stage: SHIFT + click or a right-click on a bar of the arrangement – it ends before that bar |
 | `SAVED` · `NOT SAVED: STORE FULL` | F6 SAVE |
+| `SFX KIT` · `MUSIC KIT` | SHIFT + ENTER: the other kit |
+| a sound's name, such as `EXPLOSION` | F1 PRESET on a sound page: the sound the pad holds now |
+| `MUTATED` · `RANDOM` · `UNDO` | F2 MUTATE · F4 RANDOM · F3 UNDO on a sound page. F3 with nothing to take back: `NOTHING TO UNDO` |
+| `EXPORTED` | F5 EXPORT on a sound page: the sound went out as SysEx |
+| `SENDING` · `SENDING - NO GAME SEEN` · `SONG SENT` | F5 SEND on SONG: the 16 sounds and the song go out · the same, and nothing has come from a game yet · the last piece has gone |
 | `OLDER FIRMWARE'S SONG` | at the start: an older firmware saved a song later than this one did. F2 brings this one's back |
+| `PATCH LOADED` · `SOUND LOADED` · `BAD PATCH` | a sound came from a game: onto a pad of the kit shown, which becomes the selected sound · onto a pad of the MUSIC kit, as a song's sound · damaged, not taken |
 | `SONG LOADED` · `BAD SONG` · `NEWER SONG: UPDATE` | a song came from a game: taken · damaged · from a later format |
 | `ARRANGEMENT IN USE` | CHAIN is not used while there is an arrangement |
 

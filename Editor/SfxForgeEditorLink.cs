@@ -17,6 +17,8 @@ namespace CatSplat.SfxForge.Editor
 
         static SfxForgeEditorLink()
         {
+            // The editor polls the link itself, in Play mode too. A build has no editor: there an SfxForgeLink
+            // component in the scene does it - which is why a link can work in the editor and not in a build.
             EditorApplication.update += SfxLink.Shared.Poll;
             AssemblyReloadEvents.beforeAssemblyReload += SfxLink.Shared.Close;
             EditorApplication.quitting += SfxLink.Shared.Close;

@@ -88,7 +88,8 @@ namespace CatSplat.SfxForge
                     warned = true;
                     Debug.LogWarning(
                         "SFX Forge: the native library (sfxforge) is not available on this platform – SfxPlayer stays "
-                            + "silent. Bake presets to clips instead."
+                            + "silent. Only clips and WAV files baked beforehand, in the editor on Windows x64, "
+                            + "play here: baking needs the library too."
                     );
                 }
 
