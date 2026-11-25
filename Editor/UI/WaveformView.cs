@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The picture of a sound: SfxPicture renders the samples the device draws a sound from, WaveformView draws them
 // and, over them, a line for what the page's knobs shape.

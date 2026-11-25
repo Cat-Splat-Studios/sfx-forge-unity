@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The UI kit's value: Knob is the picture of the display's dial, ValueTile the control around it (the dial, a
 // label, the value in its unit) that tells what the mouse and the keyboard did to it.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // SfxPlayer: the component that plays a preset live, with the device's engine. SfxMix (at the end) is the small
 // helper it shares with SfxMusicPlayer.

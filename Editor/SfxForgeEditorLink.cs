@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 using System.IO;
 using UnityEditor;
 using UnityEngine;

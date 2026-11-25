@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The UI kit's larger pieces of a song, each drawn as the device's stage draws it:
 //   IntensityStrip  INTENSITY as a bar, with a mark for every sound's LAYER

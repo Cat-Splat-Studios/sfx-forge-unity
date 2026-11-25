@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 // MIDI in and out on Windows (winmm), SysEx included. No dependency; other platforms report no ports.
 using System;
 using System.Collections.Concurrent;

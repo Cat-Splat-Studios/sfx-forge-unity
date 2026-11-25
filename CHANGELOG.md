@@ -5,6 +5,10 @@
 The first version of the standalone package. It is generated from the SFX FORGE repository (the firmware, the engine
 and the Unity code live there) by `tools/make_unity_package.py`; nothing in it is edited by hand.
 
+Licence: the GNU General Public License, version 3 or any later version (GPL-3.0-or-later), with two additional
+permissions under its section 7 (the Unity engine; the hosts of VIBE FM firmwares): `LICENSE.md`,
+`ADDITIONAL-PERMISSIONS.md`. No version of this package was published under another licence.
+
 ### In it
 
 - **Runtime** (`CatSplat.SfxForge`): `SfxPatch`, `SfxPreset`, `SfxSong`, `SfxPlayer`, `SfxMusicPlayer`, `SfxNative`

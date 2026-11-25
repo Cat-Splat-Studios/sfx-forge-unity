@@ -4,6 +4,10 @@ Five videos, made by scripts from the firmware and the game themselves: nobody h
 The sound in them is what SFX FORGE produced, on the device or in Unity; there is no voice-over, the captions
 say what happens. Nobody has listened to them: their levels were measured, not judged.
 
+The two device videos and the two Unity videos end with the words "Open source, GPL-3.0-or-later":
+SFX FORGE is under the GNU General Public License, version 3 or any later version
+([LICENSE.md](../../LICENSE.md)).
+
 The device in the two device videos and in the link video is drawn by the VIBE FM SDK's emulator
 (see [Third Party Notices](../../Third%20Party%20Notices.md)).
 

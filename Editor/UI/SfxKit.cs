@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The base of the UI kit every inspector and window of the package is built from (README.md in this folder).
 //   SfxColors  the display's colours

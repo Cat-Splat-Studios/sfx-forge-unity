@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // A sound as text ("SFXF1:" and 56 hex digits) and as a .syx file: SfxPatchText writes and reads both,
 // SfxTextResult says what reading came to.

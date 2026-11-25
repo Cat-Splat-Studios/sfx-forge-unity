@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // What a device is and what it holds.
 //   SfxProfile     the formats a device speaks and its sizes, as numbers

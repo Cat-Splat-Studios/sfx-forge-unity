@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The UI kit's small pieces of a song:
 //   StepRow       a sound's row of steps in a pattern

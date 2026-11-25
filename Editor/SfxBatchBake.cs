@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Many sounds to .wav files in one go: the work behind Window > SFX Forge Bake.
 //   SfxBakeReport  what a bake did, file by file

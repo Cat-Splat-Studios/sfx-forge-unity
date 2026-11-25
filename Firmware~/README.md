@@ -61,6 +61,11 @@ New in 1.5.0, on the sequencer pages: LOOP and SONG (F1: a pattern repeats, or t
 pattern strip that shows which pattern plays, which is shown and which waits, REC that plays the pads as the
 kit and loops the pattern, ERASE while recording (F4), and UNDO (F2, one step, again for redo).
 
+Licence: the firmware is under the GNU General Public License, version 3 or any later version
+(GPL-3.0-or-later), as its manifest says: [LICENSE.md](../LICENSE.md). An additional permission allows
+combining it with the hosts of VIBE FM firmwares, which are not free software:
+[ADDITIONAL-PERMISSIONS.md](../ADDITIONAL-PERMISSIONS.md).
+
 The `.wasm` is SFX FORGE's code compiled together with the VIBE FM SDK's runtime and its display fonts
 (Apache-2.0 and SIL OFL 1.1): see [Third Party Notices](../Third%20Party%20Notices.md) and the licence texts in
 [`Documentation~/licenses`](../Documentation~/licenses). It carries no debug information.

@@ -18,7 +18,7 @@
     "name": "Cat Splat Studios",
     "url": "https://github.com/hisham-CSS"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.audio": "1.0.0",

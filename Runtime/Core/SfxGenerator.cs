@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // A new sound from nothing: SfxCategory names the ten kinds, SfxGenerator makes a patch of a kind from a seed.
 // The Recipes table is the heart of it: an engine and, for each value it names, the range the value is drawn from.

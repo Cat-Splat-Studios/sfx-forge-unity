@@ -8,6 +8,14 @@ they arrive in Unity as assets, and the game synthesizes them while it runs. The
 The documentation and the videos are the main thing here. Start with the videos, then
 [the Unity manual](Documentation~/UNITY.md).
 
+**The licence, before you build on it.** SFX Forge is free software under the GNU General Public License, version 3
+or any later version (GPL-3.0-or-later): [LICENSE.md](LICENSE.md). In short: you may use it at no cost in a project that
+is itself offered under the GPL, with its source. A game that is not offered under the GPL, a closed-source game for
+one, needs another licence from the copyright holder: ask Cat Splat Studios, through the issue tracker of the
+repository you got this package from. An additional permission covers the Unity engine itself, which is not free
+software ([ADDITIONAL-PERMISSIONS.md](ADDITIONAL-PERMISSIONS.md)); it does not cover your own code. This is a
+summary; the licence text decides. More under [License](#license).
+
 ## Watch
 
 Each picture is a silent excerpt of ten to fourteen seconds, at a third of the video's size; the text under it says
@@ -430,7 +438,22 @@ Not tested:
 
 ## License
 
-MIT, see [LICENSE.md](LICENSE.md). Two binaries in the package hold other people's code in compiled form: the
+Copyright (c) 2026 Cat Splat Studios. The package (its code, the native library, the firmware, the showcase, the
+manuals and their figures) is under the GNU General Public License, version 3 or (at your option) any later version
+(GPL-3.0-or-later): [LICENSE.md](LICENSE.md) is its text. It comes without warranty (sections 15 and 16).
+
+- **What that means for a Unity project**, as a summary; the licence text decides. The package costs nothing in a
+  project that is itself offered under the GPL: whoever gets the game can get its source under the same licence. A
+  game that is not offered under the GPL needs another licence from the copyright holder.
+- **The Unity engine.** The engine is not free software, and a game links with it. An additional permission under
+  section 7 of the licence allows conveying SFX Forge combined with the Unity engine and its runtime and editor
+  libraries. It is for the engine only, not for your own code or for other libraries:
+  [ADDITIONAL-PERMISSIONS.md](ADDITIONAL-PERMISSIONS.md). A second permission there does the same for the hosts that
+  load VIBE FM firmwares.
+- **Other terms.** The copyright holder can offer SFX Forge under other terms. Ask Cat Splat Studios, through the
+  issue tracker of the repository you got this package from.
+
+Two binaries in the package hold other people's code in compiled form: the
 firmware holds the VIBE FM SDK's runtime and display fonts (Apache-2.0, SIL OFL 1.1), and `sfxforge.dll` holds
 start-up code of the mingw-w64 runtime. The device shown in the videos is drawn by the SDK's emulator. All of it is
 in [Third Party Notices](Third%20Party%20Notices.md), with the licence texts in

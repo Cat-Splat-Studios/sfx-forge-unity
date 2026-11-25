@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The UI kit's 16 pads: PadState is how a pad's tile looks, PadGrid the four rows of four.
 using System;

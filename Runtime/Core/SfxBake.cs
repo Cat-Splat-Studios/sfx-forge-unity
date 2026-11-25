@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // A patch as samples: the one way every tool renders a sound.
 //   SfxBakeOptions  how to render: rate, mono, pitch, note, velocity, trim, normalise

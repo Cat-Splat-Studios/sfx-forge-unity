@@ -1626,3 +1626,7 @@ click · MENU the tour · HOME this page's controls · A the output volume (not 
 
 The pictures in this manual are made from the firmware itself: `node docs/shots.mjs` takes the screenshots,
 `python docs/figures.py` puts the marks on them.
+
+**Licence.** SFX FORGE is free software under the GNU General Public License, version 3 or any later version:
+`LICENSE.md` at the top of the package, with the additional permissions of `ADDITIONAL-PERMISSIONS.md` beside it
+(one of them is for the hosts that load VIBE FM firmwares). See the package's README, "License".

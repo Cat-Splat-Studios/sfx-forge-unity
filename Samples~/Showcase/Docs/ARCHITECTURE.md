@@ -266,7 +266,8 @@ Exit code 0 is success. Compile errors appear in the log as `error CS`; the self
 ## 7. Copy this into your own game
 
 The short version: copy `Scripts/Audio`, give it your own events, and call one installer. The longer
-version, with every step, is `../README.md` ("Use SFX FORGE in your own Unity game").
+version, with every step, is `../README.md` ("Use SFX FORGE in your own Unity game"). The showcase is under
+the package's licence (`GPL-3.0-or-later`), and what you copy from it stays under that licence.
 
 1. **What you need.** The `com.catsplatstudios.sfxforge` package (`Packages/manifest.json`:
    `"com.catsplatstudios.sfxforge": "file:<path>/com.catsplatstudios.sfxforge"`) and an assembly that references

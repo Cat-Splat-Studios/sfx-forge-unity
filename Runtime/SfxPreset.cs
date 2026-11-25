@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // SfxPreset: one sound as an asset. SfxAssetFormat: the number every SFX Forge asset keeps of the asset format
 // that wrote it, and what is said when an asset comes from a newer version.

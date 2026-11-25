@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The MIDI between SFX FORGE and a game engine (README.md, "The link"): every number of it, and the messages.
 //   SfxMaster      the song's master effects

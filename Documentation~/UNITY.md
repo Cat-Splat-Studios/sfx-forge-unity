@@ -6,6 +6,12 @@ is needed.
 
 There are no audio files in it. A sound is a patch; a patch is 28 bytes.
 
+**Licence.** The package is under the GNU General Public License, version 3 or any later version, with an
+additional permission for the Unity engine: [LICENSE.md](../LICENSE.md),
+[ADDITIONAL-PERMISSIONS.md](../ADDITIONAL-PERMISSIONS.md). A game that is not offered under the GPL needs another
+licence from the copyright holder ([README, License](../README.md#license)). This is a summary; the licence text
+decides.
+
 This is the sibling of [the device's manual](MANUAL.md). That one explains the instrument. This one explains the
 package `com.catsplatstudios.sfxforge` and the example game built with it.
 
@@ -1540,6 +1546,9 @@ The music's volume is 0.36 (`musicVolume`), halved for a moment after a hit.
 ![What to copy](img/unity-copy.png)
 
 *What to take from the showcase, and where it goes in your game.*
+
+The showcase is under the package's licence (`GPL-3.0-or-later`, the **Licence** paragraph at the top of this
+manual), and what you copy from it stays under that licence.
 
 | | Do this | Read |
 |---|---|---|

@@ -9,6 +9,9 @@ It exists to be read and copied. The game is small on purpose; the part to take 
 [`Scripts/Audio`](Scripts/Audio), seventeen short files that show the three ways to use SFX FORGE in a
 Unity game: **one-shots**, **sounds that follow the game while they play**, and **adaptive music**.
 
+The showcase is under the same licence as the package, the GNU General Public License, version 3 or any
+later version (`GPL-3.0-or-later`). What you copy from it stays under that licence.
+
 **The Unity manual**, [`Documentation~/UNITY.md`](../../Documentation~/UNITY.md), explains the package itself – every value of a
 patch, the three routes, the music player, the link to the device – and uses this game as its worked example.
 

@@ -1,7 +1,9 @@
 # Third Party Notices
 
-The package's code, the showcase, the manuals and their figures are Cat Splat Studios' own work under the MIT
-licence ([LICENSE.md](LICENSE.md)). Everything you hear is synthesized by that code: there are no samples or
+The package's code, the showcase, the manuals and their figures are Cat Splat Studios' own work under the GNU
+General Public License, version 3 or any later version (GPL-3.0-or-later: [LICENSE.md](LICENSE.md), with the additional
+permissions of [ADDITIONAL-PERMISSIONS.md](ADDITIONAL-PERMISSIONS.md)). The parts below are other people's and stay
+under their own licences. Everything you hear is synthesized by that code: there are no samples or
 recordings. Three things come from, or depend on, someone else's work: the VIBE FM SDK (in the firmware and in the
 videos), the fonts of the device's display (in the firmware and in the videos), and the C runtime that the compiler
 links into the native library. Their licence and notice texts are in

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The UI kit's keys: SoftKey is one of the display's soft keys, SoftKeyRow a row of them that wraps evenly,
 // PageTabs the row of page names (OSC TONE FILTER ...).

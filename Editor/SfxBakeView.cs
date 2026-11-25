@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Window > SFX Forge Bake, without the window: what it shows and what it looks like.
 //   SfxBakeModel  what the window shows and what it is asked to do, as plain data and callbacks

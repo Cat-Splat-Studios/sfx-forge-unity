@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // How loud a sound is, and how to make sounds as loud as each other.
 //   SfxLevelReading  a peak and an RMS

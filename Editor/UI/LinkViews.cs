@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The UI kit's pieces for the link (Window > SFX Forge):
 //   LinkBars   the LINK page: a line with a thin bar for each value that is sent
